@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>每日JS — JavaScript → CesiumJS 学习路径</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0f1117;
+      --surface:   #1a1d27;
+      --card:      #21253a;
+      --border:    #2e3350;
+      --accent:    #61dafb;
+      --accent2:   #f7c948;
+      --accent3:   #7ee787;
+      --accent4:   #ff7b72;
+      --text:      #cdd3e0;
+      --muted:     #6e7a96;
+      --tag-bg:    #1e3a5f;
+      --code-bg:   #161b2e;
+    }
+
+    body {
+      font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.75;
+      font-size: 15px;
+    }
+
+    /* ===== HERO ===== */
+    .hero {
+      background: linear-gradient(135deg, #0d1b3e 0%, #1a2d5a 50%, #0f2040 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 72px 24px 60px;
+      text-align: center;
+    }
+    .hero .badge {
+      display: inline-block;
+      background: var(--accent);
+      color: #0a0e1a;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 4px 14px;
+      border-radius: 20px;
+      margin-bottom: 20px;
+    }
+    .hero h1 {
+      font-size: clamp(30px, 6vw, 56px);
+      font-weight: 800;
+      color: #fff;
+      line-height: 1.15;
+      margin-bottom: 16px;
+    }
+    .hero h1 span { color: var(--accent); }
+    .hero p {
+      color: var(--muted);
+      font-size: 16px;
+      max-width: 580px;
+      margin: 0 auto 28px;
+    }
+    .hero .meta {
+      display: flex;
+      justify-content: center;
+      gap: 24px;
+      flex-wrap: wrap;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .hero .meta span { display: flex; align-items: center; gap: 6px; }
+
+    /* ===== LAYOUT ===== */
+    .container { max-width: 860px; margin: 0 auto; padding: 56px 24px 80px; }
+
+    /* ===== SECTION HEADER ===== */
+    .section-label {
+      font-size: 12px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 10px;
+      font-weight: 600;
+    }
+    .section-title {
+      font-size: 28px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 32px;
+    }
+
+    /* ===== DAY CARDS ===== */
+    .days-grid {
+      display: grid;
+      gap: 16px;
+      margin-bottom: 56px;
+    }
+
+    .day-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 24px 28px;
+      display: flex;
+      align-items: center;
+      gap: 22px;
+      text-decoration: none;
+      color: var(--text);
+      transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s;
+      cursor: pointer;
+    }
+    .day-card:hover {
+      border-color: var(--accent);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(97, 218, 251, 0.1);
+      color: var(--text);
+    }
+
+    .day-num {
+      width: 52px;
+      height: 52px;
+      border-radius: 12px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--muted);
+      flex-shrink: 0;
+      transition: background 0.2s, border-color 0.2s, color 0.2s;
+    }
+    .day-card:hover .day-num {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #0a0e1a;
+    }
+
+    .day-info { flex: 1; min-width: 0; }
+    .day-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 4px;
+    }
+    .day-desc {
+      font-size: 13px;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .day-tags { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; flex-shrink: 0; }
+    .tag {
+      font-size: 11px;
+      background: var(--tag-bg);
+      color: var(--accent);
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    .arrow {
+      font-size: 18px;
+      color: var(--border);
+      flex-shrink: 0;
+      transition: color 0.2s, transform 0.2s;
+    }
+    .day-card:hover .arrow {
+      color: var(--accent);
+      transform: translateX(4px);
+    }
+
+    /* ===== PATH CARD ===== */
+    .path-card {
+      background: linear-gradient(135deg, #0d1b3e, #1a2d5a);
+      border: 1px solid #2e3350;
+      border-radius: 16px;
+      padding: 36px 40px;
+      text-align: center;
+    }
+    .path-card h2 {
+      font-size: 22px;
+      color: #fff;
+      margin-bottom: 10px;
+    }
+    .path-card p {
+      color: var(--muted);
+      font-size: 14px;
+      margin-bottom: 24px;
+    }
+    .path-steps {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .path-step {
+      padding: 8px 18px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .ps-base { background: #1e3a5f; color: var(--accent); border: 1px solid #2a5a8f; }
+    .ps-next { background: var(--card); color: var(--muted); border: 1px solid var(--border); }
+    .ps-arrow { color: var(--border); font-size: 16px; }
+    .path-card .target {
+      display: inline-block;
+      background: rgba(97, 218, 251, 0.12);
+      border: 1px solid rgba(97, 218, 251, 0.3);
+      color: var(--accent);
+      padding: 10px 24px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 700;
+      margin-top: 20px;
+    }
+
+    /* ===== FOOTER ===== */
+    .footer {
+      text-align: center;
+      padding: 40px 24px 20px;
+      color: var(--muted);
+      font-size: 13px;
+      border-top: 1px solid var(--border);
+    }
+    .footer strong { color: var(--accent); }
+  </style>
+</head>
+<body>
+
+<!-- ===== HERO ===== -->
+<div class="hero">
+  <div class="badge">🚀 学习路径</div>
+  <h1>每日<span>JS</span></h1>
+  <p>每天一个主题，30 天掌握 JavaScript，然后进入 CesiumJS 地球可视化开发。</p>
+  <div class="meta">
+    <span>🕐 日更中</span>
+    <span>⚡ 30 天完整路径</span>
+    <span>🌍 CesiumJS 阶段</span>
+  </div>
+</div>
+
+<!-- ===== CONTAINER ===== -->
+<div class="container">
+
+  <!-- 学习路径预览 -->
+  <div class="section-label">📍 学习路线图</div>
+  <div class="section-title">内容导航</div>
+
+  <!-- Days Grid -->
+  <div class="days-grid">
+    <a class="day-card" href="day01.html">
+      <div class="day-num">Day 01</div>
+      <div class="day-info">
+        <div class="day-title">变量、数据类型与运算符</div>
+        <div class="day-desc">var / let / const · 7 种原始类型 · typeof · 算术·比较·逻辑运算符</div>
+      </div>
+      <div class="day-tags">
+        <span class="tag">VARIABLES</span>
+        <span class="tag">TYPES</span>
+      </div>
+      <div class="arrow">→</div>
+    </a>
+
+    <a class="day-card" href="day02.html">
+      <div class="day-num">Day 02</div>
+      <div class="day-info">
+        <div class="day-title">函数与作用域</div>
+        <div class="day-desc">函数声明 · 箭头函数 · 作用域链 · 闭包 · this 指向</div>
+      </div>
+      <div class="day-tags">
+        <span class="tag">FUNCTIONS</span>
+        <span class="tag">SCOPE</span>
+      </div>
+      <div class="arrow">→</div>
+    </a>
+
+    <a class="day-card" href="day03.html">
+      <div class="day-num">Day 03</div>
+      <div class="day-info">
+        <div class="day-title">数组与对象</div>
+        <div class="day-desc">数组方法 · 对象增删改查 · 解构赋值 · 展开运算符</div>
+      </div>
+      <div class="day-tags">
+        <span class="tag">ARRAYS</span>
+        <span class="tag">OBJECTS</span>
+      </div>
+      <div class="arrow">→</div>
+    </a>
+
+    <a class="day-card" href="day04.html">
+      <div class="day-num">Day 04</div>
+      <div class="day-info">
+        <div class="day-title">控制流</div>
+        <div class="day-desc">if / else · switch · for / while / do-while · break / continue</div>
+      </div>
+      <div class="day-tags">
+        <span class="tag">CONTROL</span>
+        <span class="tag">LOOPS</span>
+      </div>
+      <div class="arrow">→</div>
+    </a>
+
+    <a class="day-card" href="day05.html">
+      <div class="day-num">Day 05</div>
+      <div class="day-info">
+        <div class="day-title">DOM 操作</div>
+        <div class="day-desc">选择器 · 创建/插入/删除元素 · 属性操作 · 样式修改</div>
+      </div>
+      <div class="day-tags">
+        <span class="tag">DOM</span>
+        <span class="tag">BOM</span>
+      </div>
+      <div class="arrow">→</div>
+    </a>
+  </div>
+
+  <!-- Coming Soon -->
+  <div class="days-grid">
+    <div class="day-card" style="cursor:default;opacity:0.5;" onclick="return false;">
+      <div class="day-num">Day 06</div>
+      <div class="day-info">
+        <div class="day-title">事件与异步</div>
+        <div class="day-desc">事件监听 · 事件冒泡 · 事件委托 · Promise · async/await</div>
+      </div>
+      <div class="day-tags">
+        <span class="tag" style="background:var(--card);color:var(--muted);border:1px solid var(--border)">即将推出</span>
+      </div>
+      <div class="arrow" style="color:var(--border)">…</div>
+    </div>
+  </div>
+
+  <!-- 学习路径 -->
+  <div class="path-card">
+    <h2>🗺️ 完整学习路径</h2>
+    <p>从零基础到 CesiumJS 地球开发，一步一步来</p>
+    <div class="path-steps">
+      <div class="path-step ps-base">JS 基础（Day 01–08）</div>
+      <div class="path-step ps-arrow">→</div>
+      <div class="path-step ps-next">JS 进阶（Day 09–16）</div>
+      <div class="path-step ps-arrow">→</div>
+      <div class="path-step ps-next">浏览器 API（Day 17–22）</div>
+      <div class="path-step ps-arrow">→</div>
+      <div class="path-step ps-next">工程化（Day 23–26）</div>
+      <div class="path-step ps-arrow">→</div>
+      <div class="path-step ps-base">CesiumJS 🌍</div>
+    </div>
+    <div class="target">🌍 CesiumJS 阶段：3D 地球、可视化、地理信息系统开发</div>
+  </div>
+
+</div>
+
+<!-- ===== FOOTER ===== -->
+<div class="footer">
+  <p>🚀 <strong>每日JS</strong> — JavaScript → CesiumJS 学习路径</p>
+  <p style="margin-top:6px;">已发布 Day 01–05 · 日更中 · 加油 🚀</p>
+</div>
+
+</body>
+</html>
