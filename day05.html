@@ -1,0 +1,1250 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>JavaScript 每日学习 — Day 05：DOM 操作</title>
+  <style>
+    /* ===== 全局 ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0f1117;
+      --surface:   #1a1d27;
+      --card:      #21253a;
+      --border:    #2e3350;
+      --accent:    #61dafb;
+      --accent2:   #f7c948;
+      --accent3:   #7ee787;
+      --accent4:   #ff7b72;
+      --text:      #cdd3e0;
+      --muted:     #6e7a96;
+      --tag-bg:    #1e3a5f;
+      --code-bg:   #161b2e;
+    }
+
+    body {
+      font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.75;
+      font-size: 15px;
+    }
+
+    /* ===== 顶部 Banner ===== */
+    .hero {
+      background: linear-gradient(135deg, #0d1b3e 0%, #1a2d5a 50%, #0f2040 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 52px 24px 40px;
+      text-align: center;
+    }
+    .hero .badge {
+      display: inline-block;
+      background: var(--accent);
+      color: #0a0e1a;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 4px 12px;
+      border-radius: 20px;
+      margin-bottom: 16px;
+    }
+    .hero h1 {
+      font-size: clamp(24px, 5vw, 42px);
+      font-weight: 800;
+      color: #fff;
+      line-height: 1.2;
+      margin-bottom: 12px;
+    }
+    .hero h1 span { color: var(--accent); }
+    .hero p {
+      color: var(--muted);
+      font-size: 15px;
+      max-width: 560px;
+      margin: 0 auto 24px;
+    }
+    .hero .meta {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      flex-wrap: wrap;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .hero .meta span { display: flex; align-items: center; gap: 5px; }
+
+    /* ===== 布局 ===== */
+    .container { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; }
+
+    /* ===== 目录卡片 ===== */
+    .toc {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--accent);
+      border-radius: 12px;
+      padding: 24px 28px;
+      margin-bottom: 40px;
+    }
+    .toc h2 { font-size: 14px; letter-spacing: 1px; text-transform: uppercase; color: var(--accent); margin-bottom: 14px; }
+    .toc ol { padding-left: 20px; }
+    .toc li { margin: 6px 0; }
+    .toc a { color: var(--text); text-decoration: none; }
+    .toc a:hover { color: var(--accent); }
+
+    /* ===== 章节标题 ===== */
+    .section { margin-bottom: 52px; }
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 24px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    .section-num {
+      width: 38px; height: 38px;
+      border-radius: 10px;
+      background: var(--accent);
+      color: #0a0e1a;
+      font-weight: 800;
+      font-size: 16px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .section-header h2 {
+      font-size: 22px;
+      font-weight: 700;
+      color: #fff;
+    }
+    .section-header .tag {
+      font-size: 11px;
+      background: var(--tag-bg);
+      color: var(--accent);
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    /* ===== 卡片 ===== */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+    .card h3 {
+      font-size: 16px;
+      color: var(--accent2);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card p { margin-bottom: 10px; color: var(--text); }
+    .card p:last-child { margin-bottom: 0; }
+
+    /* ===== 代码块 ===== */
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px 22px;
+      overflow-x: auto;
+      margin: 16px 0;
+      font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+      font-size: 13.5px;
+      line-height: 1.7;
+    }
+    code { font-family: inherit; }
+
+    /* 语法着色 */
+    .kw  { color: #c792ea; }  /* 关键字 */
+    .str { color: #c3e88d; }  /* 字符串 */
+    .num { color: #f78c6c; }  /* 数字 */
+    .cmt { color: #546e7a; font-style: italic; }  /* 注释 */
+    .fn  { color: #82aaff; }  /* 函数名 */
+    .var { color: #eeffff; }  /* 变量 */
+    .op  { color: var(--accent); }  /* 运算符 */
+    .typ { color: var(--accent2); }  /* 类型 */
+    .out { color: var(--accent3); }  /* 输出 */
+
+    /* ===== 提示框 ===== */
+    .tip, .warn, .info {
+      border-radius: 10px;
+      padding: 14px 18px;
+      margin: 16px 0;
+      font-size: 14px;
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+    .tip  { background: #0d3321; border-left: 4px solid var(--accent3); }
+    .warn { background: #3a2500; border-left: 4px solid var(--accent2); }
+    .info { background: #0d1e3a; border-left: 4px solid var(--accent); }
+    .tip .icon, .warn .icon, .info .icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+
+    /* ===== 对比表格 ===== */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 14px;
+    }
+    th {
+      background: var(--surface);
+      color: var(--accent);
+      padding: 12px 16px;
+      text-align: left;
+      border-bottom: 2px solid var(--border);
+      font-weight: 600;
+    }
+    td {
+      padding: 11px 16px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+      vertical-align: top;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(97, 218, 251, 0.04); }
+    .td-kw { color: #c792ea; font-family: 'Cascadia Code','Fira Code',monospace; font-weight: 600; }
+    .td-type { color: var(--accent2); }
+    .td-good { color: var(--accent3); }
+    .td-bad  { color: var(--accent4); }
+
+    /* ===== 两列网格 ===== */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 600px) { .grid-2 { grid-template-columns: 1fr; } }
+
+    /* ===== 练习区 ===== */
+    .practice {
+      background: linear-gradient(135deg, #0d2238, #1a2d1a);
+      border: 1px solid #2a4a2a;
+      border-radius: 12px;
+      padding: 28px;
+      margin-top: 48px;
+    }
+    .practice h2 {
+      font-size: 20px;
+      color: var(--accent3);
+      margin-bottom: 8px;
+    }
+    .practice p { color: var(--muted); margin-bottom: 20px; font-size: 14px; }
+    .exercise {
+      background: var(--code-bg);
+      border: 1px dashed #2a4a2a;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+    .exercise .q {
+      color: var(--accent2);
+      font-weight: 600;
+      margin-bottom: 12px;
+      font-size: 14px;
+    }
+    .exercise pre { margin: 0; }
+
+    /* ===== 交互控制台 ===== */
+    .console-area {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-top: 48px;
+    }
+    .console-header {
+      background: var(--surface);
+      padding: 12px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+    .console-header span { color: var(--accent); font-size: 13px; font-weight: 600; letter-spacing: 1px; }
+    .console-dots { display: flex; gap: 6px; }
+    .dot { width: 12px; height: 12px; border-radius: 50%; }
+    .dot-r { background: #ff5f57; }
+    .dot-y { background: #febc2e; }
+    .dot-g { background: #28c840; }
+    #sandbox-code {
+      width: 100%;
+      background: var(--code-bg);
+      color: var(--accent3);
+      border: none;
+      padding: 18px 20px;
+      font-family: 'Cascadia Code','Fira Code',monospace;
+      font-size: 13.5px;
+      line-height: 1.7;
+      resize: vertical;
+      min-height: 140px;
+      outline: none;
+    }
+    .console-actions {
+      padding: 12px 18px;
+      display: flex;
+      gap: 10px;
+      border-top: 1px solid var(--border);
+    }
+    .btn {
+      padding: 8px 20px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      transition: opacity .2s;
+    }
+    .btn:hover { opacity: .85; }
+    .btn-run { background: var(--accent); color: #0a0e1a; }
+    .btn-clear { background: var(--surface); color: var(--muted); border: 1px solid var(--border); }
+    #output-box {
+      padding: 16px 20px;
+      min-height: 60px;
+      font-family: 'Cascadia Code','Fira Code',monospace;
+      font-size: 13px;
+      color: var(--accent3);
+      border-top: 1px solid var(--border);
+      white-space: pre-wrap;
+    }
+    #output-box .err { color: var(--accent4); }
+
+    /* ===== 进度条 ===== */
+    .progress-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 22px 26px;
+      margin-bottom: 40px;
+    }
+    .progress-card h3 { font-size: 13px; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); margin-bottom: 16px; }
+    .progress-list { display: flex; flex-wrap: wrap; gap: 8px; }
+    .progress-item {
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+    }
+    .pi-done  { background: #0d3321; color: var(--accent3); border: 1px solid #1a4d2a; }
+    .pi-today { background: #1e3a5f; color: var(--accent); border: 1px solid #2a5a8f; }
+    .pi-next  { background: var(--card); color: var(--muted); border: 1px solid var(--border); }
+
+    /* ===== 底部 ===== */
+    .footer {
+      text-align: center;
+      padding: 40px 24px 20px;
+      color: var(--muted);
+      font-size: 13px;
+      border-top: 1px solid var(--border);
+    }
+    .footer strong { color: var(--accent); }
+
+    /* ===== inline code ===== */
+    p code, li code, td code {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      padding: 1px 6px;
+      border-radius: 5px;
+      font-family: 'Cascadia Code','Fira Code',monospace;
+      font-size: 12.5px;
+      color: var(--accent);
+    }
+    ul { padding-left: 20px; }
+    li { margin: 5px 0; }
+
+    /* ===== DOM 演示区 ===== */
+    .dom-demo {
+      background: #0a0e1a;
+      border: 1px dashed var(--border);
+      border-radius: 10px;
+      padding: 20px;
+      margin: 16px 0;
+    }
+    .demo-box {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      margin: 8px 0;
+    }
+    .demo-btn {
+      background: var(--accent);
+      color: #0a0e1a;
+      border: none;
+      padding: 6px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      margin: 4px 4px 4px 0;
+    }
+    .demo-btn:hover { opacity: .85; }
+    .demo-highlight { background: rgba(97,218,251,0.15); border-color: var(--accent); }
+  </style>
+</head>
+<body>
+
+<!-- ===== HERO ===== -->
+<div class="hero">
+  <div class="badge">JavaScript 学习路径</div>
+  <h1>Day 05 — <span>DOM</span> 操作</h1>
+  <p>掌握网页的"遥控器"：选择元素、修改内容、操控样式、动态创建节点，让网页活起来。</p>
+  <div class="meta">
+    <span>📅 第 5 天</span>
+    <span>⏱ 预计 50 分钟</span>
+    <span>🎯 目标：CesiumJS 地球开发</span>
+    <span>📊 基础阶段</span>
+  </div>
+</div>
+
+<!-- ===== CONTAINER ===== -->
+<div class="container">
+
+  <!-- 学习进度 -->
+  <div class="progress-card">
+    <h3>📍 学习路线图</h3>
+    <div class="progress-list">
+      <div class="progress-item pi-done">Day 01 · 变量与数据类型</div>
+      <div class="progress-item pi-done">Day 02 · 函数与作用域</div>
+      <div class="progress-item pi-done">Day 03 · 数组与对象</div>
+      <div class="progress-item pi-done">Day 04 · 控制流</div>
+      <div class="progress-item pi-today">Day 05 · DOM 操作 ← 今天</div>
+      <div class="progress-item pi-next">Day 06 · 事件与异步</div>
+      <div class="progress-item pi-next">Day 07 · ES6+ 语法</div>
+      <div class="progress-item pi-next">Day 08 · 模块与类</div>
+      <div class="progress-item pi-next">…</div>
+      <div class="progress-item pi-next">CesiumJS 阶段 🌍</div>
+    </div>
+  </div>
+
+  <!-- 目录 -->
+  <div class="toc">
+    <h2>📚 本课目录</h2>
+    <ol>
+      <li><a href="#s1">DOM 简介：文档对象模型</a></li>
+      <li><a href="#s2">DOM 选择器：找到元素</a></li>
+      <li><a href="#s3">读取与修改内容</a></li>
+      <li><a href="#s4">属性与样式操作</a></li>
+      <li><a href="#s5">DOM 遍历：在树中移动</a></li>
+      <li><a href="#s6">创建、插入与删除元素</a></li>
+      <li><a href="#s7">CesiumJS 关联场景</a></li>
+      <li><a href="#s8">练习题</a></li>
+      <li><a href="#s9">在线练习控制台</a></li>
+    </ol>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 1: DOM 简介                                          -->
+  <!-- ============================================================ -->
+  <div class="section" id="s1">
+    <div class="section-header">
+      <div class="section-num">1</div>
+      <h2>DOM 简介：文档对象模型</h2>
+      <span class="tag">DOM</span>
+    </div>
+
+    <p><strong>DOM（Document Object Model）</strong>是浏览器将 HTML 文档解析后形成的一棵<strong>树形结构</strong>。JavaScript 通过 DOM API 来读取和修改网页内容。</p>
+
+    <div class="card">
+      <h3>🌲 DOM 树结构</h3>
+      <p>每个 HTML 标签都是一个<strong>元素节点（Element Node）</strong>，标签内的文本是<strong>文本节点（Text Node）</strong>，标签上的属性是<strong>属性节点（Attribute Node）</strong>。</p>
+<pre><code><span class="cmt">&lt;!-- HTML 源码 --&gt;</span>
+<span class="op">&lt;</span><span class="var">div</span> <span class="var">id</span><span class="op">=</span><span class="str">"map"</span><span class="op">&gt;</span>
+  <span class="op">&lt;</span><span class="var">h1</span><span class="op">&gt;</span>CesiumJS 地球<span class="op">&lt;/</span><span class="var">h1</span><span class="op">&gt;</span>
+  <span class="op">&lt;</span><span class="var">p</span> <span class="var">class</span><span class="op">=</span><span class="str">"desc"</span><span class="op">&gt;</span>三维地理可视化<span class="op">&lt;/</span><span class="var">p</span><span class="op">&gt;</span>
+<span class="op">&lt;/</span><span class="var">div</span><span class="op">&gt;</span>
+
+<span class="cmt">/* 对应的 DOM 树 */
+        document
+           |
+         html
+        /    \
+     head    body
+              |
+             div#map
+            /       \
+         h1         p.desc
+          |          |
+    "CesiumJS 地球"  "三维地理可视化"
+*/</span></code></pre>
+    </div>
+
+    <div class="info">
+      <span class="icon">ℹ️</span>
+      <div>DOM 是浏览器提供的 API，<strong>不是 JavaScript 语言本身</strong>的一部分。但在浏览器环境中，JS 通过全局对象 <code>document</code> 和 <code>window</code> 来访问 DOM。</div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 2: DOM 选择器                                        -->
+  <!-- ============================================================ -->
+  <div class="section" id="s2">
+    <div class="section-header">
+      <div class="section-num">2</div>
+      <h2>DOM 选择器：找到元素</h2>
+      <span class="tag">SELECTORS</span>
+    </div>
+
+    <p>操作 DOM 的第一步是<strong>选中目标元素</strong>。JavaScript 提供了多种选择器方法：</p>
+
+    <table>
+      <tr>
+        <th>方法</th>
+        <th>选择依据</th>
+        <th>返回结果</th>
+        <th>推荐指数</th>
+      </tr>
+      <tr>
+        <td class="td-kw">getElementById(id)</td>
+        <td>id 属性</td>
+        <td>单个元素 / null</td>
+        <td class="td-good">✅ 快速</td>
+      </tr>
+      <tr>
+        <td class="td-kw">getElementsByClassName(cls)</td>
+        <td>class 属性</td>
+        <td>HTMLCollection（实时集合）</td>
+        <td class="td-bad">⚠️ 旧式</td>
+      </tr>
+      <tr>
+        <td class="td-kw">getElementsByTagName(tag)</td>
+        <td>标签名</td>
+        <td>HTMLCollection（实时集合）</td>
+        <td class="td-bad">⚠️ 旧式</td>
+      </tr>
+      <tr>
+        <td class="td-kw">querySelector(selector)</td>
+        <td>CSS 选择器</td>
+        <td>第一个匹配的元素 / null</td>
+        <td class="td-good">✅ 推荐</td>
+      </tr>
+      <tr>
+        <td class="td-kw">querySelectorAll(selector)</td>
+        <td>CSS 选择器</td>
+        <td>NodeList（静态集合，可 forEach）</td>
+        <td class="td-good">✅ 推荐</td>
+      </tr>
+    </table>
+
+    <div class="card">
+      <h3>🔍 选择器用法示例</h3>
+<pre><code><span class="cmt">// ① getElementById — 通过 id 查找（最快速）</span>
+<span class="kw">const</span> <span class="var">mapContainer</span> <span class="op">=</span> <span class="var">document</span>.<span class="fn">getElementById</span>(<span class="str">"cesiumContainer"</span>);
+
+<span class="cmt">// ② querySelector — CSS 选择器，返回第一个匹配</span>
+<span class="kw">const</span> <span class="var">title</span> <span class="op">=</span> <span class="var">document</span>.<span class="fn">querySelector</span>(<span class="str">"h1"</span>);           <span class="cmt">// 第一个 h1</span>
+<span class="kw">const</span> <span class="var">btn</span>   <span class="op">=</span> <span class="var">document</span>.<span class="fn">querySelector</span>(<span class="str">".btn-primary"</span>); <span class="cmt">// 第一个 class="btn-primary"</span>
+<span class="kw">const</span> <span class="var">nav</span>   <span class="op">=</span> <span class="var">document</span>.<span class="fn">querySelector</span>(<span class="str">"nav ul li"</span>);    <span class="cmt">// 嵌套选择</span>
+
+<span class="cmt">// ③ querySelectorAll — 返回所有匹配（NodeList）</span>
+<span class="kw">const</span> <span class="var">items</span> <span class="op">=</span> <span class="var">document</span>.<span class="fn">querySelectorAll</span>(<span class="str">".layer-item"</span>);
+<span class="var">items</span>.<span class="fn">forEach</span>((<span class="var">item</span>, <span class="var">index</span>) <span class="op">=></span> {
+  <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">`图层 <span class="op">${</span><span class="var">index</span><span class="op">}</span>: <span class="op">${</span><span class="var">item</span>.<span class="var">textContent</span><span class="op">}</span>`</span>);
+});
+
+<span class="cmt">// ④ 在指定元素内查找（缩小范围）</span>
+<span class="kw">const</span> <span class="var">sidebar</span> <span class="op">=</span> <span class="var">document</span>.<span class="fn">querySelector</span>(<span class="str">"#sidebar"</span>);
+<span class="kw">const</span> <span class="var">links</span>   <span class="op">=</span> <span class="var">sidebar</span>.<span class="fn">querySelectorAll</span>(<span class="str">"a"</span>); <span class="cmt">// 只在 sidebar 内找 a 标签</span>
+
+<span class="cmt">// ⑤ 组合选择器</span>
+<span class="kw">const</span> <span class="var">activeItem</span> <span class="op">=</span> <span class="var">document</span>.<span class="fn">querySelector</span>(<span class="str">"li.active[data-type='satellite']"</span>);
+</code></pre>
+    </div>
+
+    <div class="tip">
+      <span class="icon">💡</span>
+      <div><strong>选择器性能：</strong><code>getElementById</code> 最快，因为它直接通过哈希表查找。但对于大多数场景，<code>querySelector</code> 和 <code>querySelectorAll</code> 的性能差异可以忽略不计，且语法更灵活。建议统一使用 <code>querySelector</code> 系列，保持代码一致性。</div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 3: 读取与修改内容                                    -->
+  <!-- ============================================================ -->
+  <div class="section" id="s3">
+    <div class="section-header">
+      <div class="section-num">3</div>
+      <h2>读取与修改内容</h2>
+      <span class="tag">CONTENT</span>
+    </div>
+
+    <p>选中元素后，可以读取或修改它的<strong>文本内容</strong>和<strong>HTML 结构</strong>。</p>
+
+    <div class="grid-2">
+      <div class="card">
+        <h3>📝 textContent</h3>
+        <p>纯文本内容，<strong>不包含 HTML 标签</strong>，不解析 HTML，安全性高。</p>
+<pre><code><span class="kw">const</span> <span class="var">box</span> <span class="op">=</span> <span class="var">document</span>.<span class="fn">querySelector</span>(<span class="str">"#info"</span>);
+
+<span class="cmt">// 读取</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">box</span>.<span class="var">textContent</span>);
+
+<span class="cmt">// 修改（文本原样写入）</span>
+<span class="var">box</span>.<span class="var">textContent</span> <span class="op">=</span> <span class="str">"&lt;b&gt;警告&lt;/b&gt;：前方高能"</span>;
+<span class="cmt">// 页面显示：&lt;b&gt;警告&lt;/b&gt;：前方高能（不会解析为加粗）</span>
+</code></pre>
+      </div>
+
+      <div class="card">
+        <h3>🌐 innerHTML</h3>
+        <p>元素的完整 HTML 内容，<strong>会解析 HTML 标签</strong>，功能强大但要小心 XSS。</p>
+<pre><code><span class="kw">const</span> <span class="var">box</span> <span class="op">=</span> <span class="var">document</span>.<span class="fn">querySelector</span>(<span class="str">"#info"</span>);
+
+<span class="cmt">// 读取</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">box</span>.<span class="var">innerHTML</span>);
+
+<span class="cmt">// 修改（HTML 会被解析渲染）</span>
+<span class="var">box</span>.<span class="var">innerHTML</span> <span class="op">=</span> <span class="str">"&lt;b&gt;警告&lt;/b&gt;：前方高能"</span>;
+<span class="cmt">// 页面显示：<b>警告</b>：前方高能（加粗效果生效）</span>
+</code></pre>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>⚠️ innerHTML vs textContent vs innerText 对比</h3>
+      <table>
+        <tr>
+          <th>属性</th>
+          <th>解析 HTML</th>
+          <th>读取隐藏元素</th>
+          <th>XSS 风险</th>
+        </tr>
+        <tr>
+          <td class="td-kw">textContent</td>
+          <td class="td-bad">❌ 不解析</td>
+          <td class="td-good">✅ 读取</td>
+          <td class="td-good">✅ 安全</td>
+        </tr>
+        <tr>
+          <td class="td-kw">innerHTML</td>
+          <td class="td-good">✅ 解析</td>
+          <td class="td-good">✅ 读取</td>
+          <td class="td-bad">⚠️ 有 XSS 风险</td>
+        </tr>
+        <tr>
+          <td class="td-kw">innerText</td>
+          <td class="td-bad">❌ 不解析</td>
+          <td class="td-bad">❌ 忽略隐藏元素</td>
+          <td class="td-good">✅ 安全</td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="warn">
+      <span class="icon">⚠️</span>
+      <div><strong>XSS 警告：</strong>永远不要将用户输入直接赋值给 <code>innerHTML</code>！恶意用户可以注入 <code>&lt;script&gt;</code> 标签执行攻击代码。对于用户输入，始终使用 <code>textContent</code>。</div>
+    </div>
+
+    <div class="card">
+      <h3>🌍 CesiumJS 场景：动态更新坐标信息</h3>
+<pre><code><span class="cmt">// 假设页面上有一个信息面板显示当前相机位置</span>
+<span class="kw">const</span> <span class="var">lonDisplay</span> <span class="op">=</span> <span class="var">document</span>.<span class="fn">querySelector</span>(<span class="str">"#longitude"</span>);
+<span class="kw">const</span> <span class="var">latDisplay</span> <span class="op">=</span> <span class="var">document</span>.<span class="fn">querySelector</span>(<span class="str">"#latitude"</span>);
+<span class="kw">const</span> <span class="var">altDisplay</span> <span class="op">=</span> <span class="var">document</span>.<span class="fn">querySelector</span>(<span class="str">"#altitude"</span>);
+
+<span class="kw">function</span> <span class="fn">updatePosition</span>(<span class="var">lon</span>, <span class="var">lat</span>, <span class="var">alt</span>) {
+  <span class="var">lonDisplay</span>.<span class="var">textContent</span> <span class="op">=</span> <span class="var">lon</span>.<span class="fn">toFixed</span>(<span class="num">4</span>) <span class="op">+</span> <span class="str">"°"</span>;
+  <span class="var">latDisplay</span>.<span class="var">textContent</span> <span class="op">=</span> <span class="var">lat</span>.<span class="fn">toFixed</span>(<span class="num">4</span>) <span class="op">+</span> <span class="str">"°"</span>;
+  <span class="var">altDisplay</span>.<span class="var">textContent</span> <span class="op">=</span> <span class="var">alt</span>.<span class="fn">toFixed</span>(<span class="num">0</span>) <span class="op">+</span> <span class="str">" m"</span>;
+}
+
+<span class="fn">updatePosition</span>(<span class="num">116.3974</span>, <span class="num">39.9093</span>, <span class="num">50000</span>);
+<span class="cmt">// 信息面板实时更新为：116.3974°, 39.9093°, 50000 m</span>
+</code></pre>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 4: 属性与样式操作                                    -->
+  <!-- ============================================================ -->
+  <div class="section" id="s4">
+    <div class="section-header">
+      <div class="section-num">4</div>
+      <h2>属性与样式操作</h2>
+      <span class="tag">ATTRIBUTES & STYLES</span>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <h3>🏷️ HTML 属性操作</h3>
+<pre><code><span class="kw">const</span> <span class="var">img</span> <span class="op">=</span> <span class="var">document</span>.<span class="fn">querySelector</span>(<span class="str">"#map-thumb"</span>);
+
+<span class="cmt">// 读取属性</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">img</span>.<span class="fn">getAttribute</span>(<span class="str">"src"</span>));
+
+<span class="cmt">// 设置属性</span>
+<span class="var">img</span>.<span class="fn">setAttribute</span>(<span class="str">"src"</span>, <span class="str">"beijing-satellite.png"</span>);
+<span class="var">img</span>.<span class="fn">setAttribute</span>(<span class="str">"alt"</span>, <span class="str">"北京卫星影像"</span>);
+
+<span class="cmt">// 检查是否存在某属性</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">img</span>.<span class="fn">hasAttribute</span>(<span class="str">"data-layer"</span>)); <span class="cmt">// true / false</span>
+
+<span class="cmt">// 删除属性</span>
+<span class="var">img</span>.<span class="fn">removeAttribute</span>(<span class="str">"title"</span>);
+
+<span class="cmt">// 便捷属性访问（标准属性可直接用点号）</span>
+<span class="var">img</span>.<span class="var">src</span> <span class="op">=</span> <span class="str">"new-image.png"</span>;
+<span class="var">img</span>.<span class="var">id</span> <span class="op">=</span> <span class="str">"updated-thumb"</span>;
+</code></pre>
+      </div>
+
+      <div class="card">
+        <h3>🎨 样式操作</h3>
+<pre><code><span class="kw">const</span> <span class="var">panel</span> <span class="op">=</span> <span class="var">document</span>.<span class="fn">querySelector</span>(<span class="str">".info-panel"</span>);
+
+<span class="cmt">// 直接修改 style（内联样式，优先级最高）</span>
+<span class="var">panel</span>.<span class="var">style</span>.<span class="var">backgroundColor</span> <span class="op">=</span> <span class="str">"#1a1d27"</span>;
+<span class="var">panel</span>.<span class="var">style</span>.<span class="var">width</span> <span class="op">=</span> <span class="str">"320px"</span>;
+<span class="var">panel</span>.<span class="var">style</span>.<span class="var">display</span> <span class="op">=</span> <span class="str">"none"</span>;    <span class="cmt">// 隐藏</span>
+<span class="var">panel</span>.<span class="var">style</span>.<span class="var">display</span> <span class="op">=</span> <span class="str">"block"</span>;   <span class="cmt">// 显示</span>
+
+<span class="cmt">// 注意：CSS 属性名转 camelCase</span>
+<span class="cmt">// background-color → backgroundColor</span>
+<span class="cmt">// border-radius    → borderRadius</span>
+
+<span class="cmt">// 一次性设置多个样式</span>
+<span class="var">panel</span>.<span class="var">style</span>.<span class="var">cssText</span> <span class="op">=</span> <span class="str">`
+  background: #1a1d27;
+  border: 1px solid #2e3350;
+  border-radius: 8px;
+  padding: 16px;
+`</span>;
+</code></pre>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>🎯 classList：优雅的类名操作</h3>
+      <p>通过 <code>classList</code> 可以方便地添加、删除、切换 CSS 类，<strong>比直接操作 <code>className</code> 字符串更安全</strong>。</p>
+<pre><code><span class="kw">const</span> <span class="var">btn</span> <span class="op">=</span> <span class="var">document</span>.<span class="fn">querySelector</span>(<span class="str">"#layer-toggle"</span>);
+
+<span class="cmt">// 添加类名</span>
+<span class="var">btn</span>.<span class="var">classList</span>.<span class="fn">add</span>(<span class="str">"active"</span>);
+
+<span class="cmt">// 删除类名</span>
+<span class="var">btn</span>.<span class="var">classList</span>.<span class="fn">remove</span>(<span class="str">"disabled"</span>);
+
+<span class="cmt">// 切换类名（有则删，无则加）— 最常用的技巧</span>
+<span class="var">btn</span>.<span class="var">classList</span>.<span class="fn">toggle</span>(<span class="str">"active"</span>);
+
+<span class="cmt">// 检查是否包含某类名</span>
+<span class="kw">if</span> (<span class="var">btn</span>.<span class="var">classList</span>.<span class="fn">contains</span>(<span class="str">"active"</span>)) {
+  <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">"图层已激活"</span>);
+}
+
+<span class="cmt">// 替换类名</span>
+<span class="var">btn</span>.<span class="var">classList</span>.<span class="fn">replace</span>(<span class="str">"btn-default"</span>, <span class="str">"btn-primary"</span>);
+</code></pre>
+    </div>
+
+    <div class="tip">
+      <span class="icon">💡</span>
+      <div><strong>最佳实践：</strong>尽量通过添加/删除 CSS 类来控制样式，而不是直接修改 <code>element.style</code>。这样样式集中在 CSS 文件中，便于维护和主题切换。直接改 <code>style</code> 只适用于需要<strong>动态计算</strong>的样式值（如鼠标跟随位置）。</div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 5: DOM 遍历                                          -->
+  <!-- ============================================================ -->
+  <div class="section" id="s5">
+    <div class="section-header">
+      <div class="section-num">5</div>
+      <h2>DOM 遍历：在树中移动</h2>
+      <span class="tag">TRAVERSAL</span>
+    </div>
+
+    <p>有时需要通过一个已知的元素，<strong>在 DOM 树中导航</strong>到相关的其他元素。</p>
+
+    <div class="grid-2">
+      <div class="card">
+        <h3>⬆️ 向上遍历</h3>
+<pre><code><span class="kw">const</span> <span class="var">item</span> <span class="op">=</span> <span class="var">document</span>.<span class="fn">querySelector</span>(<span class="str">".layer-item"</span>);
+
+<span class="var">item</span>.<span class="var">parentNode</span>        <span class="cmt">// 直接父节点（可能是文本节点）</span>
+<span class="var">item</span>.<span class="var">parentElement</span>     <span class="cmt">// 父元素节点（推荐）</span>
+<span class="var">item</span>.<span class="fn">closest</span>(<span class="str">".sidebar"</span>) <span class="cmt">// 向上查找最近的匹配祖先（含自身）</span>
+</code></pre>
+      </div>
+
+      <div class="card">
+        <h3>⬇️ 向下遍历</h3>
+<pre><code><span class="kw">const</span> <span class="var">container</span> <span class="op">=</span> <span class="var">document</span>.<span class="fn">querySelector</span>(<span class="str">"#layer-list"</span>);
+
+<span class="var">container</span>.<span class="var">children</span>        <span class="cmt">// 所有子元素（HTMLCollection）</span>
+<span class="var">container</span>.<span class="var">firstElementChild</span>  <span class="cmt">// 第一个子元素</span>
+<span class="var">container</span>.<span class="var">lastElementChild</span>   <span class="cmt">// 最后一个子元素</span>
+<span class="var">container</span>.<span class="fn">querySelector</span>(<span class="str">".active"</span>) <span class="cmt">// 在子元素中搜索</span>
+</code></pre>
+      </div>
+
+      <div class="card">
+        <h3>➡️ 横向遍历</h3>
+<pre><code><span class="kw">const</span> <span class="var">item</span> <span class="op">=</span> <span class="var">document</span>.<span class="fn">querySelector</span>(<span class="str">".layer-item"</span>);
+
+<span class="var">item</span>.<span class="var">nextElementSibling</span>     <span class="cmt">// 下一个兄弟元素</span>
+<span class="var">item</span>.<span class="var">previousElementSibling</span> <span class="cmt">// 上一个兄弟元素</span>
+
+<span class="cmt">// 遍历所有兄弟元素</span>
+<span class="kw">let</span> <span class="var">sibling</span> <span class="op">=</span> <span class="var">item</span>.<span class="var">nextElementSibling</span>;
+<span class="kw">while</span> (<span class="var">sibling</span>) {
+  <span class="fn">console</span>.<span class="fn">log</span>(<span class="var">sibling</span>.<span class="var">textContent</span>);
+  <span class="var">sibling</span> <span class="op">=</span> <span class="var">sibling</span>.<span class="var">nextElementSibling</span>;
+}
+</code></pre>
+      </div>
+
+      <div class="card">
+        <h3>🧭 常用遍历技巧</h3>
+<pre><code><span class="cmt">// Array.from 将类数组转为真数组，使用数组方法</span>
+<span class="kw">const</span> <span class="var">children</span> <span class="op">=</span> <span class="fn">Array</span>.<span class="fn">from</span>(<span class="var">container</span>.<span class="var">children</span>);
+<span class="kw">const</span> <span class="var">filtered</span> <span class="op">=</span> <span class="var">children</span>.<span class="fn">filter</span>(<span class="var">el</span> <span class="op">=></span> <span class="var">el</span>.<span class="var">classList</span>.<span class="fn">contains</span>(<span class="str">"visible"</span>));
+
+<span class="cmt">// [...] 展开运算符同样有效</span>
+<span class="kw">const</span> <span class="var">siblings</span> <span class="op">=</span> [...<span class="var">item</span>.<span class="var">parentElement</span>.<span class="var">children</span>]
+  .<span class="fn">filter</span>(<span class="var">el</span> <span class="op">=></span> <span class="var">el</span> <span class="op">!==</span> <span class="var">item</span>);
+</code></pre>
+      </div>
+    </div>
+
+    <div class="info">
+      <span class="icon">ℹ️</span>
+      <div>注意区分 <code>childNodes</code> 和 <code>children</code>：<code>childNodes</code> 包含文本节点、注释节点等所有节点；<code>children</code> 只包含元素节点。在大多数实际开发中，使用 <code>children</code> 更安全。</div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 6: 创建、插入与删除元素                              -->
+  <!-- ============================================================ -->
+  <div class="section" id="s6">
+    <div class="section-header">
+      <div class="section-num">6</div>
+      <h2>创建、插入与删除元素</h2>
+      <span class="tag">CREATE & MODIFY</span>
+    </div>
+
+    <p>DOM 的强大之处在于可以<strong>动态创建、移动和删除元素</strong>，实现完全交互式的网页。</p>
+
+    <div class="card">
+      <h3>✨ 创建元素</h3>
+<pre><code><span class="cmt">// ① createElement — 创建新元素</span>
+<span class="kw">const</span> <span class="var">div</span> <span class="op">=</span> <span class="var">document</span>.<span class="fn">createElement</span>(<span class="str">"div"</span>);
+<span class="var">div</span>.<span class="var">id</span> <span class="op">=</span> <span class="str">"tooltip"</span>;
+<span class="var">div</span>.<span class="var">className</span> <span class="op">=</span> <span class="str">"map-tooltip"</span>;
+<span class="var">div</span>.<span class="var">textContent</span> <span class="op">=</span> <span class="str">"点击选择位置"</span>;
+
+<span class="cmt">// ② createTextNode — 创建文本节点（较少用）</span>
+<span class="kw">const</span> <span class="var">text</span> <span class="op">=</span> <span class="var">document</span>.<span class="fn">createTextNode</span>(<span class="str">"纯文本内容"</span>);
+<span class="var">div</span>.<span class="fn">appendChild</span>(<span class="var">text</span>);
+
+<span class="cmt">// ③ cloneNode — 克隆现有元素</span>
+<span class="kw">const</span> <span class="var">template</span> <span class="op">=</span> <span class="var">document</span>.<span class="fn">querySelector</span>(<span class="str">".layer-item"</span>);
+<span class="kw">const</span> <span class="var">clone</span> <span class="op">=</span> <span class="var">template</span>.<span class="fn">cloneNode</span>(<span class="kw">true</span>); <span class="cmt">// true = 深克隆（包含子元素）</span>
+<span class="var">clone</span>.<span class="var">textContent</span> <span class="op">=</span> <span class="str">"新图层"</span>;
+</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>📌 插入元素到 DOM</h3>
+<pre><code><span class="kw">const</span> <span class="var">list</span> <span class="op">=</span> <span class="var">document</span>.<span class="fn">querySelector</span>(<span class="str">"#layer-list"</span>);
+<span class="kw">const</span> <span class="var">newItem</span> <span class="op">=</span> <span class="var">document</span>.<span class="fn">createElement</span>(<span class="str">"li"</span>);
+<span class="var">newItem</span>.<span class="var">textContent</span> <span class="op">=</span> <span class="str">"卫星影像层"</span>;
+
+<span class="cmt">// ① append — 在末尾添加（现代推荐，可同时添加多个）</span>
+<span class="var">list</span>.<span class="fn">append</span>(<span class="var">newItem</span>);
+
+<span class="cmt">// ② prepend — 在开头添加</span>
+<span class="var">list</span>.<span class="fn">prepend</span>(<span class="var">newItem</span>);
+
+<span class="cmt">// ③ before / after — 在参考元素之前/之后插入</span>
+<span class="kw">const</span> <span class="var">ref</span> <span class="op">=</span> <span class="var">document</span>.<span class="fn">querySelector</span>(<span class="str">".layer-item.active"</span>);
+<span class="var">ref</span>.<span class="fn">after</span>(<span class="var">newItem</span>);  <span class="cmt">// 在 ref 后面插入</span>
+
+<span class="cmt">// ④ insertAdjacentElement — 精确控制位置</span>
+<span class="var">list</span>.<span class="fn">insertAdjacentElement</span>(<span class="str">"beforeend"</span>, <span class="var">newItem</span>);
+<span class="cmt">// 位置参数: "beforebegin" | "afterbegin" | "beforeend" | "afterend"</span>
+
+<span class="cmt">// ⑤ insertAdjacentHTML — 直接插入 HTML 字符串</span>
+<span class="var">list</span>.<span class="fn">insertAdjacentHTML</span>(<span class="str">"beforeend"</span>, <span class="str">`&lt;li class="layer-item"&gt;地形层&lt;/li&gt;`</span>);
+</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>🗑️ 删除与替换元素</h3>
+<pre><code><span class="kw">const</span> <span class="var">item</span> <span class="op">=</span> <span class="var">document</span>.<span class="fn">querySelector</span>(<span class="str">".layer-item.old"</span>);
+
+<span class="cmt">// ① remove — 元素自我删除（现代推荐）</span>
+<span class="var">item</span>.<span class="fn">remove</span>();
+
+<span class="cmt">// ② 通过父元素删除子元素（兼容旧浏览器）</span>
+<span class="var">item</span>.<span class="var">parentElement</span>.<span class="fn">removeChild</span>(<span class="var">item</span>);
+
+<span class="cmt">// ③ replaceWith — 替换元素</span>
+<span class="kw">const</span> <span class="var">newItem</span> <span class="op">=</span> <span class="var">document</span>.<span class="fn">createElement</span>(<span class="str">"li"</span>);
+<span class="var">newItem</span>.<span class="var">textContent</span> <span class="op">=</span> <span class="str">"替换后的图层"</span>;
+<span class="var">item</span>.<span class="fn">replaceWith</span>(<span class="var">newItem</span>);
+
+<span class="cmt">// ④ replaceChild — 旧版替换方式</span>
+<span class="var">item</span>.<span class="var">parentElement</span>.<span class="fn">replaceChild</span>(<span class="var">newItem</span>, <span class="var">item</span>);
+</code></pre>
+    </div>
+
+    <div class="tip">
+      <span class="icon">💡</span>
+      <div><strong>性能提示：</strong>频繁操作 DOM 会引发<strong>重排（Reflow）</strong>和<strong>重绘（Repaint）</strong>，影响性能。如果需要批量插入多个元素，可以先用 <code>document.createDocumentFragment()</code> 在内存中组装，最后一次性插入到页面中。</div>
+    </div>
+
+    <div class="card">
+      <h3>⚡ DocumentFragment 批量插入</h3>
+<pre><code><span class="cmt">// 高性能批量插入示例</span>
+<span class="kw">const</span> <span class="var">list</span> <span class="op">=</span> <span class="var">document</span>.<span class="fn">querySelector</span>(<span class="str">"#layer-list"</span>);
+<span class="kw">const</span> <span class="var">fragment</span> <span class="op">=</span> <span class="var">document</span>.<span class="fn">createDocumentFragment</span>();
+
+<span class="kw">const</span> <span class="var">layers</span> <span class="op">=</span> [<span class="str">"卫星"</span>, <span class="str">"地形"</span>, <span class="str">"街道"</span>, <span class="str">"3D建筑"</span>];
+<span class="var">layers</span>.<span class="fn">forEach</span>((<span class="var">name</span>) <span class="op">=></span> {
+  <span class="kw">const</span> <span class="var">li</span> <span class="op">=</span> <span class="var">document</span>.<span class="fn">createElement</span>(<span class="str">"li"</span>);
+  <span class="var">li</span>.<span class="var">className</span> <span class="op">=</span> <span class="str">"layer-item"</span>;
+  <span class="var">li</span>.<span class="var">textContent</span> <span class="op">=</span> <span class="var">name</span>;
+  <span class="var">fragment</span>.<span class="fn">appendChild</span>(<span class="var">li</span>);
+});
+
+<span class="cmt">// 只触发一次 DOM 更新！</span>
+<span class="var">list</span>.<span class="fn">append</span>(<span class="var">fragment</span>);
+</code></pre>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 7: CesiumJS 关联场景                                 -->
+  <!-- ============================================================ -->
+  <div class="section" id="s7">
+    <div class="section-header">
+      <div class="section-num">7</div>
+      <h2>CesiumJS 关联场景</h2>
+      <span class="tag">CESIUMJS</span>
+    </div>
+
+    <p>在 CesiumJS 三维地球开发中，DOM 操作无处不在：自定义信息面板、图层控制 UI、加载指示器、坐标拾取显示等，全部依赖 DOM API。</p>
+
+    <div class="card">
+      <h3>🌍 场景 1：自定义图层控制面板</h3>
+<pre><code><span class="cmt">// CesiumJS 应用中的典型 DOM 操作：动态构建图层列表</span>
+<span class="kw">const</span> <span class="var">layerPanel</span> <span class="op">=</span> <span class="var">document</span>.<span class="fn">querySelector</span>(<span class="str">"#layer-panel"</span>);
+
+<span class="kw">const</span> <span class="var">imageryLayers</span> <span class="op">=</span> [
+  { <span class="var">id</span>: <span class="str">"satellite"</span>, <span class="var">name</span>: <span class="str">"卫星影像"</span>, <span class="var">active</span>: <span class="kw">true</span> },
+  { <span class="var">id</span>: <span class="str">"terrain"</span>,   <span class="var">name</span>: <span class="str">"地形晕渲"</span>, <span class="var">active</span>: <span class="kw">false</span> },
+  { <span class="var">id</span>: <span class="str">"roads"</span>,     <span class="var">name</span>: <span class="str">"道路网"</span>,   <span class="var">active</span>: <span class="kw">false</span> },
+];
+
+<span class="kw">function</span> <span class="fn">renderLayerList</span>() {
+  <span class="var">layerPanel</span>.<span class="var">innerHTML</span> <span class="op">=</span> <span class="str">""</span>; <span class="cmt">// 清空</span>
+
+  <span class="var">imageryLayers</span>.<span class="fn">forEach</span>((<span class="var">layer</span>) <span class="op">=></span> {
+    <span class="kw">const</span> <span class="var">btn</span> <span class="op">=</span> <span class="var">document</span>.<span class="fn">createElement</span>(<span class="str">"button"</span>);
+    <span class="var">btn</span>.<span class="var">className</span> <span class="op">=</span> <span class="str">"layer-btn"</span>;
+    <span class="var">btn</span>.<span class="var">dataset</span>.<span class="var">layerId</span> <span class="op">=</span> <span class="var">layer</span>.<span class="var">id</span>;
+
+    <span class="kw">if</span> (<span class="var">layer</span>.<span class="var">active</span>) {
+      <span class="var">btn</span>.<span class="var">classList</span>.<span class="fn">add</span>(<span class="str">"active"</span>);
+    }
+
+    <span class="var">btn</span>.<span class="var">textContent</span> <span class="op">=</span> <span class="var">layer</span>.<span class="var">name</span>;
+    <span class="var">layerPanel</span>.<span class="fn">appendChild</span>(<span class="var">btn</span>);
+  });
+}
+
+<span class="fn">renderLayerList</span>();
+</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>🌍 场景 2：CesiumJS 信息框（InfoBox）动态内容</h3>
+<pre><code><span class="cmt">// CesiumJS 的 InfoBox 本质上是 DOM 元素
+// 我们可以通过 DOM API 自定义其内容和样式</span>
+
+<span class="cmt">// 获取 Cesium Viewer 的 infoBox 容器</span>
+<span class="kw">const</span> <span class="var">infoBox</span> <span class="op">=</span> <span class="var">document</span>.<span class="fn">querySelector</span>(<span class="str">".cesium-infoBox"</span>);
+
+<span class="cmt">// 自定义信息框标题样式</span>
+<span class="kw">const</span> <span class="var">title</span> <span class="op">=</span> <span class="var">infoBox</span>.<span class="fn">querySelector</span>(<span class="str">".cesium-infoBox-title"</span>);
+<span class="var">title</span>.<span class="var">style</span>.<span class="var">backgroundColor</span> <span class="op">=</span> <span class="str">"#1a3a5f"</span>;
+<span class="var">title</span>.<span class="var">style</span>.<span class="var">color</span> <span class="op">=</span> <span class="str">"#61dafb"</span>;
+
+<span class="cmt">// 动态更新信息框内容（响应实体选择事件）</span>
+<span class="kw">function</span> <span class="fn">updateInfoBox</span>(<span class="var">entity</span>) {
+  <span class="kw">const</span> <span class="var">content</span> <span class="op">=</span> <span class="var">infoBox</span>.<span class="fn">querySelector</span>(<span class="str">".cesium-infoBox-description"</span>);
+  <span class="var">content</span>.<span class="var">innerHTML</span> <span class="op">=</span> <span class="str">`
+    &lt;h3&gt;<span class="op">${</span><span class="var">entity</span>.<span class="var">name</span><span class="op">}</span>&lt;/h3&gt;
+    &lt;p&gt;经度: <span class="op">${</span><span class="var">entity</span>.<span class="var">position</span>.<span class="var">longitude</span>.<span class="fn">toFixed</span>(<span class="num">4</span>)<span class="op">}</span>°&lt;/p&gt;
+    &lt;p&gt;纬度: <span class="op">${</span><span class="var">entity</span>.<span class="var">position</span>.<span class="var">latitude</span>.<span class="fn">toFixed</span>(<span class="num">4</span>)<span class="op">}</span>°&lt;/p&gt;
+    &lt;p&gt;高度: <span class="op">${</span><span class="var">entity</span>.<span class="var">position</span>.<span class="var">height</span>.<span class="fn">toFixed</span>(<span class="num">0</span>)<span class="op">}</span> m&lt;/p&gt;
+  `</span>;
+}
+</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>🌍 场景 3：加载状态指示器</h3>
+<pre><code><span class="cmt">// CesiumJS 加载地形或影像时显示进度</span>
+<span class="kw">const</span> <span class="var">loader</span> <span class="op">=</span> <span class="var">document</span>.<span class="fn">createElement</span>(<span class="str">"div"</span>);
+<span class="var">loader</span>.<span class="var">id</span> <span class="op">=</span> <span class="str">"cesium-loader"</span>;
+<span class="var">loader</span>.<span class="var">className</span> <span class="op">=</span> <span class="str">"loading-overlay"</span>;
+<span class="var">loader</span>.<span class="var">innerHTML</span> <span class="op">=</span> <span class="str">`&lt;div class="spinner"&gt;&lt;/div&gt;&lt;p&gt;加载地形数据中...&lt;/p&gt;`</span>;
+<span class="var">document</span>.<span class="var">body</span>.<span class="fn">appendChild</span>(<span class="var">loader</span>);
+
+<span class="cmt">// 地形加载完成后隐藏</span>
+<span class="kw">function</span> <span class="fn">hideLoader</span>() {
+  <span class="var">loader</span>.<span class="var">style</span>.<span class="var">opacity</span> <span class="op">=</span> <span class="str">"0"</span>;
+  <span class="var">loader</span>.<span class="var">style</span>.<span class="var">transition</span> <span class="op">=</span> <span class="str">"opacity 0.5s"</span>;
+  <span class="fn">setTimeout</span>(() <span class="op">=></span> <span class="var">loader</span>.<span class="fn">remove</span>(), <span class="num">500</span>);
+}
+</code></pre>
+    </div>
+
+    <div class="info">
+      <span class="icon">ℹ️</span>
+      <div><strong>CesiumJS 与 DOM 的关系：</strong>CesiumJS 核心渲染在 <code>&lt;canvas&gt;</code> 上进行，但所有周边 UI（工具栏、时间轴、图层列表、属性面板、搜索框）都是标准 DOM 元素。掌握 DOM 操作，才能构建完整的 CesiumJS 应用界面。</div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 8: 练习题                                            -->
+  <!-- ============================================================ -->
+  <div class="section" id="s8">
+    <div class="section-header">
+      <div class="section-num">8</div>
+      <h2>练习题</h2>
+      <span class="tag">PRACTICE</span>
+    </div>
+
+    <div class="practice">
+      <h2>🎯 动手练习</h2>
+      <p>在下方控制台中输入代码并运行，验证你的答案：</p>
+
+      <div class="exercise">
+        <div class="q">题 1：选择器练习</div>
+        <p style="color:var(--text);font-size:14px;">假设页面有以下 HTML，请用 <code>querySelector</code> 和 <code>querySelectorAll</code> 分别选中第一个图层项和所有图层项，并打印它们的 <code>textContent</code>。</p>
+<pre><code><span class="cmt">&lt;ul id="layers"&gt;
+  &lt;li class="layer"&gt;卫星&lt;/li&gt;
+  &lt;li class="layer active"&gt;地形&lt;/li&gt;
+  &lt;li class="layer"&gt;街道&lt;/li&gt;
+&lt;/ul&gt;</span>
+
+<span class="cmt">// 你的代码：</span>
+<span class="kw">const</span> <span class="var">first</span> <span class="op">=</span> ___;
+<span class="kw">const</span> <span class="var">all</span> <span class="op">=</span> ___;
+
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">first</span>.<span class="var">textContent</span>);
+<span class="var">all</span>.<span class="fn">forEach</span>(<span class="var">el</span> <span class="op">=></span> <span class="fn">console</span>.<span class="fn">log</span>(<span class="var">el</span>.<span class="var">textContent</span>));
+</code></pre>
+      </div>
+
+      <div class="exercise">
+        <div class="q">题 2：动态创建元素</div>
+        <p style="color:var(--text);font-size:14px;">创建一个 <code>div</code> 元素，设置其 <code>className</code> 为 <code>"cesium-panel"</code>，<code>textContent</code> 为 <code>"CesiumJS Viewer Ready"</code>，背景色为 <code>#1a3a5f</code>，然后将其添加到 <code>document.body</code> 末尾。</p>
+<pre><code><span class="kw">const</span> <span class="var">panel</span> <span class="op">=</span> ___;
+<span class="var">panel</span>.<span class="var">className</span> <span class="op">=</span> ___;
+<span class="var">panel</span>.<span class="var">textContent</span> <span class="op">=</span> ___;
+<span class="var">panel</span>.<span class="var">style</span>.<span class="var">backgroundColor</span> <span class="op">=</span> ___;
+
+<span class="cmt">// 添加到 body</span>
+___;
+</code></pre>
+      </div>
+
+      <div class="exercise">
+        <div class="q">题 3：classList 与 toggle</div>
+        <p style="color:var(--text);font-size:14px;">编写一个函数 <code>toggleLayer(id)</code>，根据 id 找到对应的图层按钮，切换其 <code>active</code> 类名，并更新按钮文本为 <code>"激活"</code> 或 <code>"未激活"</code>。</p>
+<pre><code><span class="kw">function</span> <span class="fn">toggleLayer</span>(<span class="var">id</span>) {
+  <span class="kw">const</span> <span class="var">btn</span> <span class="op">=</span> ___;
+  <span class="var">btn</span>.<span class="var">classList</span>.<span class="fn">toggle</span>(___);
+
+  <span class="kw">const</span> <span class="var">isActive</span> <span class="op">=</span> <span class="var">btn</span>.<span class="var">classList</span>.<span class="fn">contains</span>(___);
+  <span class="var">btn</span>.<span class="var">textContent</span> <span class="op">=</span> <span class="var">isActive</span> <span class="op">?</span> ___ : ___;
+}
+
+<span class="cmt">// 测试</span>
+<span class="cmt">// toggleLayer("layer-1");</span>
+</code></pre>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 9: 交互控制台                                         -->
+  <!-- ============================================================ -->
+  <div id="s9" style="margin-bottom:52px;">
+    <div class="section-header">
+      <div class="section-num">9</div>
+      <h2>在线练习控制台</h2>
+      <span class="tag">SANDBOX</span>
+    </div>
+
+    <p style="margin-bottom:16px;color:var(--muted);">直接在这里写 JavaScript，点击运行查看结果：</p>
+
+    <div class="console-area">
+      <div class="console-header">
+        <div class="console-dots">
+          <div class="dot dot-r"></div>
+          <div class="dot dot-y"></div>
+          <div class="dot dot-g"></div>
+        </div>
+        <span>JS SANDBOX</span>
+        <span style="font-size:11px;color:var(--muted);">Day 05</span>
+      </div>
+      <textarea id="sandbox-code" spellcheck="false">// 试试这些 DOM 操作代码：
+
+// ① 创建一个信息面板
+const panel = document.createElement("div");
+panel.className = "demo-info-box";
+panel.style.cssText = `
+  background: #1a3a5f;
+  color: #61dafb;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin: 10px 0;
+  font-family: monospace;
+`;
+
+// ② 设置内容（注意 textContent 和 innerHTML 的区别）
+panel.textContent = "CesiumJS 坐标: 116.3974°E, 39.9093°N";
+
+// ③ 模拟添加到 body（在真实页面中会生效）
+console.log("创建的元素:", panel.tagName);
+console.log("元素类名:", panel.className);
+console.log("元素内容:", panel.textContent);
+
+// ④ classList 操作演示
+panel.classList.add("visible");
+panel.classList.add("active");
+console.log("classList 内容:", panel.classList.value);
+
+panel.classList.remove("active");
+console.log("移除 active 后:", panel.classList.value);
+
+// ⑤ 属性操作
+panel.setAttribute("data-lon", "116.3974");
+panel.setAttribute("data-lat", "39.9093");
+console.log("经度属性:", panel.getAttribute("data-lon"));
+console.log("纬度属性:", panel.getAttribute("data-lat"));
+
+// ⑥ innerHTML vs textContent 对比
+const testDiv = document.createElement("div");
+testDiv.textContent = "<b>粗体</b>文本";
+console.log("textContent 结果:", testDiv.innerHTML);
+
+testDiv.innerHTML = "<b>粗体</b>文本";
+console.log("innerHTML 结果:", testDiv.innerHTML);
+</textarea>
+      <div class="console-actions">
+        <button class="btn btn-run" onclick="runCode()">▶ 运行</button>
+        <button class="btn btn-clear" onclick="clearOutput()">清空输出</button>
+        <button class="btn btn-clear" onclick="resetCode()">重置代码</button>
+      </div>
+      <div id="output-box">// 点击"运行"查看输出结果...</div>
+    </div>
+  </div>
+
+
+  <!-- 今日总结 -->
+  <div class="card" style="border-color:var(--accent);border-left-width:4px;">
+    <h3 style="color:var(--accent)">📋 今日知识点总结</h3>
+    <ul style="margin-top:12px;">
+      <li>✅ DOM 是浏览器将 HTML 解析成的树形结构，通过 <code>document</code> 对象访问</li>
+      <li>✅ <code>querySelector</code> / <code>querySelectorAll</code> 是最灵活、最推荐的选择器方法</li>
+      <li>✅ <code>textContent</code> 操作纯文本（安全），<code>innerHTML</code> 操作 HTML（注意 XSS）</li>
+      <li>✅ <code>classList.add/remove/toggle/contains</code> 是操作 CSS 类的最佳方式</li>
+      <li>✅ <code>createElement</code> + <code>append/prepend/before/after</code> 实现动态元素创建和插入</li>
+      <li>✅ <code>DocumentFragment</code> 可以批量插入元素而只触发一次重排，性能更优</li>
+      <li>✅ CesiumJS 的 InfoBox、工具栏、图层控制面板等 UI 全部依赖 DOM 操作构建</li>
+    </ul>
+  </div>
+
+</div><!-- /container -->
+
+<!-- ===== FOOTER ===== -->
+<div class="footer">
+  <p>🚀 <strong>每日JS</strong> — JavaScript → CesiumJS 学习路径</p>
+  <p style="margin-top:6px;">Day 05 / DOM 操作 · 明天继续：<strong>事件与异步</strong></p>
+</div>
+
+
+<!-- ===== SCRIPT ===== -->
+<script>
+  const DEFAULT_CODE = document.getElementById('sandbox-code').value;
+
+  function runCode() {
+    const code = document.getElementById('sandbox-code').value;
+    const outputBox = document.getElementById('output-box');
+    const logs = [];
+
+    // 拦截 console.log
+    const origLog = console.log;
+    const origError = console.error;
+    const origWarn = console.warn;
+
+    console.log = (...args) => {
+      logs.push(args.map(a => {
+        if (typeof a === 'object' && a !== null) {
+          try { return JSON.stringify(a, null, 2); } catch { return String(a); }
+        }
+        return String(a);
+      }).join(' '));
+      origLog(...args);
+    };
+    console.error = (...args) => {
+      logs.push('❌ ' + args.join(' '));
+      origError(...args);
+    };
+    console.warn = (...args) => {
+      logs.push('⚠️ ' + args.join(' '));
+      origWarn(...args);
+    };
+
+    try {
+      eval(code);
+      outputBox.innerHTML = logs.length
+        ? logs.map(l => `<span>${escHtml(l)}</span>`).join('\n')
+        : '<span style="color:var(--muted)">// 代码运行成功（无输出）</span>';
+    } catch(e) {
+      outputBox.innerHTML = `<span class="err">❌ ${escHtml(e.message)}</span>`;
+    } finally {
+      console.log = origLog;
+      console.error = origError;
+      console.warn = origWarn;
+    }
+  }
+
+  function clearOutput() {
+    document.getElementById('output-box').innerHTML = '// 输出已清空...';
+  }
+
+  function resetCode() {
+    document.getElementById('sandbox-code').value = DEFAULT_CODE;
+    clearOutput();
+  }
+
+  function escHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  // Ctrl+Enter 运行
+  document.getElementById('sandbox-code').addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      e.preventDefault();
+      runCode();
+    }
+  });
+</script>
+</body>
+</html>

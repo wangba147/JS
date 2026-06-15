@@ -1,0 +1,1328 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>JavaScript 每日学习 — Day 03：数组与对象</title>
+  <style>
+    /* ===== 全局 ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0f1117;
+      --surface:   #1a1d27;
+      --card:      #21253a;
+      --border:    #2e3350;
+      --accent:    #61dafb;
+      --accent2:   #f7c948;
+      --accent3:   #7ee787;
+      --accent4:   #ff7b72;
+      --text:      #cdd3e0;
+      --muted:     #6e7a96;
+      --tag-bg:    #1e3a5f;
+      --code-bg:   #161b2e;
+    }
+
+    body {
+      font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.75;
+      font-size: 15px;
+    }
+
+    /* ===== 顶部 Banner ===== */
+    .hero {
+      background: linear-gradient(135deg, #0d1b3e 0%, #1a2d5a 50%, #0f2040 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 52px 24px 40px;
+      text-align: center;
+    }
+    .hero .badge {
+      display: inline-block;
+      background: var(--accent);
+      color: #0a0e1a;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 4px 12px;
+      border-radius: 20px;
+      margin-bottom: 16px;
+    }
+    .hero h1 {
+      font-size: clamp(24px, 5vw, 42px);
+      font-weight: 800;
+      color: #fff;
+      line-height: 1.2;
+      margin-bottom: 12px;
+    }
+    .hero h1 span { color: var(--accent); }
+    .hero p {
+      color: var(--muted);
+      font-size: 15px;
+      max-width: 560px;
+      margin: 0 auto 24px;
+    }
+    .hero .meta {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      flex-wrap: wrap;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .hero .meta span { display: flex; align-items: center; gap: 5px; }
+
+    /* ===== 布局 ===== */
+    .container { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; }
+
+    /* ===== 目录卡片 ===== */
+    .toc {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--accent);
+      border-radius: 12px;
+      padding: 24px 28px;
+      margin-bottom: 40px;
+    }
+    .toc h2 { font-size: 14px; letter-spacing: 1px; text-transform: uppercase; color: var(--accent); margin-bottom: 14px; }
+    .toc ol { padding-left: 20px; }
+    .toc li { margin: 6px 0; }
+    .toc a { color: var(--text); text-decoration: none; }
+    .toc a:hover { color: var(--accent); }
+
+    /* ===== 章节标题 ===== */
+    .section { margin-bottom: 52px; }
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 24px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    .section-num {
+      width: 38px; height: 38px;
+      border-radius: 10px;
+      background: var(--accent);
+      color: #0a0e1a;
+      font-weight: 800;
+      font-size: 16px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .section-header h2 {
+      font-size: 22px;
+      font-weight: 700;
+      color: #fff;
+    }
+    .section-header .tag {
+      font-size: 11px;
+      background: var(--tag-bg);
+      color: var(--accent);
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    /* ===== 卡片 ===== */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+    .card h3 {
+      font-size: 16px;
+      color: var(--accent2);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card p { margin-bottom: 10px; color: var(--text); }
+    .card p:last-child { margin-bottom: 0; }
+
+    /* ===== 代码块 ===== */
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px 22px;
+      overflow-x: auto;
+      margin: 16px 0;
+      font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+      font-size: 13.5px;
+      line-height: 1.7;
+    }
+    code { font-family: inherit; }
+
+    /* 语法着色 */
+    .kw  { color: #c792ea; }
+    .str { color: #c3e88d; }
+    .num { color: #f78c6c; }
+    .cmt { color: #546e7a; font-style: italic; }
+    .fn  { color: #82aaff; }
+    .var { color: #eeffff; }
+    .op  { color: var(--accent); }
+    .typ { color: var(--accent2); }
+    .out { color: var(--accent3); }
+
+    /* ===== 提示框 ===== */
+    .tip, .warn, .info {
+      border-radius: 10px;
+      padding: 14px 18px;
+      margin: 16px 0;
+      font-size: 14px;
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+    .tip  { background: #0d3321; border-left: 4px solid var(--accent3); }
+    .warn { background: #3a2500; border-left: 4px solid var(--accent2); }
+    .info { background: #0d1e3a; border-left: 4px solid var(--accent); }
+    .tip .icon, .warn .icon, .info .icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+
+    /* ===== 对比表格 ===== */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 14px;
+    }
+    th {
+      background: var(--surface);
+      color: var(--accent);
+      padding: 12px 16px;
+      text-align: left;
+      border-bottom: 2px solid var(--border);
+      font-weight: 600;
+    }
+    td {
+      padding: 11px 16px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+      vertical-align: top;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(97, 218, 251, 0.04); }
+    .td-kw { color: #c792ea; font-family: 'Cascadia Code','Fira Code',monospace; font-weight: 600; }
+    .td-type { color: var(--accent2); }
+    .td-good { color: var(--accent3); }
+    .td-bad  { color: var(--accent4); }
+
+    /* ===== 两列网格 ===== */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 600px) { .grid-2 { grid-template-columns: 1fr; } }
+
+    /* ===== 练习区 ===== */
+    .practice {
+      background: linear-gradient(135deg, #0d2238, #1a2d1a);
+      border: 1px solid #2a4a2a;
+      border-radius: 12px;
+      padding: 28px;
+      margin-top: 48px;
+    }
+    .practice h2 {
+      font-size: 20px;
+      color: var(--accent3);
+      margin-bottom: 8px;
+    }
+    .practice p { color: var(--muted); margin-bottom: 20px; font-size: 14px; }
+    .exercise {
+      background: var(--code-bg);
+      border: 1px dashed #2a4a2a;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+    .exercise .q {
+      color: var(--accent2);
+      font-weight: 600;
+      margin-bottom: 12px;
+      font-size: 14px;
+    }
+    .exercise pre { margin: 0; }
+
+    /* ===== 交互控制台 ===== */
+    .console-area {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-top: 48px;
+    }
+    .console-header {
+      background: var(--surface);
+      padding: 12px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+    .console-header span { color: var(--accent); font-size: 13px; font-weight: 600; letter-spacing: 1px; }
+    .console-dots { display: flex; gap: 6px; }
+    .dot { width: 12px; height: 12px; border-radius: 50%; }
+    .dot-r { background: #ff5f57; }
+    .dot-y { background: #febc2e; }
+    .dot-g { background: #28c840; }
+    #sandbox-code {
+      width: 100%;
+      background: var(--code-bg);
+      color: var(--accent3);
+      border: none;
+      padding: 18px 20px;
+      font-family: 'Cascadia Code','Fira Code',monospace;
+      font-size: 13.5px;
+      line-height: 1.7;
+      resize: vertical;
+      min-height: 140px;
+      outline: none;
+    }
+    .console-actions {
+      padding: 12px 18px;
+      display: flex;
+      gap: 10px;
+      border-top: 1px solid var(--border);
+    }
+    .btn {
+      padding: 8px 20px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      transition: opacity .2s;
+    }
+    .btn:hover { opacity: .85; }
+    .btn-run { background: var(--accent); color: #0a0e1a; }
+    .btn-clear { background: var(--surface); color: var(--muted); border: 1px solid var(--border); }
+    #output-box {
+      padding: 16px 20px;
+      min-height: 60px;
+      font-family: 'Cascadia Code','Fira Code',monospace;
+      font-size: 13px;
+      color: var(--accent3);
+      border-top: 1px solid var(--border);
+      white-space: pre-wrap;
+    }
+    #output-box .err { color: var(--accent4); }
+
+    /* ===== 进度条 ===== */
+    .progress-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 22px 26px;
+      margin-bottom: 40px;
+    }
+    .progress-card h3 { font-size: 13px; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); margin-bottom: 16px; }
+    .progress-list { display: flex; flex-wrap: wrap; gap: 8px; }
+    .progress-item {
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+    }
+    .pi-done  { background: #0d3321; color: var(--accent3); border: 1px solid #1a4d2a; }
+    .pi-today { background: #1e3a5f; color: var(--accent); border: 1px solid #2a5a8f; }
+    .pi-next  { background: var(--card); color: var(--muted); border: 1px solid var(--border); }
+
+    /* ===== 底部 ===== */
+    .footer {
+      text-align: center;
+      padding: 40px 24px 20px;
+      color: var(--muted);
+      font-size: 13px;
+      border-top: 1px solid var(--border);
+    }
+    .footer strong { color: var(--accent); }
+
+    /* ===== inline code ===== */
+    p code, li code, td code {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      padding: 1px 6px;
+      border-radius: 5px;
+      font-family: 'Cascadia Code','Fira Code',monospace;
+      font-size: 12.5px;
+      color: var(--accent);
+    }
+    ul { padding-left: 20px; }
+    li { margin: 5px 0; }
+  </style>
+</head>
+<body>
+
+<!-- ===== HERO ===== -->
+<div class="hero">
+  <div class="badge">JavaScript 学习路径</div>
+  <h1>Day 03 — <span>数组</span>与对象</h1>
+  <p>数组和对象是 JavaScript 中最重要的两种复合数据结构。数组管理有序列表，对象存储键值映射——这两者构成了所有 JS 程序的骨架。</p>
+  <div class="meta">
+    <span>📅 第 3 天</span>
+    <span>⏱ 预计 50 分钟</span>
+    <span>🎯 目标：CesiumJS 地球开发</span>
+    <span>📊 基础阶段</span>
+  </div>
+</div>
+
+<!-- ===== CONTAINER ===== -->
+<div class="container">
+
+  <!-- 学习进度 -->
+  <div class="progress-card">
+    <h3>📍 学习路线图</h3>
+    <div class="progress-list">
+      <div class="progress-item pi-done">Day 01 · 变量与类型 ✅</div>
+      <div class="progress-item pi-done">Day 02 · 函数与作用域 ✅</div>
+      <div class="progress-item pi-today">Day 03 · 数组与对象 ← 今天</div>
+      <div class="progress-item pi-next">Day 04 · 控制流</div>
+      <div class="progress-item pi-next">Day 05 · DOM 操作</div>
+      <div class="progress-item pi-next">Day 06 · 事件与异步</div>
+      <div class="progress-item pi-next">Day 07 · ES6+ 语法</div>
+      <div class="progress-item pi-next">Day 08 · 模块与类</div>
+      <div class="progress-item pi-next">…</div>
+      <div class="progress-item pi-next">CesiumJS 阶段 🌍</div>
+    </div>
+  </div>
+
+  <!-- 目录 -->
+  <div class="toc">
+    <h2>📚 本课目录</h2>
+    <ol>
+      <li><a href="#s1">数组基础：创建、访问、length</a></li>
+      <li><a href="#s2">数组方法：增删改查</a></li>
+      <li><a href="#s3">数组迭代：map / filter / reduce</a></li>
+      <li><a href="#s4">对象基础：创建与属性操作</a></li>
+      <li><a href="#s5">对象方法与 this</a></li>
+      <li><a href="#s6">解构赋值（数组 &amp; 对象）</a></li>
+      <li><a href="#s7">CesiumJS 关联场景</a></li>
+      <li><a href="#s8">练习题</a></li>
+      <li><a href="#s9">在线练习控制台</a></li>
+    </ol>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 1: 数组基础                                            -->
+  <!-- ============================================================ -->
+  <div class="section" id="s1">
+    <div class="section-header">
+      <div class="section-num">1</div>
+      <h2>数组基础：创建、访问、length</h2>
+      <span class="tag">ARRAYS</span>
+    </div>
+
+    <p>数组（Array）是一个<strong>有序的</strong>数据集合，用方括号 <code>[]</code> 表示。每个元素都有<strong>从 0 开始的索引</strong>。</p>
+
+    <table>
+      <tr>
+        <th>属性/方法</th>
+        <th>说明</th>
+        <th>示例</th>
+      </tr>
+      <tr>
+        <td class="td-kw">length</td>
+        <td>数组中元素的个数</td>
+        <td class="td-type">[1,2,3].length → 3</td>
+      </tr>
+      <tr>
+        <td class="td-kw">索引访问</td>
+        <td>通过数字下标访问元素</td>
+        <td class="td-type">arr[0] → 第一个元素</td>
+      </tr>
+      <tr>
+        <td class="td-kw">构造函数</td>
+        <td>用 new Array() 创建数组</td>
+        <td class="td-type">new Array(3) → [空,空,空]</td>
+      </tr>
+      <tr>
+        <td class="td-kw">Array.of()</td>
+        <td>可靠的数组创建（ES6）</td>
+        <td class="td-type">Array.of(3) → [3]</td>
+      </tr>
+    </table>
+
+<pre><code><span class="cmt">// ① 创建数组（三种常用方式）</span>
+<span class="kw">const</span> <span class="var">cities</span> <span class="op">=</span> [<span class="str">'北京'</span>, <span class="str">'上海'</span>, <span class="str">'广州'</span>, <span class="str">'深圳'</span>];
+<span class="kw">const</span> <span class="var">emptyArr</span> <span class="op">=</span> [];                      <span class="cmt">// 空数组</span>
+<span class="kw">const</span> <span class="var">nums</span> <span class="op">=</span> <span class="fn">Array</span>.<span class="fn">of</span>(<span class="num">10</span>, <span class="num">20</span>, <span class="num">30</span>);      <span class="cmt">// ES6：创建含3个元素的数组</span>
+
+<span class="cmt">// ② 访问元素（索引从 0 开始）</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">cities</span>[<span class="num">0</span>]);                 <span class="cmt">// "北京" — 第1个</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">cities</span>[<span class="var">cities</span>.<span class="var">length</span> <span class="op">-</span> <span class="num">1</span>]); <span class="cmt">// "深圳" — 最后一个</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">cities</span>[<span class="num">99</span>]);               <span class="cmt">// undefined（索引越界不报错）</span>
+
+<span class="cmt">// ③ length 属性——就是数组元素个数</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">cities</span>.<span class="var">length</span>);           <span class="cmt">// 4</span>
+
+<span class="cmt">// ④ 数组可混合存放任意类型</span>
+<span class="kw">const</span> <span class="var">mixed</span> <span class="op">=</span> [<span class="num">42</span>, <span class="str">"hello"</span>, <span class="kw">true</span>, <span class="kw">null</span>, {<span class="var">x</span>: <span class="num">1</span>}, [<span class="num">1</span>,<span class="num">2</span>]];
+
+<span class="cmt">// ⑤ 修改元素</span>
+<span class="var">cities</span>[<span class="num">1</span>] <span class="op">=</span> <span class="str">'重庆'</span>;               <span class="cmt">// 将"上海"改为"重庆"</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">cities</span>);                <span class="cmt">// ["北京","重庆","广州","深圳"]</span>
+</code></pre>
+
+    <div class="tip">
+      <span class="icon">💡</span>
+      <div><strong>注意：</strong><code>new Array(3)</code> 创建的是长度为 3 的空槽数组，而 <code>Array.of(3)</code> 创建的是含一个元素 3 的数组。推荐用字面量 <code>[]</code> 或 <code>Array.of()</code>。</div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 2: 数组方法——增删改查                                    -->
+  <!-- ============================================================ -->
+  <div class="section" id="s2">
+    <div class="section-header">
+      <div class="section-num">2</div>
+      <h2>数组方法：增删改查</h2>
+      <span class="tag">MUTATE</span>
+    </div>
+
+    <div class="card">
+      <h3>🔧 会<strong>修改原数组</strong>的方法（Mutating）</h3>
+<pre><code><span class="kw">let</span> <span class="var">arr</span> <span class="op">=</span> [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>];
+
+<span class="cmt">// 尾部操作</span>
+<span class="var">arr</span>.<span class="fn">push</span>(<span class="num">4</span>);          <span class="cmt">// 在尾部添加 → [1,2,3,4]，返回 4（新长度）</span>
+<span class="var">arr</span>.<span class="fn">pop</span>();            <span class="cmt">// 删除尾部元素 → [1,2,3]，返回 4（被删元素）</span>
+
+<span class="cmt">// 头部操作</span>
+<span class="var">arr</span>.<span class="fn">unshift</span>(<span class="num">0</span>);      <span class="cmt">// 在头部添加 → [0,1,2,3]，返回 4</span>
+<span class="var">arr</span>.<span class="fn">shift</span>();          <span class="cmt">// 删除头部元素 → [1,2,3]，返回 0</span>
+
+<span class="cmt">// splice — 万能增删（起始索引, 删除个数, ...新增元素）</span>
+<span class="var">arr</span>.<span class="fn">splice</span>(<span class="num">1</span>, <span class="num">1</span>);        <span class="cmt">// 删除索引1的元素 → [1,3]</span>
+<span class="var">arr</span>.<span class="fn">splice</span>(<span class="num">1</span>, <span class="num">0</span>, <span class="num">10</span>, <span class="num">20</span>); <span class="cmt">// 在索引1处插入 → [1,10,20,3]</span>
+<span class="var">arr</span>.<span class="fn">splice</span>(<span class="num">2</span>, <span class="num">1</span>, <span class="str">'X'</span>);     <span class="cmt">// 替换索引2 → [1,10,'X',3]</span>
+
+<span class="cmt">// reverse — 反转</span>
+[<span class="num">1</span>,<span class="num">2</span>,<span class="num">3</span>].<span class="fn">reverse</span>();     <span class="cmt">// → [3,2,1]</span>
+
+<span class="cmt">// sort — 排序（默认按字符串排序，需要传入比较函数）</span>
+[<span class="num">3</span>, <span class="num">1</span>, <span class="num">10</span>, <span class="num">2</span>].<span class="fn">sort</span>();                     <span class="cmt">// ⚠️ [1,10,2,3] — 字符串序！</span>
+[<span class="num">3</span>, <span class="num">1</span>, <span class="num">10</span>, <span class="num">2</span>].<span class="fn">sort</span>((<span class="var">a</span>, <span class="var">b</span>) <span class="op">=></span> <span class="var">a</span> <span class="op">-</span> <span class="var">b</span>);   <span class="cmt">// [1,2,3,10] ✅ 数字序</span>
+</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>🔍 <strong>不会修改</strong>原数组的方法（非变异）</h3>
+<pre><code><span class="kw">const</span> <span class="var">a</span> <span class="op">=</span> [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>, <span class="num">5</span>];
+
+<span class="cmt">// 查找</span>
+<span class="var">a</span>.<span class="fn">indexOf</span>(<span class="num">3</span>);              <span class="cmt">// 2（第一个匹配索引，找不到返回 -1）</span>
+<span class="var">a</span>.<span class="fn">lastIndexOf</span>(<span class="num">2</span>);          <span class="cmt">// 1（最后一个匹配索引）</span>
+<span class="var">a</span>.<span class="fn">includes</span>(<span class="num">3</span>);              <span class="cmt">// true（是否包含该值）</span>
+<span class="var">a</span>.<span class="fn">find</span>(<span class="var">x</span> <span class="op">=></span> <span class="var">x</span> <span class="op">></span> <span class="num">3</span>);           <span class="cmt">// 4（第一个满足条件的元素）</span>
+<span class="var">a</span>.<span class="fn">findIndex</span>(<span class="var">x</span> <span class="op">=></span> <span class="var">x</span> <span class="op">></span> <span class="num">3</span>);      <span class="cmt">// 3（第一个满足条件的索引）</span>
+
+<span class="cmt">// 截取 / 拼接</span>
+<span class="kw">const</span> <span class="var">sub</span> <span class="op">=</span> <span class="var">a</span>.<span class="fn">slice</span>(<span class="num">1</span>, <span class="num">4</span>);       <span class="cmt">// [2,3,4]（拷贝，不含末索引）a 不变</span>
+<span class="kw">const</span> <span class="var">merged</span> <span class="op">=</span> <span class="var">a</span>.<span class="fn">concat</span>([<span class="num">6</span>,<span class="num">7</span>]); <span class="cmt">// [1,2,3,4,5,6,7] a 不变</span>
+<span class="kw">const</span> <span class="var">joined</span> <span class="op">=</span> <span class="var">a</span>.<span class="fn">join</span>(<span class="str">' - '</span>);    <span class="cmt">// "1 - 2 - 3 - 4 - 5"（转字符串）</span>
+
+<span class="cmt">// ES6+：展开运算符（不修改原数组）</span>
+<span class="kw">const</span> <span class="var">copy</span> <span class="op">=</span> [<span class="op">...</span><span class="var">a</span>];             <span class="cmt">// 浅拷贝：[1,2,3,4,5]</span>
+<span class="kw">const</span> <span class="var">extended</span> <span class="op">=</span> [<span class="op">...</span><span class="var">a</span>, <span class="num">6</span>, <span class="num">7</span>];  <span class="cmt">// [1,2,3,4,5,6,7]</span>
+</code></pre>
+    </div>
+
+    <div class="warn">
+      <span class="icon">⚠️</span>
+      <div><code>sort()</code> 默认按<strong>字符串 Unicode</strong> 排序！数字排序必须传入比较函数 <code>(a,b) => a - b</code>（升序）或 <code>(a,b) => b - a</code>（降序）。</div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 3: 数组迭代                                           -->
+  <!-- ============================================================ -->
+  <div class="section" id="s3">
+    <div class="section-header">
+      <div class="section-num">3</div>
+      <h2>数组迭代：map / filter / reduce</h2>
+      <span class="tag">ITERATION</span>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <h3>🔄 forEach — 遍历每个元素</h3>
+        <p>对每个元素执行一次回调，<strong>不返回新数组</strong>。</p>
+<pre><code><span class="kw">const</span> <span class="var">city</span> <span class="op">=</span> [<span class="str">'北京'</span>, <span class="str">'上海'</span>, <span class="str">'广州'</span>];
+
+<span class="var">city</span>.<span class="fn">forEach</span>((<span class="var">name</span>, <span class="var">index</span>) <span class="op">=></span> {
+  <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">`<span class="op">${</span><span class="var">index</span><span class="op">}</span>: <span class="op">${</span><span class="var">name</span><span class="op">}</span>`</span>);
+});
+<span class="cmt">// 0: 北京</span>
+<span class="cmt">// 1: 上海</span>
+<span class="cmt">// 2: 广州</span>
+</code></pre>
+      </div>
+
+      <div class="card">
+        <h3>🗺️ map — 映射（返回新数组）</h3>
+        <p>对每个元素应用函数，<strong>返回新数组</strong>，元素个数不变。</p>
+<pre><code><span class="kw">const</span> <span class="var">nums</span> <span class="op">=</span> [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>, <span class="num">5</span>];
+
+<span class="kw">const</span> <span class="var">doubled</span> <span class="op">=</span> <span class="var">nums</span>.<span class="fn">map</span>(<span class="var">x</span> <span class="op">=></span> <span class="var">x</span> <span class="op">*</span> <span class="num">2</span>);
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">doubled</span>);
+<span class="cmt">// [2, 4, 6, 8, 10]</span>
+</code></pre>
+      </div>
+
+      <div class="card">
+        <h3>🔍 filter — 过滤（返回新数组）</h3>
+        <p>通过条件函数过滤，<strong>返回符合条件的元素组成的数组</strong>。</p>
+<pre><code><span class="kw">const</span> <span class="var">nums</span> <span class="op">=</span> [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>, <span class="num">5</span>];
+
+<span class="kw">const</span> <span class="var">even</span> <span class="op">=</span> <span class="var">nums</span>.<span class="fn">filter</span>(<span class="var">x</span> <span class="op">=></span> <span class="var">x</span> <span class="op">%</span> <span class="num">2</span> <span class="op">===</span> <span class="num">0</span>);
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">even</span>);
+<span class="cmt">// [2, 4]</span>
+
+<span class="kw">const</span> <span class="var">big</span> <span class="op">=</span> <span class="var">nums</span>.<span class="fn">filter</span>(<span class="var">x</span> <span class="op">=></span> <span class="var">x</span> <span class="op">></span> <span class="num">2</span>);
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">big</span>);
+<span class="cmt">// [3, 4, 5]</span>
+</code></pre>
+      </div>
+
+      <div class="card">
+        <h3>📉 reduce — 归约（单向累积）</h3>
+        <p>将数组"缩减"为一个值——求和、求平均、分组等。</p>
+<pre><code><span class="kw">const</span> <span class="var">nums</span> <span class="op">=</span> [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>, <span class="num">5</span>];
+
+<span class="kw">const</span> <span class="var">sum</span> <span class="op">=</span> <span class="var">nums</span>.<span class="fn">reduce</span>((<span class="var">acc</span>, <span class="var">cur</span>) <span class="op">=></span> {
+  <span class="kw">return</span> <span class="var">acc</span> <span class="op">+</span> <span class="var">cur</span>;
+}, <span class="num">0</span>);
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">sum</span>); <span class="cmt">// 15</span>
+</code></pre>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:0">
+      <h3>📊 迭代方法速查表</h3>
+      <table>
+        <tr>
+          <th>方法</th>
+          <th>返回值</th>
+          <th>典型用途</th>
+          <th>链式调用</th>
+        </tr>
+        <tr>
+          <td class="td-kw">forEach</td>
+          <td class="td-bad">undefined</td>
+          <td>遍历执行副作用（打印、DOM修改等）</td>
+          <td class="td-bad">❌ 不支持</td>
+        </tr>
+        <tr>
+          <td class="td-kw">map</td>
+          <td class="td-good">新数组（等长）</td>
+          <td>数据转换 / 提取字段</td>
+          <td class="td-good">✅</td>
+        </tr>
+        <tr>
+          <td class="td-kw">filter</td>
+          <td class="td-good">新数组（变短或等长）</td>
+          <td>筛选数据</td>
+          <td class="td-good">✅</td>
+        </tr>
+        <tr>
+          <td class="td-kw">reduce</td>
+          <td class="td-good">任意值</td>
+          <td>数据聚合（求和/分组/统计）</td>
+          <td class="td-good">✅（通常在末尾）</td>
+        </tr>
+        <tr>
+          <td class="td-kw">find</td>
+          <td class="td-good">第一个匹配元素</td>
+          <td>按条件查找单个项</td>
+          <td class="td-good">✅</td>
+        </tr>
+        <tr>
+          <td class="td-kw">some</td>
+          <td class="td-good">boolean</td>
+          <td>是否有元素满足条件</td>
+          <td class="td-good">✅</td>
+        </tr>
+        <tr>
+          <td class="td-kw">every</td>
+          <td class="td-good">boolean</td>
+          <td>是否所有元素都满足条件</td>
+          <td class="td-good">✅</td>
+        </tr>
+        <tr>
+          <td class="td-kw">sort</td>
+          <td class="td-good">排序后的原数组</td>
+          <td>排序（会修改原数组）</td>
+          <td class="td-bad">⚠️ 注意变异</td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3>⛓️ 链式调用——组合多个方法</h3>
+      <p>map、filter、sort 等返回数组的方法可以链式串联，写出清晰的数据处理管道：</p>
+<pre><code><span class="kw">const</span> <span class="var">items</span> <span class="op">=</span> [
+  { <span class="var">name</span>: <span class="str">'北京'</span>, <span class="var">pop</span>: <span class="num">2154</span> },
+  { <span class="var">name</span>: <span class="str">'上海'</span>, <span class="var">pop</span>: <span class="num">2487</span> },
+  { <span class="var">name</span>: <span class="str">'广州'</span>, <span class="var">pop</span>: <span class="num">1868</span> },
+  { <span class="var">name</span>: <span class="str">'拉萨'</span>, <span class="var">pop</span>: <span class="num">86</span> },
+  { <span class="var">name</span>: <span class="str">'深圳'</span>, <span class="var">pop</span>: <span class="num">1756</span> },
+];
+
+<span class="cmt">// 需求：找出人口 > 1000 的城市名，按人口降序排列</span>
+<span class="kw">const</span> <span class="var">result</span> <span class="op">=</span> <span class="var">items</span>
+  .<span class="fn">filter</span>(<span class="var">c</span> <span class="op">=></span> <span class="var">c</span>.<span class="var">pop</span> <span class="op">></span> <span class="num">1000</span>)         <span class="cmt">// 过滤</span>
+  .<span class="fn">sort</span>((<span class="var">a</span>, <span class="var">b</span>) <span class="op">=></span> <span class="var">b</span>.<span class="var">pop</span> <span class="op">-</span> <span class="var">a</span>.<span class="var">pop</span>)       <span class="cmt">// 排序</span>
+  .<span class="fn">map</span>(<span class="var">c</span> <span class="op">=></span> <span class="var">c</span>.<span class="var">name</span>);                    <span class="cmt">// 提取名字</span>
+
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">result</span>); <span class="cmt">// ["上海", "北京", "广州", "深圳"]</span>
+</code></pre>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 4: 对象基础                                           -->
+  <!-- ============================================================ -->
+  <div class="section" id="s4">
+    <div class="section-header">
+      <div class="section-num">4</div>
+      <h2>对象基础：创建与属性操作</h2>
+      <span class="tag">OBJECTS</span>
+    </div>
+
+    <p>对象（Object）是<strong>键值对（key-value）</strong>的集合，花括号 <code>{}</code> 表示。每个键（属性名）映射到一个值（可以是任意类型）。</p>
+
+    <div class="grid-2">
+      <div class="card">
+        <h3>🏗️ 创建对象</h3>
+<pre><code><span class="cmt">// ① 字面量（最常用）</span>
+<span class="kw">const</span> <span class="var">coordinate</span> <span class="op">=</span> {
+  <span class="var">longitude</span>: <span class="num">116.4</span>,
+  <span class="var">latitude</span>:  <span class="num">39.9</span>,
+  <span class="var">height</span>:    <span class="num">50</span>,
+};
+
+<span class="cmt">// ② 构造函数</span>
+<span class="kw">const</span> <span class="var">point</span> <span class="op">=</span> <span class="kw">new</span> <span class="fn">Object</span>();
+<span class="var">point</span>.<span class="var">x</span> <span class="op">=</span> <span class="num">10</span>;
+<span class="var">point</span>.<span class="var">y</span> <span class="op">=</span> <span class="num">20</span>;
+
+<span class="cmt">// ③ ES6+ 属性简写</span>
+<span class="kw">const</span> <span class="var">lon</span> <span class="op">=</span> <span class="num">116.4</span>, <span class="var">lat</span> <span class="op">=</span> <span class="num">39.9</span>;
+<span class="kw">const</span> <span class="var">pos</span> <span class="op">=</span> { <span class="var">lon</span>, <span class="var">lat</span> }; <span class="cmt">// 等价于 { lon: lon, lat: lat }</span>
+</code></pre>
+      </div>
+
+      <div class="card">
+        <h3>📝 属性访问</h3>
+<pre><code><span class="kw">const</span> <span class="var">city</span> <span class="op">=</span> {
+  <span class="var">name</span>: <span class="str">'杭州'</span>,
+  <span class="str">'full name'</span>: <span class="str">'杭州市'</span>,  <span class="cmt">// 含空格的属性名要加引号</span>
+  <span class="var">population</span>: <span class="num">1220</span>,
+};
+
+<span class="cmt">// 点号语法（.）——属性名必须为合法标识符</span>
+<span class="var">city</span>.<span class="var">name</span>          <span class="cmt">// "杭州"</span>
+<span class="var">city</span>.<span class="var">population</span>    <span class="cmt">// 1220</span>
+
+<span class="cmt">// 方括号语法（[]）——可包含任意字符、动态键</span>
+<span class="var">city</span>[<span class="str">'name'</span>]        <span class="cmt">// "杭州"</span>
+<span class="var">city</span>[<span class="str">'full name'</span>]   <span class="cmt">// "杭州市"</span>
+
+<span class="kw">const</span> <span class="var">key</span> <span class="op">=</span> <span class="str">'population'</span>;
+<span class="var">city</span>[<span class="var">key</span>]             <span class="cmt">// 1220 — 动态键访问！</span>
+</code></pre>
+      </div>
+
+      <div class="card">
+        <h3>✏️ 添加 / 修改 / 删除属性</h3>
+<pre><code><span class="kw">const</span> <span class="var">entity</span> <span class="op">=</span> { <span class="var">id</span>: <span class="str">'marker_1'</span> };
+
+<span class="cmt">// 添加属性（直接赋值）</span>
+<span class="var">entity</span>.<span class="var">name</span> <span class="op">=</span> <span class="str">'天安门'</span>;
+<span class="var">entity</span>.<span class="var">type</span> <span class="op">=</span> <span class="str">'poi'</span>;
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">entity</span>);
+<span class="cmt">// { id: 'marker_1', name: '天安门', type: 'poi' }</span>
+
+<span class="cmt">// 修改属性（和添加语法一样）</span>
+<span class="var">entity</span>.<span class="var">name</span> <span class="op">=</span> <span class="str">'故宫'</span>;
+
+<span class="cmt">// 删除属性</span>
+<span class="kw">delete</span> <span class="var">entity</span>.<span class="var">type</span>;
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">entity</span>.<span class="var">type</span>); <span class="cmt">// undefined</span>
+
+<span class="cmt">// 检查属性是否存在</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="str">'name'</span> <span class="kw">in</span> <span class="var">entity</span>);      <span class="cmt">// true</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">entity</span>.<span class="fn">hasOwnProperty</span>(<span class="str">'id'</span>)); <span class="cmt">// true</span>
+</code></pre>
+      </div>
+
+      <div class="card">
+        <h3>🧊 const 对象与可变性</h3>
+        <p><code>const</code> 声明的对象<strong>引用不可变</strong>，但<strong>内部属性可变</strong>。</p>
+<pre><code><span class="kw">const</span> <span class="var">obj</span> <span class="op">=</span> { <span class="var">x</span>: <span class="num">1</span> };
+<span class="var">obj</span>.<span class="var">x</span> <span class="op">=</span> <span class="num">2</span>;        <span class="cmt">// ✅ 可以修改属性</span>
+<span class="var">obj</span>.<span class="var">y</span> <span class="op">=</span> <span class="num">3</span>;        <span class="cmt">// ✅ 可以添加属性</span>
+<span class="cmt">// obj = {};          ❌ 不能重新绑定引用</span>
+</code></pre>
+      </div>
+    </div>
+
+    <div class="info">
+      <span class="icon">ℹ️</span>
+      <div><strong>为什么 const 对象可以修改？</strong> <code>const</code>绑定的是<strong>引用</strong>（内存地址），不是内容。对象的属性存储在堆内存中，修改它们不改变引用本身。就像你不能把门牌号改了，但可以重新装修房间。</div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 5: 对象方法与 this                                     -->
+  <!-- ============================================================ -->
+  <div class="section" id="s5">
+    <div class="section-header">
+      <div class="section-num">5</div>
+      <h2>对象方法与遍历</h2>
+      <span class="tag">METHODS &amp; THIS</span>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <h3>🏃 对象方法</h3>
+        <p>对象的属性值可以是函数——这种属性就叫"方法"（method）。</p>
+<pre><code><span class="kw">const</span> <span class="var">camera</span> <span class="op">=</span> {
+  <span class="var">x</span>: <span class="num">0</span>,
+  <span class="var">y</span>: <span class="num">0</span>,
+  <span class="var">z</span>: <span class="num">100</span>,
+
+  <span class="cmt">// ES6 方法简写（推荐）</span>
+  <span class="fn">moveUp</span>(<span class="var">distance</span>) {
+    <span class="kw">this</span>.<span class="var">z</span> <span class="op">+=</span> <span class="var">distance</span>;
+  },
+
+  <span class="fn">getPosition</span>() {
+    <span class="kw">return</span> <span class="str">`(<span class="op">${</span><span class="kw">this</span>.<span class="var">x</span><span class="op">}</span>, <span class="op">${</span><span class="kw">this</span>.<span class="var">y</span><span class="op">}</span>, <span class="op">${</span><span class="kw">this</span>.<span class="var">z</span><span class="op">}</span>)`</span>;
+  },
+};
+
+<span class="var">camera</span>.<span class="fn">moveUp</span>(<span class="num">50</span>);
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">camera</span>.<span class="fn">getPosition</span>());
+<span class="cmt">// (0, 0, 150)</span>
+</code></pre>
+      </div>
+
+      <div class="card">
+        <h3>🎯 this 关键字</h3>
+        <p>在对象方法中，<code>this</code> 指向<strong>调用该方法的对象</strong>（即方法前的那个对象）。</p>
+<pre><code><span class="kw">const</span> <span class="var">user</span> <span class="op">=</span> {
+  <span class="var">name</span>: <span class="str">'开发者'</span>,
+  <span class="fn">greet</span>() {
+    <span class="cmt">// this 指 user 对象</span>
+    <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">`你好，我是<span class="op">${</span><span class="kw">this</span>.<span class="var">name</span><span class="op">}</span>`</span>);
+  },
+};
+
+<span class="var">user</span>.<span class="fn">greet</span>(); <span class="cmt">// "你好，我是开发者"</span>
+
+<span class="cmt">// ⚠️ 箭头函数的 this 不同！它继承外层作用域，不绑定调用者</span>
+</code></pre>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>🔁 遍历对象的键和值</h3>
+<pre><code><span class="kw">const</span> <span class="var">mapConfig</span> <span class="op">=</span> {
+  <span class="var">center</span>: [<span class="num">116.4</span>, <span class="num">39.9</span>],
+  <span class="var">zoom</span>:   <span class="num">12</span>,
+  <span class="var">theme</span>:  <span class="str">'dark'</span>,
+};
+
+<span class="cmt">// ① for...in — 遍历键（含原型链，需过滤）</span>
+<span class="kw">for</span> (<span class="kw">const</span> <span class="var">key</span> <span class="kw">in</span> <span class="var">mapConfig</span>) {
+  <span class="kw">if</span> (<span class="var">mapConfig</span>.<span class="fn">hasOwnProperty</span>(<span class="var">key</span>)) {
+    <span class="fn">console</span>.<span class="fn">log</span>(<span class="var">key</span>, <span class="str">'→'</span>, <span class="var">mapConfig</span>[<span class="var">key</span>]);
+  }
+}
+
+<span class="cmt">// ② Object.keys() — 获取所有自身属性的键（数组）</span>
+<span class="kw">const</span> <span class="var">keys</span> <span class="op">=</span> <span class="fn">Object</span>.<span class="fn">keys</span>(<span class="var">mapConfig</span>);
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">keys</span>); <span class="cmt">// ["center", "zoom", "theme"]</span>
+
+<span class="cmt">// ③ Object.values() — 获取所有自身属性的值（数组）</span>
+<span class="kw">const</span> <span class="var">values</span> <span class="op">=</span> <span class="fn">Object</span>.<span class="fn">values</span>(<span class="var">mapConfig</span>);
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">values</span>); <span class="cmt">// [[116.4,39.9], 12, "dark"]</span>
+
+<span class="cmt">// ④ Object.entries() — 键值对数组</span>
+<span class="kw">const</span> <span class="var">entries</span> <span class="op">=</span> <span class="fn">Object</span>.<span class="fn">entries</span>(<span class="var">mapConfig</span>);
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">entries</span>);
+<span class="cmt">// [["center", [...]], ["zoom", 12], ["theme", "dark"]]</span>
+
+<span class="cmt">// ⑤ forEach + entries 优雅遍历</span>
+<span class="var">entries</span>.<span class="fn">forEach</span>(([<span class="var">k</span>, <span class="var">v</span>]) <span class="op">=></span> <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">`<span class="op">${</span><span class="var">k</span><span class="op">}</span>: <span class="op">${</span><span class="var">v</span><span class="op">}</span>`</span>));
+</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>🛡️ Object.freeze() 与 Object.seal()</h3>
+      <table>
+        <tr>
+          <th>方法</th>
+          <th>可修改现有属性</th>
+          <th>可添加新属性</th>
+          <th>可删除属性</th>
+        </tr>
+        <tr>
+          <td class="td-kw">Object.freeze()</td>
+          <td class="td-bad">❌</td>
+          <td class="td-bad">❌</td>
+          <td class="td-bad">❌</td>
+        </tr>
+        <tr>
+          <td class="td-kw">Object.seal()</td>
+          <td class="td-good">✅</td>
+          <td class="td-bad">❌</td>
+          <td class="td-bad">❌</td>
+        </tr>
+        <tr>
+          <td class="td-kw">无（默认）</td>
+          <td class="td-good">✅</td>
+          <td class="td-good">✅</td>
+          <td class="td-good">✅</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 6: 解构赋值                                            -->
+  <!-- ============================================================ -->
+  <div class="section" id="s6">
+    <div class="section-header">
+      <div class="section-num">6</div>
+      <h2>解构赋值（数组 &amp; 对象）</h2>
+      <span class="tag">ES6+</span>
+    </div>
+
+    <p>解构赋值（Destructuring）是 ES6 最重要的语法糖之一——让你从数组或对象中<strong>快速提取值</strong>并赋给变量。</p>
+
+    <div class="grid-2">
+      <div class="card">
+        <h3>📦 数组解构</h3>
+<pre><code><span class="cmt">// 基本解构——按位置匹配</span>
+<span class="kw">const</span> <span class="var">coords</span> <span class="op">=</span> [<span class="num">116.4</span>, <span class="num">39.9</span>, <span class="num">50</span>];
+<span class="kw">const</span> [<span class="var">lon</span>, <span class="var">lat</span>, <span class="var">alt</span>] <span class="op">=</span> <span class="var">coords</span>;
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">lon</span>, <span class="var">lat</span>, <span class="var">alt</span>); <span class="cmt">// 116.4 39.9 50</span>
+
+<span class="cmt">// 跳过元素</span>
+<span class="kw">const</span> [, <span class="var">latOnly</span>] <span class="op">=</span> <span class="var">coords</span>;
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">latOnly</span>); <span class="cmt">// 39.9</span>
+
+<span class="cmt">// 默认值</span>
+<span class="kw">const</span> [<span class="var">a</span> <span class="op">=</span> <span class="num">1</span>, <span class="var">b</span> <span class="op">=</span> <span class="num">2</span>] <span class="op">=</span> [<span class="num">10</span>];
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">a</span>, <span class="var">b</span>); <span class="cmt">// 10 2（b 用了默认值）</span>
+
+<span class="cmt">// 交换变量（无需临时变量！）</span>
+<span class="kw">let</span> <span class="var">x</span> <span class="op">=</span> <span class="num">1</span>, <span class="var">y</span> <span class="op">=</span> <span class="num">2</span>;
+[<span class="var">x</span>, <span class="var">y</span>] <span class="op">=</span> [<span class="var">y</span>, <span class="var">x</span>];
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">x</span>, <span class="var">y</span>); <span class="cmt">// 2 1</span>
+
+<span class="cmt">// 剩余元素（rest）</span>
+<span class="kw">const</span> [<span class="var">first</span>, <span class="op">...</span><span class="var">rest</span>] <span class="op">=</span> [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>];
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">first</span>); <span class="cmt">// 1</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">rest</span>); <span class="cmt">// [2, 3, 4]</span>
+</code></pre>
+      </div>
+
+      <div class="card">
+        <h3>📋 对象解构</h3>
+<pre><code><span class="cmt">// 基本解构——按属性名匹配（非顺序！）</span>
+<span class="kw">const</span> <span class="var">city</span> <span class="op">=</span> { <span class="var">name</span>: <span class="str">'北京'</span>, <span class="var">lat</span>: <span class="num">39.9</span>, <span class="var">lon</span>: <span class="num">116.4</span> };
+<span class="kw">const</span> { <span class="var">name</span>, <span class="var">lat</span>, <span class="var">lon</span> } <span class="op">=</span> <span class="var">city</span>;
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">name</span>); <span class="cmt">// "北京"</span>
+
+<span class="cmt">// 重命名</span>
+<span class="kw">const</span> { <span class="var">name</span>: <span class="var">cityName</span> } <span class="op">=</span> <span class="var">city</span>;
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">cityName</span>); <span class="cmt">// "北京"</span>
+
+<span class="cmt">// 默认值</span>
+<span class="kw">const</span> { <span class="var">zoom</span> <span class="op">=</span> <span class="num">12</span> } <span class="op">=</span> <span class="var">city</span>;
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">zoom</span>); <span class="cmt">// 12（city 中没有 zoom）</span>
+
+<span class="cmt">// 剩余属性（rest）</span>
+<span class="kw">const</span> { <span class="var">name</span>: <span class="var">n</span>, <span class="op">...</span><span class="var">coords</span> } <span class="op">=</span> <span class="var">city</span>;
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">coords</span>); <span class="cmt">// { lat: 39.9, lon: 116.4 }</span>
+
+<span class="cmt">// 函数参数解构（非常常用！）</span>
+<span class="kw">const</span> <span class="fn">printCity</span> <span class="op">=</span> ({ <span class="var">name</span>, <span class="var">lat</span>, <span class="var">lon</span> }) <span class="op">=></span> {
+  <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">`<span class="op">${</span><span class="var">name</span><span class="op">}</span>位于 (<span class="op">${</span><span class="var">lat</span><span class="op">}</span>°, <span class="op">${</span><span class="var">lon</span><span class="op">}</span>°)`</span>);
+};
+<span class="fn">printCity</span>(<span class="var">city</span>); <span class="cmt">// 北京位于 (39.9°, 116.4°)</span>
+</code></pre>
+      </div>
+    </div>
+
+    <div class="tip">
+      <span class="icon">💡</span>
+      <div><strong>关键区别：</strong>数组解构按<strong>位置</strong>匹配，对象解构按<strong>属性名</strong>匹配。这是两者最大的不同。</div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 7: CesiumJS 关联场景                                   -->
+  <!-- ============================================================ -->
+  <div class="section" id="s7">
+    <div class="section-header">
+      <div class="section-num">7</div>
+      <h2>🌍 CesiumJS 关联场景</h2>
+      <span class="tag">CESIUMJS</span>
+    </div>
+
+    <p>数组和对象是 CesiumJS 开发中最核心的数据结构。来看看将来的实际应用场景：</p>
+
+    <div class="card">
+      <h3>🗺️ 场景 1：管理实体集合（Entity Collection）</h3>
+      <p>在 CesiumJS 中，你可以在地球上放置各种标记点（marker）、线条、多边形。这些实体通常存储为<strong>对象数组</strong>：</p>
+<pre><code><span class="cmt">// CesiumJS 中的实体数据——对象数组</span>
+<span class="kw">const</span> <span class="var">landmarks</span> <span class="op">=</span> [
+  { <span class="var">id</span>: <span class="str">'bj'</span>,    <span class="var">name</span>: <span class="str">'天安门'</span>,   <span class="var">lon</span>: <span class="num">116.3975</span>, <span class="var">lat</span>: <span class="num">39.9087</span> },
+  { <span class="var">id</span>: <span class="str">'sh'</span>,    <span class="var">name</span>: <span class="str">'东方明珠'</span>, <span class="var">lon</span>: <span class="num">121.4998</span>, <span class="var">lat</span>: <span class="num">31.2397</span> },
+  { <span class="var">id</span>: <span class="str">'gz'</span>,    <span class="var">name</span>: <span class="str">'广州塔'</span>,   <span class="var">lon</span>: <span class="num">113.3245</span>, <span class="var">lat</span>: <span class="num">23.1065</span> },
+  { <span class="var">id</span>: <span class="str">'cd'</span>,    <span class="var">name</span>: <span class="str">'宽窄巷子'</span>, <span class="var">lon</span>: <span class="num">104.0535</span>, <span class="var">lat</span>: <span class="num">30.6698</span> },
+];
+
+<span class="cmt">// 用 map 将地标数据转换为 Cesium 实体配置</span>
+<span class="kw">const</span> <span class="var">entities</span> <span class="op">=</span> <span class="var">landmarks</span>.<span class="fn">map</span>(<span class="var">place</span> <span class="op">=></span> ({
+  <span class="var">id</span>: <span class="var">place</span>.<span class="var">id</span>,
+  <span class="var">name</span>: <span class="var">place</span>.<span class="var">name</span>,
+  <span class="var">position</span>: <span class="fn">Cesium</span>.<span class="var">Cartesian3</span>.<span class="fn">fromDegrees</span>(<span class="var">place</span>.<span class="var">lon</span>, <span class="var">place</span>.<span class="var">lat</span>),
+  <span class="var">point</span>: { <span class="var">pixelSize</span>: <span class="num">10</span>, <span class="var">color</span>: <span class="fn">Cesium</span>.<span class="var">Color</span>.<span class="var">RED</span> },
+}));
+
+<span class="cmt">// 用 filter 筛选特定区域的地标</span>
+<span class="kw">const</span> <span class="var">easternCities</span> <span class="op">=</span> <span class="var">landmarks</span>.<span class="fn">filter</span>(<span class="var">p</span> <span class="op">=></span> <span class="var">p</span>.<span class="var">lon</span> <span class="op">></span> <span class="num">110</span>);
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">easternCities</span>.<span class="fn">length</span>); <span class="cmt">// 3（北京、上海、广州）</span>
+</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>🎨 场景 2：样式配置对象</h3>
+      <p>CesiumJS 大量使用配置对象来定义实体的外观：</p>
+<pre><code><span class="cmt">// 典型的 CesiumJS 实体样式对象</span>
+<span class="kw">const</span> <span class="var">polygonStyle</span> <span class="op">=</span> {
+  <span class="var">material</span>: <span class="str">'rgba(255, 255, 0, 0.3)'</span>,   <span class="cmt">// 填充色</span>
+  <span class="var">outline</span>: <span class="kw">true</span>,                             <span class="cmt">// 显示边框</span>
+  <span class="var">outlineColor</span>: <span class="str">'rgba(255, 255, 0, 1)'</span>,    <span class="cmt">// 边框色</span>
+  <span class="var">outlineWidth</span>: <span class="num">2</span>,                           <span class="cmt">// 边框宽度</span>
+  <span class="var">height</span>: <span class="num">0</span>,                                  <span class="cmt">// 贴地高度</span>
+};
+
+<span class="cmt">// 对象方法：设置相机飞行动画</span>
+<span class="kw">const</span> <span class="var">cameraConfig</span> <span class="op">=</span> {
+  <span class="var">destination</span>: [<span class="num">116.4</span>, <span class="num">39.9</span>, <span class="num">5000</span>],  <span class="cmt">// 目标坐标 + 高度</span>
+  <span class="var">orientation</span>: {
+    <span class="var">heading</span>: <span class="num">0</span>,           <span class="cmt">// 朝向（弧度）</span>
+    <span class="var">pitch</span>: <span class="op">-</span><span class="fn">Math</span>.<span class="var">PI</span> <span class="op">/</span> <span class="num">4</span>,  <span class="cmt">// 俯仰角</span>
+    <span class="var">roll</span>: <span class="num">0</span>,
+  },
+  <span class="var">duration</span>: <span class="num">3</span>,  <span class="cmt">// 飞行持续时间（秒）</span>
+};
+</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>📊 场景 3：轨迹数据处理</h3>
+      <p>利用数组方法处理 GPS 轨迹数据——这是 CesiumJS 的典型任务：</p>
+<pre><code><span class="cmt">// GPS 轨迹数组（每个点是一个对象）</span>
+<span class="kw">const</span> <span class="var">gpsTrack</span> <span class="op">=</span> [
+  { <span class="var">time</span>: <span class="str">'08:00'</span>, <span class="var">lon</span>: <span class="num">116.4</span>, <span class="var">lat</span>: <span class="num">39.9</span>, <span class="var">alt</span>: <span class="num">0</span> },
+  { <span class="var">time</span>: <span class="str">'08:05'</span>, <span class="var">lon</span>: <span class="num">116.5</span>, <span class="var">lat</span>: <span class="num">40.0</span>, <span class="var">alt</span>: <span class="num">200</span> },
+  { <span class="var">time</span>: <span class="str">'08:10'</span>, <span class="var">lon</span>: <span class="num">116.6</span>, <span class="var">lat</span>: <span class="num">40.1</span>, <span class="var">alt</span>: <span class="num">500</span> },
+  { <span class="var">time</span>: <span class="str">'08:15'</span>, <span class="var">lon</span>: <span class="num">116.7</span>, <span class="var">lat</span>: <span class="num">40.2</span>, <span class="var">alt</span>: <span class="num">800</span> },
+  { <span class="var">time</span>: <span class="str">'08:20'</span>, <span class="var">lon</span>: <span class="num">116.8</span>, <span class="var">lat</span>: <span class="num">40.3</span>, <span class="var">alt</span>: <span class="num">1200</span> },
+];
+
+<span class="cmt">// map：提取所有经度</span>
+<span class="kw">const</span> <span class="var">lons</span> <span class="op">=</span> <span class="var">gpsTrack</span>.<span class="fn">map</span>(<span class="var">p</span> <span class="op">=></span> <span class="var">p</span>.<span class="var">lon</span>);
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">lons</span>); <span class="cmt">// [116.4, 116.5, 116.6, 116.7, 116.8]</span>
+
+<span class="cmt">// reduce：计算平均海拔</span>
+<span class="kw">const</span> <span class="var">avgAlt</span> <span class="op">=</span> <span class="var">gpsTrack</span>.<span class="fn">reduce</span>((<span class="var">sum</span>, <span class="var">p</span>) <span class="op">=></span> <span class="var">sum</span> <span class="op">+</span> <span class="var">p</span>.<span class="var">alt</span>, <span class="num">0</span>) <span class="op">/</span> <span class="var">gpsTrack</span>.<span class="var">length</span>;
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">avgAlt</span>); <span class="cmt">// 540</span>
+
+<span class="cmt">// filter：找出高于 500m 的航点</span>
+<span class="kw">const</span> <span class="var">highAlt</span> <span class="op">=</span> <span class="var">gpsTrack</span>.<span class="fn">filter</span>(<span class="var">p</span> <span class="op">=></span> <span class="var">p</span>.<span class="var">alt</span> <span class="op">></span> <span class="num">500</span>);
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">highAlt</span>.<span class="fn">length</span>); <span class="cmt">// 3</span>
+
+<span class="cmt">// find：找到海拔超过 1000 的第一个点</span>
+<span class="kw">const</span> <span class="var">firstHigh</span> <span class="op">=</span> <span class="var">gpsTrack</span>.<span class="fn">find</span>(<span class="var">p</span> <span class="op">=></span> <span class="var">p</span>.<span class="var">alt</span> <span class="op">></span> <span class="num">1000</span>);
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">firstHigh</span>); <span class="cmt">// { time: '08:20', lon: 116.8, lat: 40.3, alt: 1200 }</span>
+</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>🧩 场景 4：图层管理</h3>
+      <p>CesiumJS 中的图层管理本质就是对象数组的增删操作：</p>
+<pre><code><span class="cmt">// 模拟图层管理系统</span>
+<span class="kw">const</span> <span class="var">layers</span> <span class="op">=</span> [
+  { <span class="var">id</span>: <span class="str">'base'</span>,     <span class="var">name</span>: <span class="str">'底图'</span>,   <span class="var">visible</span>: <span class="kw">true</span>,  <span class="var">opacity</span>: <span class="num">1.0</span> },
+  { <span class="var">id</span>: <span class="str">'building'</span>, <span class="var">name</span>: <span class="str">'建筑'</span>,   <span class="var">visible</span>: <span class="kw">true</span>,  <span class="var">opacity</span>: <span class="num">0.8</span> },
+  { <span class="var">id</span>: <span class="str">'marker'</span>,   <span class="var">name</span>: <span class="str">'标记点'</span>, <span class="var">visible</span>: <span class="kw">false</span>, <span class="var">opacity</span>: <span class="num">1.0</span> },
+];
+
+<span class="cmt">// 添加新图层</span>
+<span class="var">layers</span>.<span class="fn">push</span>({ <span class="var">id</span>: <span class="str">'weather'</span>, <span class="var">name</span>: <span class="str">'天气'</span>, <span class="var">visible</span>: <span class="kw">true</span>, <span class="var">opacity</span>: <span class="num">0.5</span> });
+
+<span class="cmt">// 删除指定图层</span>
+<span class="kw">const</span> <span class="var">idx</span> <span class="op">=</span> <span class="var">layers</span>.<span class="fn">findIndex</span>(<span class="var">l</span> <span class="op">=></span> <span class="var">l</span>.<span class="var">id</span> <span class="op">===</span> <span class="str">'marker'</span>);
+<span class="kw">if</span> (<span class="var">idx</span> <span class="op">!==</span> <span class="op">-</span><span class="num">1</span>) <span class="var">layers</span>.<span class="fn">splice</span>(<span class="var">idx</span>, <span class="num">1</span>);
+
+<span class="cmt">// 获取所有可见图层</span>
+<span class="kw">const</span> <span class="var">visibleLayers</span> <span class="op">=</span> <span class="var">layers</span>.<span class="fn">filter</span>(<span class="var">l</span> <span class="op">=></span> <span class="var">l</span>.<span class="var">visible</span>);
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">visibleLayers</span>.<span class="fn">map</span>(<span class="var">l</span> <span class="op">=></span> <span class="var">l</span>.<span class="var">name</span>).<span class="fn">join</span>(<span class="str">', '</span>));
+<span class="cmt">// "底图, 建筑, 天气"</span>
+
+<span class="cmt">// 切换图层可见性</span>
+<span class="kw">const</span> <span class="var">toggleLayer</span> <span class="op">=</span> (<span class="var">id</span>) <span class="op">=></span> {
+  <span class="kw">const</span> <span class="var">layer</span> <span class="op">=</span> <span class="var">layers</span>.<span class="fn">find</span>(<span class="var">l</span> <span class="op">=></span> <span class="var">l</span>.<span class="var">id</span> <span class="op">===</span> <span class="var">id</span>);
+  <span class="kw">if</span> (<span class="var">layer</span>) <span class="var">layer</span>.<span class="var">visible</span> <span class="op">=</span> <span class="op">!</span><span class="var">layer</span>.<span class="var">visible</span>;
+};
+</code></pre>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 8: 练习题                                             -->
+  <!-- ============================================================ -->
+  <div class="section" id="s8">
+    <div class="section-header">
+      <div class="section-num">8</div>
+      <h2>练习题</h2>
+      <span class="tag">PRACTICE</span>
+    </div>
+
+    <div class="practice">
+      <h2>🎯 动手练习</h2>
+      <p>在下方控制台中输入代码并运行，验证你的答案：</p>
+
+      <div class="exercise">
+        <div class="q">题 1：数组操作——城市列表</div>
+        <p style="color:var(--text);font-size:14px;">创建一个数组 <code>cities</code> 包含你喜欢的 5 个城市名。执行以下操作：①用 <code>push</code> 添加第 6 个城市；②用 <code>slice</code> 取出前 3 个；③用 <code>join</code> 将它们拼成一个字符串，用 <code>" → "</code> 分隔。</p>
+<pre><code><span class="cmt">// 提示：</span>
+<span class="kw">const</span> <span class="var">cities</span> <span class="op">=</span> [<span class="str">'北京'</span>, <span class="str">'上海'</span>, <span class="str">'广州'</span>, <span class="str">'深圳'</span>, <span class="str">'杭州'</span>];
+<span class="var">cities</span>.<span class="fn">push</span>(<span class="str">'___'</span>);
+<span class="kw">const</span> <span class="var">top3</span> <span class="op">=</span> <span class="var">cities</span>.<span class="fn">slice</span>(<span class="num">0</span>, <span class="num">3</span>);
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">top3</span>.<span class="fn">join</span>(<span class="str">' → '</span>));
+</code></pre>
+      </div>
+
+      <div class="exercise">
+        <div class="q">题 2：数组方法——学生成绩处理</div>
+        <p style="color:var(--text);font-size:14px;">给定学生成绩数组，请用数组方法完成：① 过滤出及格的成绩（≥60）；② 将及格成绩乘以 1.1 做加分处理；③ 计算加分后的平均分。</p>
+<pre><code><span class="kw">const</span> <span class="var">scores</span> <span class="op">=</span> [<span class="num">45</span>, <span class="num">78</span>, <span class="num">92</span>, <span class="num">55</span>, <span class="num">88</span>, <span class="num">60</span>, <span class="num">39</span>];
+
+<span class="cmt">// 你的代码：</span>
+<span class="kw">const</span> <span class="var">passed</span> <span class="op">=</span> <span class="var">scores</span>.<span class="fn">___</span>(<span class="var">s</span> <span class="op">=></span> <span class="var">s</span> <span class="op">>=</span> <span class="num">60</span>);           <span class="cmt">// ① 过滤</span>
+<span class="kw">const</span> <span class="var">boosted</span> <span class="op">=</span> <span class="var">passed</span>.<span class="fn">___</span>(<span class="var">s</span> <span class="op">=></span> <span class="var">s</span> <span class="op">*</span> <span class="num">1.1</span>);      <span class="cmt">// ② 映射</span>
+<span class="kw">const</span> <span class="var">avg</span> <span class="op">=</span> <span class="var">boosted</span>.<span class="fn">___</span>((<span class="var">a</span>, <span class="var">b</span>) <span class="op">=></span> <span class="var">a</span> <span class="op">+</span> <span class="var">b</span>) <span class="op">/</span> <span class="var">boosted</span>.<span class="var">length</span>; <span class="cmt">// ③ 归约后求平均</span>
+
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="str">'及格成绩：'</span>, <span class="var">passed</span>);
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="str">'加分后：'</span>, <span class="var">boosted</span>);
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="str">'加分后平均：'</span>, <span class="var">avg</span>);
+</code></pre>
+      </div>
+
+      <div class="exercise">
+        <div class="q">题 3：对象与解构——地图标注数据（CesiumJS 关联）</div>
+        <p style="color:var(--text);font-size:14px;">给定一个地图标注对象数组，用 <code>map</code> + 解构 提取所有标注的名称和坐标摘要：</p>
+<pre><code><span class="kw">const</span> <span class="var">markers</span> <span class="op">=</span> [
+  { <span class="var">name</span>: <span class="str">'天安门'</span>, <span class="var">position</span>: [<span class="num">116.4</span>, <span class="num">39.9</span>], <span class="var">type</span>: <span class="str">'poi'</span> },
+  { <span class="var">name</span>: <span class="str">'浦东机场'</span>, <span class="var">position</span>: [<span class="num">121.8</span>, <span class="num">31.1</span>], <span class="var">type</span>: <span class="str">'airport'</span> },
+  { <span class="var">name</span>: <span class="str">'广州塔'</span>, <span class="var">position</span>: [<span class="num">113.3</span>, <span class="num">23.1</span>], <span class="var">type</span>: <span class="str">'landmark'</span> },
+];
+
+<span class="cmt">// 你的代码：用解构提取并格式化输出</span>
+<span class="kw">const</span> <span class="var">labels</span> <span class="op">=</span> <span class="var">markers</span>.<span class="fn">map</span>(({ <span class="var">name</span>, <span class="var">position</span>: [<span class="var">lon</span>, <span class="var">lat</span>] }) <span class="op">=></span> {
+  <span class="kw">return</span> <span class="str">`<span class="op">${</span><span class="var">name</span><span class="op">}</span> 位于 (<span class="op">${</span><span class="var">lon</span><span class="op">}</span>, <span class="op">${</span><span class="var">lat</span><span class="op">}</span>)`</span>;
+});
+
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">labels</span>);
+</code></pre>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 9: 交互控制台                                          -->
+  <!-- ============================================================ -->
+  <div id="s9" style="margin-bottom:52px;">
+    <div class="section-header">
+      <div class="section-num">9</div>
+      <h2>在线练习控制台</h2>
+      <span class="tag">SANDBOX</span>
+    </div>
+
+    <p style="margin-bottom:16px;color:var(--muted);">直接在这里写 JavaScript，点击运行或按 <kbd style="background:var(--surface);padding:1px 6px;border-radius:4px;border:1px solid var(--border);">Ctrl+Enter</kbd> 查看结果：</p>
+
+    <div class="console-area">
+      <div class="console-header">
+        <div class="console-dots">
+          <div class="dot dot-r"></div>
+          <div class="dot dot-y"></div>
+          <div class="dot dot-g"></div>
+        </div>
+        <span>JS SANDBOX</span>
+        <span style="font-size:11px;color:var(--muted);">Day 03</span>
+      </div>
+      <textarea id="sandbox-code" spellcheck="false">// 试试数组和对象的基础操作：
+
+// 1. 创建一个城市数组
+const cities = ['北京', '上海', '广州', '深圳', '杭州'];
+console.log('城市列表：', cities);
+console.log('城市数量：', cities.length);
+
+// 2. map + filter 组合
+const scores = [45, 78, 92, 55, 88, 60, 39];
+const passedBoosted = scores
+  .filter(s => s >= 60)
+  .map(s => s * 1.1);
+console.log('及格加分后：', passedBoosted);
+
+// 3. 创建一个对象
+const beijing = {
+  name: '北京',
+  lon: 116.4,
+  lat: 39.9,
+  getSummary() {
+    return `${this.name} (${this.lon}°, ${this.lat}°)`;
+  },
+};
+console.log(beijing.getSummary());
+
+// 4. 解构赋值
+const { name, lon, lat } = beijing;
+console.log(`解构提取：${name} 经度=${lon} 纬度=${lat}`);
+
+// 5. 处理坐标数组
+const coords = [
+  [116.4, 39.9],
+  [121.5, 31.2],
+  [113.3, 23.1],
+];
+const labeled = coords.map(([lon, lat], i) =>
+  `点${i + 1}: (${lon}, ${lat})`
+);
+console.log(labeled);
+</textarea>
+      <div class="console-actions">
+        <button class="btn btn-run" onclick="runCode()">▶ 运行</button>
+        <button class="btn btn-clear" onclick="clearOutput()">清空输出</button>
+        <button class="btn btn-clear" onclick="resetCode()">重置代码</button>
+      </div>
+      <div id="output-box">// 点击"运行"查看输出结果...</div>
+    </div>
+  </div>
+
+
+  <!-- 今日总结 -->
+  <div class="card" style="border-color:var(--accent);border-left-width:4px;">
+    <h3 style="color:var(--accent)">📋 今日知识点总结</h3>
+    <ul style="margin-top:12px;">
+      <li>✅ 数组是<strong>有序元素集合</strong>，用 <code>[]</code> 创建；索引从 0 开始；<code>length</code> 表示元素个数</li>
+      <li>✅ 变异方法（<code>push/pop/shift/unshift/splice/sort/reverse</code>）会<strong>修改原数组</strong></li>
+      <li>✅ 非变异方法（<code>map/filter/reduce/slice/concat</code>）<strong>返回新数组</strong>，不修改原数组</li>
+      <li>✅ <code>map</code> 用于转换、<code>filter</code> 用于筛选、<code>reduce</code> 用于归约，三者可以<strong>链式调用</strong></li>
+      <li>✅ 对象是<strong>键值对集合</strong>，用 <code>{}</code> 创建；用 <code>.</code> 或 <code>[]</code> 访问属性</li>
+      <li>✅ <code>const</code> 对象可以修改内部属性，但不能重新绑定引用</li>
+      <li>✅ 对象方法中的 <code>this</code> 指向<strong>调用该方法的对象</strong></li>
+      <li>✅ 解构赋值是 ES6 的强大特性：数组按<strong>位置</strong>匹配，对象按<strong>属性名</strong>匹配</li>
+      <li>✅ <code>Object.keys()</code> / <code>values()</code> / <code>entries()</code> 是遍历对象的推荐方式</li>
+    </ul>
+  </div>
+
+</div><!-- /container -->
+
+<!-- ===== FOOTER ===== -->
+<div class="footer">
+  <p>🚀 <strong>每日JS</strong> — JavaScript → CesiumJS 学习路径</p>
+  <p style="margin-top:6px;">Day 03 / 数组与对象 · 明天继续：<strong>控制流</strong></p>
+</div>
+
+
+<!-- ===== SCRIPT ===== -->
+<script>
+  const DEFAULT_CODE = document.getElementById('sandbox-code').value;
+
+  function runCode() {
+    const code = document.getElementById('sandbox-code').value;
+    const outputBox = document.getElementById('output-box');
+    const logs = [];
+
+    const origLog = console.log;
+    const origError = console.error;
+    const origWarn = console.warn;
+
+    console.log = (...args) => {
+      logs.push(args.map(a => {
+        if (typeof a === 'object' && a !== null) {
+          try { return JSON.stringify(a, null, 2); } catch { return String(a); }
+        }
+        return String(a);
+      }).join(' '));
+      origLog(...args);
+    };
+    console.error = (...args) => {
+      logs.push('❌ ' + args.join(' '));
+      origError(...args);
+    };
+    console.warn = (...args) => {
+      logs.push('⚠️ ' + args.join(' '));
+      origWarn(...args);
+    };
+
+    try {
+      eval(code);
+      outputBox.innerHTML = logs.length
+        ? logs.map(l => `<span>${escHtml(l)}</span>`).join('\n')
+        : '<span style="color:var(--muted)">// 代码运行成功（无输出）</span>';
+    } catch(e) {
+      outputBox.innerHTML = `<span class="err">❌ ${escHtml(e.message)}</span>`;
+    } finally {
+      console.log = origLog;
+      console.error = origError;
+      console.warn = origWarn;
+    }
+  }
+
+  function clearOutput() {
+    document.getElementById('output-box').innerHTML = '// 输出已清空...';
+  }
+
+  function resetCode() {
+    document.getElementById('sandbox-code').value = DEFAULT_CODE;
+    clearOutput();
+  }
+
+  function escHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  // Ctrl+Enter 运行
+  document.getElementById('sandbox-code').addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      e.preventDefault();
+      runCode();
+    }
+  });
+</script>
+</body>
+</html>

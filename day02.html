@@ -1,0 +1,1159 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>JavaScript 每日学习 — Day 02：函数与作用域</title>
+  <style>
+    /* ===== 全局 ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0f1117;
+      --surface:   #1a1d27;
+      --card:      #21253a;
+      --border:    #2e3350;
+      --accent:    #61dafb;
+      --accent2:   #f7c948;
+      --accent3:   #7ee787;
+      --accent4:   #ff7b72;
+      --text:      #cdd3e0;
+      --muted:     #6e7a96;
+      --tag-bg:    #1e3a5f;
+      --code-bg:   #161b2e;
+    }
+
+    body {
+      font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.75;
+      font-size: 15px;
+    }
+
+    /* ===== 顶部 Banner ===== */
+    .hero {
+      background: linear-gradient(135deg, #0d1b3e 0%, #1a2d5a 50%, #0f2040 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 52px 24px 40px;
+      text-align: center;
+    }
+    .hero .badge {
+      display: inline-block;
+      background: var(--accent);
+      color: #0a0e1a;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 4px 12px;
+      border-radius: 20px;
+      margin-bottom: 16px;
+    }
+    .hero h1 {
+      font-size: clamp(24px, 5vw, 42px);
+      font-weight: 800;
+      color: #fff;
+      line-height: 1.2;
+      margin-bottom: 12px;
+    }
+    .hero h1 span { color: var(--accent); }
+    .hero p {
+      color: var(--muted);
+      font-size: 15px;
+      max-width: 560px;
+      margin: 0 auto 24px;
+    }
+    .hero .meta {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      flex-wrap: wrap;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .hero .meta span { display: flex; align-items: center; gap: 5px; }
+
+    /* ===== 布局 ===== */
+    .container { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; }
+
+    /* ===== 目录卡片 ===== */
+    .toc {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--accent);
+      border-radius: 12px;
+      padding: 24px 28px;
+      margin-bottom: 40px;
+    }
+    .toc h2 { font-size: 14px; letter-spacing: 1px; text-transform: uppercase; color: var(--accent); margin-bottom: 14px; }
+    .toc ol { padding-left: 20px; }
+    .toc li { margin: 6px 0; }
+    .toc a { color: var(--text); text-decoration: none; }
+    .toc a:hover { color: var(--accent); }
+
+    /* ===== 章节标题 ===== */
+    .section { margin-bottom: 52px; }
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 24px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    .section-num {
+      width: 38px; height: 38px;
+      border-radius: 10px;
+      background: var(--accent);
+      color: #0a0e1a;
+      font-weight: 800;
+      font-size: 16px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .section-header h2 {
+      font-size: 22px;
+      font-weight: 700;
+      color: #fff;
+    }
+    .section-header .tag {
+      font-size: 11px;
+      background: var(--tag-bg);
+      color: var(--accent);
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    /* ===== 卡片 ===== */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+    .card h3 {
+      font-size: 16px;
+      color: var(--accent2);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card p { margin-bottom: 10px; color: var(--text); }
+    .card p:last-child { margin-bottom: 0; }
+
+    /* ===== 代码块 ===== */
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px 22px;
+      overflow-x: auto;
+      margin: 16px 0;
+      font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+      font-size: 13.5px;
+      line-height: 1.7;
+    }
+    code { font-family: inherit; }
+
+    /* 语法着色 */
+    .kw  { color: #c792ea; }
+    .str { color: #c3e88d; }
+    .num { color: #f78c6c; }
+    .cmt { color: #546e7a; font-style: italic; }
+    .fn  { color: #82aaff; }
+    .var { color: #eeffff; }
+    .op  { color: var(--accent); }
+    .typ { color: var(--accent2); }
+    .out { color: var(--accent3); }
+
+    /* ===== 提示框 ===== */
+    .tip, .warn, .info {
+      border-radius: 10px;
+      padding: 14px 18px;
+      margin: 16px 0;
+      font-size: 14px;
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+    .tip  { background: #0d3321; border-left: 4px solid var(--accent3); }
+    .warn { background: #3a2500; border-left: 4px solid var(--accent2); }
+    .info { background: #0d1e3a; border-left: 4px solid var(--accent); }
+    .tip .icon, .warn .icon, .info .icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+
+    /* ===== 对比表格 ===== */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 14px;
+    }
+    th {
+      background: var(--surface);
+      color: var(--accent);
+      padding: 12px 16px;
+      text-align: left;
+      border-bottom: 2px solid var(--border);
+      font-weight: 600;
+    }
+    td {
+      padding: 11px 16px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+      vertical-align: top;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(97, 218, 251, 0.04); }
+    .td-kw { color: #c792ea; font-family: 'Cascadia Code','Fira Code',monospace; font-weight: 600; }
+    .td-type { color: var(--accent2); }
+    .td-good { color: var(--accent3); }
+    .td-bad  { color: var(--accent4); }
+
+    /* ===== 两列网格 ===== */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 600px) { .grid-2 { grid-template-columns: 1fr; } }
+
+    /* ===== 练习区 ===== */
+    .practice {
+      background: linear-gradient(135deg, #0d2238, #1a2d1a);
+      border: 1px solid #2a4a2a;
+      border-radius: 12px;
+      padding: 28px;
+      margin-top: 48px;
+    }
+    .practice h2 {
+      font-size: 20px;
+      color: var(--accent3);
+      margin-bottom: 8px;
+    }
+    .practice p { color: var(--muted); margin-bottom: 20px; font-size: 14px; }
+    .exercise {
+      background: var(--code-bg);
+      border: 1px dashed #2a4a2a;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+    .exercise .q {
+      color: var(--accent2);
+      font-weight: 600;
+      margin-bottom: 12px;
+      font-size: 14px;
+    }
+    .exercise pre { margin: 0; }
+
+    /* ===== 交互控制台 ===== */
+    .console-area {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-top: 48px;
+    }
+    .console-header {
+      background: var(--surface);
+      padding: 12px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+    .console-header span { color: var(--accent); font-size: 13px; font-weight: 600; letter-spacing: 1px; }
+    .console-dots { display: flex; gap: 6px; }
+    .dot { width: 12px; height: 12px; border-radius: 50%; }
+    .dot-r { background: #ff5f57; }
+    .dot-y { background: #febc2e; }
+    .dot-g { background: #28c840; }
+    #sandbox-code {
+      width: 100%;
+      background: var(--code-bg);
+      color: var(--accent3);
+      border: none;
+      padding: 18px 20px;
+      font-family: 'Cascadia Code','Fira Code',monospace;
+      font-size: 13.5px;
+      line-height: 1.7;
+      resize: vertical;
+      min-height: 140px;
+      outline: none;
+    }
+    .console-actions {
+      padding: 12px 18px;
+      display: flex;
+      gap: 10px;
+      border-top: 1px solid var(--border);
+    }
+    .btn {
+      padding: 8px 20px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      transition: opacity .2s;
+    }
+    .btn:hover { opacity: .85; }
+    .btn-run { background: var(--accent); color: #0a0e1a; }
+    .btn-clear { background: var(--surface); color: var(--muted); border: 1px solid var(--border); }
+    #output-box {
+      padding: 16px 20px;
+      min-height: 60px;
+      font-family: 'Cascadia Code','Fira Code',monospace;
+      font-size: 13px;
+      color: var(--accent3);
+      border-top: 1px solid var(--border);
+      white-space: pre-wrap;
+    }
+    #output-box .err { color: var(--accent4); }
+
+    /* ===== 进度条 ===== */
+    .progress-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 22px 26px;
+      margin-bottom: 40px;
+    }
+    .progress-card h3 { font-size: 13px; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); margin-bottom: 16px; }
+    .progress-list { display: flex; flex-wrap: wrap; gap: 8px; }
+    .progress-item {
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+    }
+    .pi-done  { background: #0d3321; color: var(--accent3); border: 1px solid #1a4d2a; }
+    .pi-today { background: #1e3a5f; color: var(--accent); border: 1px solid #2a5a8f; }
+    .pi-next  { background: var(--card); color: var(--muted); border: 1px solid var(--border); }
+
+    /* ===== 底部 ===== */
+    .footer {
+      text-align: center;
+      padding: 40px 24px 20px;
+      color: var(--muted);
+      font-size: 13px;
+      border-top: 1px solid var(--border);
+    }
+    .footer strong { color: var(--accent); }
+
+    /* ===== inline code ===== */
+    p code, li code, td code {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      padding: 1px 6px;
+      border-radius: 5px;
+      font-family: 'Cascadia Code','Fira Code',monospace;
+      font-size: 12.5px;
+      color: var(--accent);
+    }
+    ul { padding-left: 20px; }
+    li { margin: 5px 0; }
+
+    /* ===== 箭头函数特殊着色 ===== */
+    .arrow { color: var(--accent); }
+  </style>
+</head>
+<body>
+
+<!-- ===== HERO ===== -->
+<div class="hero">
+  <div class="badge">JavaScript 学习路径</div>
+  <h1>Day 02 — <span>函数与作用域</span></h1>
+  <p>函数是 JavaScript 的"动词"—它们让代码动起来。今天掌握如何定义函数、传递参数以及理解作用域的边界。</p>
+  <div class="meta">
+    <span>📅 第 2 天</span>
+    <span>⏱ 预计 50 分钟</span>
+    <span>🎯 目标：CesiumJS 地球开发</span>
+    <span>📊 基础阶段</span>
+  </div>
+</div>
+
+<!-- ===== CONTAINER ===== -->
+<div class="container">
+
+  <!-- 学习进度 -->
+  <div class="progress-card">
+    <h3>📍 学习路线图</h3>
+    <div class="progress-list">
+      <div class="progress-item pi-done">Day 01 · 变量与数据类型 ✅</div>
+      <div class="progress-item pi-today">Day 02 · 函数与作用域 ← 今天</div>
+      <div class="progress-item pi-next">Day 03 · 数组与对象</div>
+      <div class="progress-item pi-next">Day 04 · 控制流</div>
+      <div class="progress-item pi-next">Day 05 · DOM 操作</div>
+      <div class="progress-item pi-next">Day 06 · 事件与异步</div>
+      <div class="progress-item pi-next">Day 07 · ES6+ 语法</div>
+      <div class="progress-item pi-next">Day 08 · 模块与类</div>
+      <div class="progress-item pi-next">…</div>
+      <div class="progress-item pi-next">CesiumJS 阶段 🌍</div>
+    </div>
+  </div>
+
+  <!-- 目录 -->
+  <div class="toc">
+    <h2>📚 本课目录</h2>
+    <ol>
+      <li><a href="#s1">函数的三种定义方式</a></li>
+      <li><a href="#s2">参数：默认值、剩余参数、解构</a></li>
+      <li><a href="#s3">返回值与提前返回</a></li>
+      <li><a href="#s4">作用域：全局、函数与块级</a></li>
+      <li><a href="#s5">作用域链与闭包入门</a></li>
+      <li><a href="#s6">立即执行函数 (IIFE)</a></li>
+      <li><a href="#s7">🌍 CesiumJS 关联场景</a></li>
+      <li><a href="#s8">练习题</a></li>
+      <li><a href="#s9">在线练习控制台</a></li>
+    </ol>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 1: 函数的三种定义方式                                  -->
+  <!-- ============================================================ -->
+  <div class="section" id="s1">
+    <div class="section-header">
+      <div class="section-num">1</div>
+      <h2>函数的三种定义方式</h2>
+      <span class="tag">FUNCTIONS</span>
+    </div>
+
+    <p>函数是 JavaScript 中<strong>可重复使用的代码块</strong>。JS 有三种主要定义方式，各有优劣：</p>
+
+    <table>
+      <tr>
+        <th>方式</th>
+        <th>语法示例</th>
+        <th>提升 (Hoisting)</th>
+        <th><code>this</code> 绑定</th>
+        <th>建议</th>
+      </tr>
+      <tr>
+        <td class="td-kw">函数声明</td>
+        <td><code>function foo() {}</code></td>
+        <td class="td-good">✅ 整体提升</td>
+        <td>动态（调用时决定）</td>
+        <td class="td-good">✅ 通用首选</td>
+      </tr>
+      <tr>
+        <td class="td-kw">函数表达式</td>
+        <td><code>const foo = function() {}</code></td>
+        <td class="td-bad">❌ 只提升变量</td>
+        <td>动态（调用时决定）</td>
+        <td>需赋给变量时</td>
+      </tr>
+      <tr>
+        <td class="td-kw">箭头函数</td>
+        <td><code>const foo = () => {}</code></td>
+        <td class="td-bad">❌ 不提升</td>
+        <td>静态（词法作用域）</td>
+        <td class="td-good">✅ 回调/简短函数</td>
+      </tr>
+    </table>
+
+    <div class="card">
+      <h3>📝 方式一：函数声明</h3>
+      <p>最经典的写法，会被<strong>提升 (Hoisting)</strong>——可以在定义之前调用。</p>
+<pre><code><span class="cmt">// ✅ 可以在声明前调用（提升）</span>
+<span class="fn">greet</span>(<span class="str">"张三"</span>);
+
+<span class="kw">function</span> <span class="fn">greet</span>(<span class="var">name</span>) {
+  <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">`你好，<span class="op">${</span><span class="var">name</span><span class="op">}</span>！`</span>);
+}
+
+<span class="fn">greet</span>(<span class="str">"李四"</span>);  <span class="cmt">// 同样可以调用</span>
+</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>📦 方式二：函数表达式</h3>
+      <p>把函数赋值给变量。不会整体提升——只有变量声明被提升。</p>
+<pre><code><span class="cmt">// ❌ 不能在赋值前调用</span>
+<span class="cmt">// sayHi("张三");  // ReferenceError: Cannot access 'sayHi' before initialization</span>
+
+<span class="kw">const</span> <span class="fn">sayHi</span> <span class="op">=</span> <span class="kw">function</span>(<span class="var">name</span>) {
+  <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">`Hi, <span class="op">${</span><span class="var">name</span><span class="op">}</span>!`</span>);
+};
+
+<span class="fn">sayHi</span>(<span class="str">"张三"</span>);  <span class="cmt">// ✅ 定义后调用没问题</span>
+</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>⚡ 方式三：箭头函数 (ES6+)</h3>
+      <p><strong>现代 JS 中最常用的写法</strong>。简洁、不绑定自己的 <code>this</code>，非常适合回调。</p>
+<pre><code><span class="cmt">// 完整写法</span>
+<span class="kw">const</span> <span class="fn">add</span> <span class="op">=</span> (<span class="var">a</span>, <span class="var">b</span>) <span class="op">=></span> {
+  <span class="kw">return</span> <span class="var">a</span> <span class="op">+</span> <span class="var">b</span>;
+};
+
+<span class="cmt">// 简写：只有一个表达式时，可省略 {} 和 return</span>
+<span class="kw">const</span> <span class="fn">add2</span> <span class="op">=</span> (<span class="var">a</span>, <span class="var">b</span>) <span class="op">=></span> <span class="var">a</span> <span class="op">+</span> <span class="var">b</span>;
+
+<span class="cmt">// 只有一个参数时，可省略 ()</span>
+<span class="kw">const</span> <span class="fn">square</span> <span class="op">=</span> <span class="var">x</span> <span class="op">=></span> <span class="var">x</span> <span class="op">*</span> <span class="var">x</span>;
+
+<span class="cmt">// 无参数时，必须写 ()</span>
+<span class="kw">const</span> <span class="fn">sayHello</span> <span class="op">=</span> () <span class="op">=></span> <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">"Hello!"</span>);
+
+<span class="cmt">// 返回对象字面量：需要用 () 包裹</span>
+<span class="kw">const</span> <span class="fn">makePoint</span> <span class="op">=</span> (<span class="var">x</span>, <span class="var">y</span>) <span class="op">=></span> ({ <span class="var">x</span>, <span class="var">y</span> });
+
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="fn">add</span>(<span class="num">3</span>, <span class="num">5</span>));       <span class="cmt">// 8</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="fn">square</span>(<span class="num">4</span>));        <span class="cmt">// 16</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="fn">makePoint</span>(<span class="num">10</span>, <span class="num">20</span>)); <span class="cmt">// {x: 10, y: 20}</span>
+</code></pre>
+    </div>
+
+    <div class="tip">
+      <span class="icon">💡</span>
+      <div><strong>选择建议：</strong>现代代码中，<strong>箭头函数是最流行的默认选择</strong>。但当你需要 <code>this</code> 绑定（如对象方法）或用 <code>arguments</code> 对象时，仍需要用普通函数。今天先记住它们的区别，后面会深入。</div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 2: 参数                                               -->
+  <!-- ============================================================ -->
+  <div class="section" id="s2">
+    <div class="section-header">
+      <div class="section-num">2</div>
+      <h2>参数：默认值、剩余参数、解构</h2>
+      <span class="tag">PARAMETERS</span>
+    </div>
+
+    <div class="card">
+      <h3>🎯 默认参数值 (ES6+)</h3>
+      <p>调用时如果没传某个参数，自动使用默认值。</p>
+<pre><code><span class="kw">function</span> <span class="fn">createMarker</span>(<span class="var">name</span>, <span class="var">lng</span> <span class="op">=</span> <span class="num">116.4</span>, <span class="var">lat</span> <span class="op">=</span> <span class="num">39.9</span>, <span class="var">height</span> <span class="op">=</span> <span class="num">0</span>) {
+  <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">`📍 <span class="op">${</span><span class="var">name</span><span class="op">}</span>：经度 <span class="op">${</span><span class="var">lng</span><span class="op">}</span>，纬度 <span class="op">${</span><span class="var">lat</span><span class="op">}</span>，高度 <span class="op">${</span><span class="var">height</span><span class="op">}</span>m`</span>);
+}
+
+<span class="fn">createMarker</span>(<span class="str">"天安门"</span>);                       <span class="cmt">// 后三个参数用默认值</span>
+<span class="fn">createMarker</span>(<span class="str">"外滩"</span>, <span class="num">121.49</span>, <span class="num">31.23</span>);         <span class="cmt">// 覆盖前两个默认值</span>
+<span class="fn">createMarker</span>(<span class="str">"珠峰"</span>, <span class="num">86.92</span>, <span class="num">27.98</span>, <span class="num">8848</span>); <span class="cmt">// 全部覆盖</span>
+</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>📦 剩余参数 (Rest Parameters, ES6+)</h3>
+      <p>用 <code>...args</code> 捕获不定数量的参数为一个<strong>真数组</strong>，替代旧的 <code>arguments</code> 对象。</p>
+<pre><code><span class="kw">function</span> <span class="fn">sum</span>(<span class="op">...</span><span class="var">numbers</span>) {
+  <span class="kw">let</span> <span class="var">total</span> <span class="op">=</span> <span class="num">0</span>;
+  <span class="kw">for</span> (<span class="kw">const</span> <span class="var">n</span> <span class="kw">of</span> <span class="var">numbers</span>) {
+    <span class="var">total</span> <span class="op">+=</span> <span class="var">n</span>;
+  }
+  <span class="kw">return</span> <span class="var">total</span>;
+}
+
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="fn">sum</span>(<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>));       <span class="cmt">// 6</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="fn">sum</span>(<span class="num">10</span>, <span class="num">20</span>));          <span class="cmt">// 30</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="fn">sum</span>());                 <span class="cmt">// 0（空数组）</span>
+
+<span class="cmt">// 前面可以有固定参数，...rest 必须是最后一个</span>
+<span class="kw">function</span> <span class="fn">log</span>(<span class="var">prefix</span>, <span class="op">...</span><span class="var">messages</span>) {
+  <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">`[<span class="op">${</span><span class="var">prefix</span><span class="op">}</span>]`</span>, <span class="op">...</span><span class="var">messages</span>);
+}
+
+<span class="fn">log</span>(<span class="str">"Cesium"</span>, <span class="str">"加载地形数据..."</span>, <span class="str">"完成"</span>, <span class="num">200</span>);
+<span class="cmt">// [Cesium] 加载地形数据... 完成 200</span>
+</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>🔓 参数解构 (ES6+)</h3>
+      <p>直接从参数位置解构对象或数组，尤其适合配置对象。</p>
+<pre><code><span class="cmt">// 对象解构参数（CesiumJS 中最常见的模式）</span>
+<span class="kw">function</span> <span class="fn">initViewer</span>({ <span class="var">container</span>, <span class="var">zoom</span> <span class="op">=</span> <span class="num">12</span>, <span class="var">center</span> <span class="op">=</span> [<span class="num">0</span>, <span class="num">0</span>], <span class="var">enableLighting</span> <span class="op">=</span> <span class="kw">true</span> }) {
+  <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">`容器：<span class="op">${</span><span class="var">container</span><span class="op">}</span>，缩放：<span class="op">${</span><span class="var">zoom</span><span class="op">}</span>，中心点：[<span class="op">${</span><span class="var">center</span><span class="op">}</span>]`</span>);
+}
+
+<span class="cmt">// 只传必要参数</span>
+<span class="fn">initViewer</span>({ <span class="var">container</span>: <span class="str">"cesiumContainer"</span> });
+<span class="cmt">// 容器：cesiumContainer，缩放：12，中心点：[0,0]</span>
+
+<span class="cmt">// 完整配置</span>
+<span class="fn">initViewer</span>({
+  <span class="var">container</span>: <span class="str">"map"</span>,
+  <span class="var">zoom</span>: <span class="num">18</span>,
+  <span class="var">center</span>: [<span class="num">116.4</span>, <span class="num">39.9</span>],
+  <span class="var">enableLighting</span>: <span class="kw">false</span>
+});
+</code></pre>
+    </div>
+
+    <div class="info">
+      <span class="icon">ℹ️</span>
+      <div><strong>关于 <code>arguments</code>：</strong>普通函数内部有一个类数组对象 <code>arguments</code>（箭头函数没有）。但现代代码中，<code>...rest</code> 是更好的选择，因为它返回的是<strong>真数组</strong>，可以直接用 <code>forEach</code>、<code>map</code> 等方法。</div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 3: 返回值                                             -->
+  <!-- ============================================================ -->
+  <div class="section" id="s3">
+    <div class="section-header">
+      <div class="section-num">3</div>
+      <h2>返回值与提前返回</h2>
+      <span class="tag">RETURN</span>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <h3>↩️ return 语句</h3>
+        <p>函数通过 <code>return</code> 把结果"交还"给调用者。一旦执行 <code>return</code>，函数立即停止。</p>
+<pre><code><span class="kw">function</span> <span class="fn">multiply</span>(<span class="var">a</span>, <span class="var">b</span>) {
+  <span class="kw">return</span> <span class="var">a</span> <span class="op">*</span> <span class="var">b</span>;
+  <span class="cmt">// 这行永远不会执行 ↓</span>
+  <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">"不会打印"</span>);
+}
+
+<span class="kw">const</span> <var>result</var> <span class="op">=</span> <span class="fn">multiply</span>(<span class="num">6</span>, <span class="num">7</span>);
+<span class="fn">console</span>.<span class="fn">log</span>(<var>result</var>);  <span class="cmt">// 42</span>
+</code></pre>
+      </div>
+
+      <div class="card">
+        <h3>🚫 无 return = undefined</h3>
+        <p>如果函数没有 <code>return</code> 语句，则自动返回 <code>undefined</code>。</p>
+<pre><code><span class="kw">function</span> <span class="fn">doSomething</span>() {
+  <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">"执行了"</span>);
+  <span class="cmt">// 没有 return</span>
+}
+
+<span class="kw">const</span> <span class="var">val</span> <span class="op">=</span> <span class="fn">doSomething</span>();
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">val</span>);  <span class="cmt">// undefined</span>
+</code></pre>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>🛡️ 提前返回 (Early Return)</h3>
+      <p>提前 return 可以让代码更扁平，避免深层嵌套——这是<strong>推荐的编码风格</strong>。</p>
+<pre><code><span class="cmt">// ❌ 深层嵌套（不推荐）</span>
+<span class="kw">function</span> <span class="fn">getZoomLevel</span>(<span class="var">type</span>) {
+  <span class="kw">if</span> (<span class="var">type</span>) {
+    <span class="kw">if</span> (<span class="var">type</span> <span class="op">===</span> <span class="str">"city"</span>) {
+      <span class="kw">return</span> <span class="num">14</span>;
+    } <span class="kw">else</span> <span class="kw">if</span> (<span class="var">type</span> <span class="op">===</span> <span class="str">"building"</span>) {
+      <span class="kw">return</span> <span class="num">18</span>;
+    } <span class="kw">else</span> {
+      <span class="kw">return</span> <span class="num">10</span>;
+    }
+  }
+  <span class="kw">return</span> <span class="num">5</span>; <span class="cmt">// 默认值</span>
+}
+
+<span class="cmt">// ✅ 提前返回 + 扁平化（推荐）</span>
+<span class="kw">function</span> <span class="fn">getZoomLevel2</span>(<span class="var">type</span>) {
+  <span class="kw">if</span> (<span class="op">!</span><span class="var">type</span>) <span class="kw">return</span> <span class="num">5</span>;           <span class="cmt">// 提前返回默认值</span>
+  <span class="kw">if</span> (<span class="var">type</span> <span class="op">===</span> <span class="str">"city"</span>) <span class="kw">return</span> <span class="num">14</span>;
+  <span class="kw">if</span> (<span class="var">type</span> <span class="op">===</span> <span class="str">"building"</span>) <span class="kw">return</span> <span class="num">18</span>;
+  <span class="kw">return</span> <span class="num">10</span>;
+}
+</code></pre>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 4: 作用域                                             -->
+  <!-- ============================================================ -->
+  <div class="section" id="s4">
+    <div class="section-header">
+      <div class="section-num">4</div>
+      <h2>作用域：全局、函数与块级</h2>
+      <span class="tag">SCOPE</span>
+    </div>
+
+    <p>作用域决定了<strong>在哪里可以访问变量</strong>。JavaScript 有三层作用域：</p>
+
+    <div class="card">
+      <h3>🌐 全局作用域</h3>
+      <p>在所有函数和块之外声明的变量，<strong>整个程序任何位置</strong>都能访问。</p>
+<pre><code><span class="kw">const</span> <span class="var">APP_NAME</span> <span class="op">=</span> <span class="str">"CesiumEarth"</span>;  <span class="cmt">// 全局变量</span>
+
+<span class="kw">function</span> <span class="fn">showApp</span>() {
+  <span class="fn">console</span>.<span class="fn">log</span>(<span class="var">APP_NAME</span>);  <span class="cmt">// ✅ 可以访问</span>
+}
+
+<span class="fn">showApp</span>();
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">APP_NAME</span>);     <span class="cmt">// ✅ 也能访问</span>
+</code></pre>
+      <div class="warn" style="margin-bottom:0;">
+        <span class="icon">⚠️</span>
+        <div><strong>注意：</strong>全局变量过多会造成"命名污染"，应尽量减少使用。</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>🏠 函数作用域</h3>
+      <p>在函数内部声明的变量，<strong>只能在函数内部</strong>访问。</p>
+<pre><code><span class="kw">function</span> <span class="fn">initMap</span>() {
+  <span class="kw">const</span> <span class="var">apiKey</span> <span class="op">=</span> <span class="str">"abc123"</span>;  <span class="cmt">// 函数作用域内的变量</span>
+  <span class="fn">console</span>.<span class="fn">log</span>(<span class="var">apiKey</span>);      <span class="cmt">// ✅ 可以访问</span>
+}
+
+<span class="fn">initMap</span>();
+<span class="cmt">// console.log(apiKey);  ❌ ReferenceError: apiKey is not defined</span>
+</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>📐 块级作用域 (ES6+)</h3>
+      <p>用 <code>let</code>/<code>const</code> 声明的变量，只在最近的 <code>{}</code> 块内有效。这是 <code>var</code> 不具备的特性。</p>
+<pre><code><span class="cmt">// let/const：块级作用域</span>
+{
+  <span class="kw">const</span> <span class="var">x</span> <span class="op">=</span> <span class="num">10</span>;
+  <span class="kw">let</span> <span class="var">y</span> <span class="op">=</span> <span class="num">20</span>;
+  <span class="fn">console</span>.<span class="fn">log</span>(<span class="var">x</span>, <span class="var">y</span>);  <span class="cmt">// ✅ 10 20</span>
+}
+<span class="cmt">// console.log(x, y);  ❌ ReferenceError</span>
+
+<span class="cmt">// var：没有块级作用域！</span>
+{
+  <span class="kw">var</span> <span class="var">z</span> <span class="op">=</span> <span class="num">30</span>;
+}
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">z</span>);  <span class="cmt">// ✅ 30（var 泄漏到块外！）</span>
+
+<span class="cmt">// for 循环也是块级作用域</span>
+<span class="kw">for</span> (<span class="kw">let</span> <span class="var">i</span> <span class="op">=</span> <span class="num">0</span>; <span class="var">i</span> <span class="op">&lt;</span> <span class="num">3</span>; <span class="var">i</span><span class="op">++</span>) {
+  <span class="cmt">// i 只在这个块内有效</span>
+}
+<span class="cmt">// console.log(i);  ❌ ReferenceError</span>
+</code></pre>
+    </div>
+
+    <div class="tip">
+      <span class="icon">💡</span>
+      <div><strong>这就是为什么不用 <code>var</code>！</strong> <code>var</code> 无视 <code>{}</code> 边界，极易导致意外的变量覆盖和泄漏。坚持 <code>const</code>/<code>let</code>，让作用域规则简单明了。</div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 5: 作用域链与闭包入门                                   -->
+  <!-- ============================================================ -->
+  <div class="section" id="s5">
+    <div class="section-header">
+      <div class="section-num">5</div>
+      <h2>作用域链与闭包入门</h2>
+      <span class="tag">CLOSURE</span>
+    </div>
+
+    <div class="card">
+      <h3>🔗 作用域链</h3>
+      <p>当函数访问一个变量时，JavaScript 从<strong>当前作用域</strong>开始查找，逐级向上，直到全局作用域。</p>
+<pre><code><span class="kw">const</span> <span class="var">globalVar</span> <span class="op">=</span> <span class="str">"我在全局"</span>;
+
+<span class="kw">function</span> <span class="fn">outer</span>() {
+  <span class="kw">const</span> <span class="var">outerVar</span> <span class="op">=</span> <span class="str">"我在外层"</span>;
+
+  <span class="kw">function</span> <span class="fn">inner</span>() {
+    <span class="kw">const</span> <span class="var">innerVar</span> <span class="op">=</span> <span class="str">"我在内层"</span>;
+
+    <span class="fn">console</span>.<span class="fn">log</span>(<span class="var">innerVar</span>);  <span class="cmt">// ✅ 找到自己</span>
+    <span class="fn">console</span>.<span class="fn">log</span>(<span class="var">outerVar</span>);  <span class="cmt">// ✅ 向上找到外层</span>
+    <span class="fn">console</span>.<span class="fn">log</span>(<span class="var">globalVar</span>); <span class="cmt">// ✅ 继续向上找到全局</span>
+  }
+
+  <span class="fn">inner</span>();
+  <span class="cmt">// console.log(innerVar);  ❌ 外层无法访问内层变量</span>
+}
+
+<span class="fn">outer</span>();
+</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>🔐 闭包 (Closure) - 入门</h3>
+      <p>闭包 = 函数 + 它能访问的外部变量。当内部函数被返回并在外部调用时，它<strong>依然能记住</strong>它诞生时的环境。</p>
+<pre><code><span class="cmt">// 经典例子：创建"计数器"函数</span>
+<span class="kw">function</span> <span class="fn">createCounter</span>() {
+  <span class="kw">let</span> <span class="var">count</span> <span class="op">=</span> <span class="num">0</span>;  <span class="cmt">// 这个变量会被闭包"记住"</span>
+
+  <span class="kw">return</span> <span class="kw">function</span>() {
+    <span class="var">count</span><span class="op">++</span>;
+    <span class="kw">return</span> <span class="var">count</span>;
+  };
+}
+
+<span class="kw">const</span> <span class="var">counter1</span> <span class="op">=</span> <span class="fn">createCounter</span>();
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="fn">counter1</span>());  <span class="cmt">// 1</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="fn">counter1</span>());  <span class="cmt">// 2</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="fn">counter1</span>());  <span class="cmt">// 3</span>
+
+<span class="cmt">// 每次调用 createCounter() 创建独立的闭包</span>
+<span class="kw">const</span> <span class="var">counter2</span> <span class="op">=</span> <span class="fn">createCounter</span>();
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="fn">counter2</span>());  <span class="cmt">// 1（独立计数）</span>
+</code></pre>
+    </div>
+
+    <div class="info">
+      <span class="icon">ℹ️</span>
+      <div><strong>闭包在 CesiumJS 中无处不在：</strong>事件回调、材质函数、瓦片加载器都依赖闭包来保持状态。理解闭包是理解和调试大型 JS 应用的基础。</div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 6: IIFE                                               -->
+  <!-- ============================================================ -->
+  <div class="section" id="s6">
+    <div class="section-header">
+      <div class="section-num">6</div>
+      <h2>立即执行函数 (IIFE)</h2>
+      <span class="tag">IIFE</span>
+    </div>
+
+    <div class="card">
+      <h3>📦 什么是 IIFE？</h3>
+      <p>IIFE = <strong>I</strong>mmediately <strong>I</strong>nvoked <strong>F</strong>unction <strong>E</strong>xpression。定义后立即执行一次，且<strong>不会污染全局作用域</strong>。</p>
+<pre><code><span class="cmt">// 经典 IIFE 语法</span>
+(<span class="kw">function</span>() {
+  <span class="kw">const</span> <span class="var">privateVar</span> <span class="op">=</span> <span class="str">"外部无法访问"</span>;
+  <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">"IIFE 执行了！"</span>);
+  <span class="fn">console</span>.<span class="fn">log</span>(<span class="var">privateVar</span>);
+})();
+
+<span class="cmt">// 带参数的 IIFE</span>
+(<span class="kw">function</span>(<span class="var">name</span>) {
+  <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">`Hello, <span class="op">${</span><span class="var">name</span><span class="op">}</span>!`</span>);
+})(<span class="str">"CesiumJS"</span>);
+
+<span class="cmt">// 箭头函数版 IIFE（ES6+）</span>
+(() => {
+  <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">"箭头函数的 IIFE"</span>);
+})();
+
+<span class="cmt">// console.log(privateVar);  ❌ ReferenceError — 隔离成功！</span>
+</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>🎯 现代替代：块级作用域</h3>
+      <p>在 ES6+ 中，很多 IIFE 的用途可以被 <strong>块级作用域</strong>替代：</p>
+<pre><code><span class="cmt">// 旧式：用 IIFE 隔离变量</span>
+(<span class="kw">function</span>() {
+  <span class="kw">const</span> <span class="var">temp</span> <span class="op">=</span> <span class="str">"我不污染外部"</span>;
+  <span class="cmt">// 做一些事...</span>
+})();
+
+<span class="cmt">// 现代：直接用块级作用域 {} + let/const</span>
+{
+  <span class="kw">const</span> <span class="var">temp</span> <span class="op">=</span> <span class="str">"我也不污染外部"</span>;
+  <span class="cmt">// 做一些事...</span>
+}
+<span class="cmt">// console.log(temp); ❌ ReferenceError — 同样隔离！</span>
+</code></pre>
+      <p style="margin-top:10px;">不过 IIFE 仍有价值：当你需要<strong>异步初始化</strong>（如 <code>async</code> IIFE）或用 <code>var</code> 的旧代码中隔离作用域时。</p>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 7: CesiumJS 关联场景                                   -->
+  <!-- ============================================================ -->
+  <div class="section" id="s7">
+    <div class="section-header">
+      <div class="section-num">7</div>
+      <h2>🌍 CesiumJS 关联场景</h2>
+      <span class="tag">CESIUM</span>
+    </div>
+
+    <p>函数与作用域在 CesiumJS 开发中<strong>无处不在</strong>。以下是你将来会遇到的真实场景：</p>
+
+    <div class="card">
+      <h3>🗺️ 场景 1：定义工具函数</h3>
+      <p>CesiumJS 大量使用角度和弧度，你经常会写这样的转换函数：</p>
+<pre><code><span class="cmt">// 度数 ↔ 弧度（CesiumJS 内部使用弧度）</span>
+<span class="kw">const</span> <span class="fn">toRadians</span>  <span class="op">=</span> (<span class="var">deg</span>) <span class="op">=></span> <span class="var">deg</span> <span class="op">*</span> <span class="fn">Math</span>.<span class="var">PI</span> <span class="op">/</span> <span class="num">180</span>;
+<span class="kw">const</span> <span class="fn">toDegrees</span>  <span class="op">=</span> (<span class="var">rad</span>) <span class="op">=></span> <span class="var">rad</span> <span class="op">*</span> <span class="num">180</span> <span class="op">/</span> <span class="fn">Math</span>.<span class="var">PI</span>;
+
+<span class="cmt">// 飞往指定位置（参数解构）</span>
+<span class="kw">function</span> <span class="fn">flyTo</span>({ <span class="var">lng</span>, <span class="var">lat</span>, <span class="var">alt</span> <span class="op">=</span> <span class="num">5000</span>, <span class="var">duration</span> <span class="op">=</span> <span class="num">2</span> }) {
+  <span class="cmt">// viewer.camera.flyTo({ ... })  将来会调用 Cesium API</span>
+  <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">`✈️ 飞往 [<span class="op">${</span><span class="var">lng</span><span class="op">}</span>,<span class="op">${</span><span class="var">lat</span><span class="op">}</span>]，高度 <span class="op">${</span><span class="var">alt</span><span class="op">}</span>m，耗时 <span class="op">${</span><span class="var">duration</span><span class="op">}</span>s`</span>);
+}
+
+<span class="fn">flyTo</span>({ <span class="var">lng</span>: <span class="num">116.4</span>, <span class="var">lat</span>: <span class="num">39.9</span> });          <span class="cmt">// alt 和 duration 用默认值</span>
+<span class="fn">flyTo</span>({ <span class="var">lng</span>: <span class="num">121.5</span>, <span class="var">lat</span>: <span class="num">31.2</span>, <span class="var">alt</span>: <span class="num">10000</span> }); <span class="cmt">// 覆盖高度</span>
+</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>📡 场景 2：事件回调 / 闭包捕获</h3>
+      <p>CesiumJS 中大量使用回调函数处理用户交互和瓦片加载：</p>
+<pre><code><span class="cmt">// 点击地球表面添加标记（闭包捕获 viewer 引用）</span>
+<span class="kw">function</span> <span class="fn">setupClickHandler</span>(<span class="var">viewer</span>) {
+  <span class="cmt">// 这个回调函数是闭包：它"记住"了 viewer</span>
+  <span class="kw">const</span> <span class="var">handler</span> <span class="op">=</span> (<span class="var">position</span>) <span class="op">=></span> {
+    <span class="cmt">// viewer.entities.add({ position, ... })</span>
+    <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">`点击位置：<span class="op">${</span><span class="fn">JSON</span>.<span class="fn">stringify</span>(<span class="var">position</span>)<span class="op">}</span>`</span>);
+  };
+
+  <span class="cmt">// viewer.screenSpaceEventHandler.setInputAction(handler, ...)</span>
+  <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">"✅ 点击处理器已设置（闭包捕获了 viewer）"</span>);
+  <span class="kw">return</span> <span class="var">handler</span>;
+}
+
+<span class="fn">setupClickHandler</span>({ <span class="var">name</span>: <span class="str">"myViewer"</span> });
+</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>🎨 场景 3：材质与着色器函数</h3>
+      <p>自定义 CesiumJS 材质时，你需要编写加工函数：</p>
+<pre><code><span class="cmt">// 创建一个带透明度的颜色函数（闭包保持透明度值）</span>
+<span class="kw">function</span> <span class="fn">createAlphaColor</span>(<span class="var">alpha</span> <span class="op">=</span> <span class="num">0.5</span>) {
+  <span class="cmt">// 返回的函数"记住"了 alpha 的值</span>
+  <span class="kw">return</span> (<span class="var">r</span>, <span class="var">g</span>, <span class="var">b</span>) <span class="op">=></span> {
+    <span class="kw">return</span> <span class="str">`rgba(<span class="op">${</span><span class="var">r</span><span class="op">}</span>, <span class="op">${</span><span class="var">g</span><span class="op">}</span>, <span class="op">${</span><span class="var">b</span><span class="op">}</span>, <span class="op">${</span><span class="var">alpha</span><span class="op">}</span>)`</span>;
+  };
+}
+
+<span class="kw">const</span> <span class="var">semiTransparent</span> <span class="op">=</span> <span class="fn">createAlphaColor</span>(<span class="num">0.3</span>);
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="fn">semiTransparent</span>(<span class="num">100</span>, <span class="num">200</span>, <span class="num">50</span>));  <span class="cmt">// "rgba(100, 200, 50, 0.3)"</span>
+</code></pre>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 8: 练习题                                             -->
+  <!-- ============================================================ -->
+  <div class="section" id="s8">
+    <div class="section-header">
+      <div class="section-num">8</div>
+      <h2>练习题</h2>
+      <span class="tag">PRACTICE</span>
+    </div>
+
+    <div class="practice">
+      <h2>🎯 动手练习</h2>
+      <p>在下方控制台中输入代码并运行，验证你的答案：</p>
+
+      <div class="exercise">
+        <div class="q">题 1：编写函数声明与箭头函数</div>
+        <p style="color:var(--text);font-size:14px;">用<strong>函数声明</strong>写一个 <code>celsiusToFahrenheit(c)</code> 转换温度（公式：F = C × 9/5 + 32）。再用<strong>箭头函数</strong>重写一遍。</p>
+<pre><code><span class="cmt">// ① 函数声明版本</span>
+<span class="kw">function</span> <span class="var">celsiusToFahrenheit</span>(<span class="var">c</span>) {
+  <span class="kw">return</span> ___;
+}
+
+<span class="cmt">// ② 箭头函数版本</span>
+<span class="kw">const</span> <span class="var">cToF</span> <span class="op">=</span> (<span class="var">c</span>) <span class="op">=></span> ___;
+
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="fn">celsiusToFahrenheit</span>(<span class="num">0</span>));   <span class="cmt">// 期望: 32</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="fn">cToF</span>(<span class="num">100</span>));                <span class="cmt">// 期望: 212</span>
+</code></pre>
+      </div>
+
+      <div class="exercise">
+        <div class="q">题 2：作用域判断</div>
+        <p style="color:var(--text);font-size:14px;">阅读以下代码，预测 <code>console.log</code> 输出什么（以及哪行会报错），然后运行验证：</p>
+<pre><code><span class="kw">const</span> <span class="var">city</span> <span class="op">=</span> <span class="str">"上海"</span>;
+
+<span class="kw">function</span> <span class="fn">showCity</span>() {
+  <span class="kw">const</span> <span class="var">city</span> <span class="op">=</span> <span class="str">"北京"</span>;
+  {
+    <span class="kw">const</span> <span class="var">city</span> <span class="op">=</span> <span class="str">"广州"</span>;
+    <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">"块内："</span>, <span class="var">city</span>);  <span class="cmt">// ① 输出什么？</span>
+  }
+  <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">"函数内："</span>, <span class="var">city</span>);  <span class="cmt">// ② 输出什么？</span>
+}
+
+<span class="fn">showCity</span>();
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="str">"全局："</span>, <span class="var">city</span>);    <span class="cmt">// ③ 输出什么？</span>
+</code></pre>
+      </div>
+
+      <div class="exercise">
+        <div class="q">题 3：闭包实战 — 创建地图层级工厂</div>
+        <p style="color:var(--text);font-size:14px;">编写一个函数 <code>createZoomFactory(baseZoom)</code>，返回两个函数：<code>zoomIn()</code> 每次 zoom+1，<code>zoomOut()</code> 每次 zoom-1。最低不低于 1。</p>
+<pre><code><span class="kw">function</span> <span class="fn">createZoomFactory</span>(<span class="var">baseZoom</span> <span class="op">=</span> <span class="num">10</span>) {
+  <span class="kw">let</span> <span class="var">zoom</span> <span class="op">=</span> <span class="var">baseZoom</span>;
+
+  <span class="kw">return</span> {
+    <span class="var">zoomIn</span>: () => { zoom++; <span class="kw">return</span> zoom; },
+    <span class="var">zoomOut</span>: () => { ___; <span class="kw">return</span> zoom; },
+    <span class="var">getZoom</span>: () => zoom
+  };
+}
+
+<span class="kw">const</span> <span class="var">mapZoom</span> <span class="op">=</span> <span class="fn">createZoomFactory</span>(<span class="num">12</span>);
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="fn">mapZoom.zoomIn</span>());   <span class="cmt">// 期望: 13</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="fn">mapZoom.zoomIn</span>());   <span class="cmt">// 期望: 14</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="fn">mapZoom.zoomOut</span>());  <span class="cmt">// 期望: 13</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="fn">mapZoom.getZoom</span>());  <span class="cmt">// 期望: 13</span>
+</code></pre>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 9: 交互沙盒                                           -->
+  <!-- ============================================================ -->
+  <div id="s9" style="margin-bottom:52px;">
+    <div class="section-header">
+      <div class="section-num">9</div>
+      <h2>在线练习控制台</h2>
+      <span class="tag">SANDBOX</span>
+    </div>
+
+    <p style="margin-bottom:16px;color:var(--muted);">直接在这里写 JavaScript，按 <strong>Ctrl+Enter</strong> 运行：</p>
+
+    <div class="console-area">
+      <div class="console-header">
+        <div class="console-dots">
+          <div class="dot dot-r"></div>
+          <div class="dot dot-y"></div>
+          <div class="dot dot-g"></div>
+        </div>
+        <span>JS SANDBOX</span>
+        <span style="font-size:11px;color:var(--muted);">Day 02</span>
+      </div>
+      <textarea id="sandbox-code" spellcheck="false">// 试试今天学的内容：
+
+// ① 箭头函数
+const square = x => x * x;
+console.log(`5² = ${square(5)}`);
+
+// ② 默认参数 + 模板字符串
+const describeCity = (name, lng = 116.4, lat = 39.9) =>
+  `📍 ${name}：经度 ${lng}°E，纬度 ${lat}°N`;
+
+console.log(describeCity("天安门"));
+console.log(describeCity("东方明珠", 121.5, 31.24));
+
+// ③ 闭包：计数器
+function createCounter(start = 0) {
+  let count = start;
+  return () => ++count;
+}
+
+const next = createCounter(0);
+console.log(`计数: ${next()}`);
+console.log(`计数: ${next()}`);
+console.log(`计数: ${next()}`);
+
+// ④ 提前返回
+const getMapLevel = (zoom) => {
+  if (zoom < 5)  return "国家";
+  if (zoom < 10) return "省/州";
+  if (zoom < 14) return "城市";
+  return "街道";
+};
+
+console.log(`zoom=3: ${getMapLevel(3)}`);
+console.log(`zoom=12: ${getMapLevel(12)}`);
+console.log(`zoom=16: ${getMapLevel(16)}`);
+</textarea>
+      <div class="console-actions">
+        <button class="btn btn-run" onclick="runCode()">▶ 运行</button>
+        <button class="btn btn-clear" onclick="clearOutput()">清空输出</button>
+        <button class="btn btn-clear" onclick="resetCode()">重置代码</button>
+      </div>
+      <div id="output-box">// 点击"运行"查看输出结果...</div>
+    </div>
+  </div>
+
+
+  <!-- 今日总结 -->
+  <div class="card" style="border-color:var(--accent);border-left-width:4px;">
+    <h3 style="color:var(--accent)">📋 今日知识点总结</h3>
+    <ul style="margin-top:12px;">
+      <li>✅ JavaScript 有三种函数定义方式：<strong>函数声明</strong>（可提升）、<strong>函数表达式</strong>、<strong>箭头函数</strong>（最简洁）</li>
+      <li>✅ 箭头函数不绑定自己的 <code>this</code>，不能用作构造函数，非常适合回调</li>
+      <li>✅ 默认参数用 <code>=</code> 设置，剩余参数用 <code>...args</code> 捕获</li>
+      <li>✅ 参数解构让配置对象传参变得优雅，是 CesiumJS 中最常见的模式</li>
+      <li>✅ 作用域有三层：全局、函数、块级（<code>let</code>/<code>const</code>）</li>
+      <li>✅ <code>var</code> 没有块级作用域，会导致泄漏——坚持用 <code>const</code>/<code>let</code></li>
+      <li>✅ 闭包 = 函数 + 它能访问的外部变量，内部函数"记住"诞生时的环境</li>
+      <li>✅ IIFE 定义后立即执行，不污染全局；现代代码中块级作用域常可替代它</li>
+      <li>✅ 提前返回（Early Return）让代码更扁平、更易读</li>
+    </ul>
+  </div>
+
+</div><!-- /container -->
+
+<!-- ===== FOOTER ===== -->
+<div class="footer">
+  <p>🚀 <strong>每日JS</strong> — JavaScript → CesiumJS 学习路径</p>
+  <p style="margin-top:6px;">Day 02 / 函数与作用域 · 明天继续：<strong>数组与对象</strong></p>
+</div>
+
+
+<!-- ===== SCRIPT ===== -->
+<script>
+  const DEFAULT_CODE = document.getElementById('sandbox-code').value;
+
+  function runCode() {
+    const code = document.getElementById('sandbox-code').value;
+    const outputBox = document.getElementById('output-box');
+    const logs = [];
+
+    // 拦截 console.log
+    const origLog = console.log;
+    const origError = console.error;
+    const origWarn = console.warn;
+
+    console.log = (...args) => {
+      logs.push(args.map(a => {
+        if (typeof a === 'object' && a !== null) {
+          try { return JSON.stringify(a, null, 2); } catch { return String(a); }
+        }
+        return String(a);
+      }).join(' '));
+      origLog(...args);
+    };
+    console.error = (...args) => {
+      logs.push('❌ ' + args.join(' '));
+      origError(...args);
+    };
+    console.warn = (...args) => {
+      logs.push('⚠️ ' + args.join(' '));
+      origWarn(...args);
+    };
+
+    try {
+      eval(code);
+      outputBox.innerHTML = logs.length
+        ? logs.map(l => `<span>${escHtml(l)}</span>`).join('\n')
+        : '<span style="color:var(--muted)">// 代码运行成功（无输出）</span>';
+    } catch(e) {
+      outputBox.innerHTML = `<span class="err">❌ ${escHtml(e.message)}</span>`;
+    } finally {
+      console.log = origLog;
+      console.error = origError;
+      console.warn = origWarn;
+    }
+  }
+
+  function clearOutput() {
+    document.getElementById('output-box').innerHTML = '// 输出已清空...';
+  }
+
+  function resetCode() {
+    document.getElementById('sandbox-code').value = DEFAULT_CODE;
+    clearOutput();
+  }
+
+  function escHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  // Ctrl+Enter 运行
+  document.getElementById('sandbox-code').addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      e.preventDefault();
+      runCode();
+    }
+  });
+</script>
+</body>
+</html>
