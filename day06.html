@@ -1,0 +1,1427 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>JavaScript 每日学习 — Day 06：事件与异步</title>
+  <style>
+    /* ===== 全局 ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0f1117;
+      --surface:   #1a1d27;
+      --card:      #21253a;
+      --border:    #2e3350;
+      --accent:    #61dafb;
+      --accent2:   #f7c948;
+      --accent3:   #7ee787;
+      --accent4:   #ff7b72;
+      --text:      #cdd3e0;
+      --muted:     #6e7a96;
+      --tag-bg:    #1e3a5f;
+      --code-bg:   #161b2e;
+    }
+
+    body {
+      font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.75;
+      font-size: 15px;
+    }
+
+    /* ===== 顶部 Banner ===== */
+    .hero {
+      background: linear-gradient(135deg, #0d1b3e 0%, #1a2d5a 50%, #0f2040 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 52px 24px 40px;
+      text-align: center;
+    }
+    .hero .badge {
+      display: inline-block;
+      background: var(--accent);
+      color: #0a0e1a;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 4px 12px;
+      border-radius: 20px;
+      margin-bottom: 16px;
+    }
+    .hero h1 {
+      font-size: clamp(24px, 5vw, 42px);
+      font-weight: 800;
+      color: #fff;
+      line-height: 1.2;
+      margin-bottom: 12px;
+    }
+    .hero h1 span { color: var(--accent); }
+    .hero p {
+      color: var(--muted);
+      font-size: 15px;
+      max-width: 560px;
+      margin: 0 auto 24px;
+    }
+    .hero .meta {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      flex-wrap: wrap;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .hero .meta span { display: flex; align-items: center; gap: 5px; }
+
+    /* ===== 布局 ===== */
+    .container { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; }
+
+    /* ===== 目录卡片 ===== */
+    .toc {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--accent);
+      border-radius: 12px;
+      padding: 24px 28px;
+      margin-bottom: 40px;
+    }
+    .toc h2 { font-size: 14px; letter-spacing: 1px; text-transform: uppercase; color: var(--accent); margin-bottom: 14px; }
+    .toc ol { padding-left: 20px; }
+    .toc li { margin: 6px 0; }
+    .toc a { color: var(--text); text-decoration: none; }
+    .toc a:hover { color: var(--accent); }
+
+    /* ===== 章节标题 ===== */
+    .section { margin-bottom: 52px; }
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 24px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    .section-num {
+      width: 38px; height: 38px;
+      border-radius: 10px;
+      background: var(--accent);
+      color: #0a0e1a;
+      font-weight: 800;
+      font-size: 16px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .section-header h2 {
+      font-size: 22px;
+      font-weight: 700;
+      color: #fff;
+    }
+    .section-header .tag {
+      font-size: 11px;
+      background: var(--tag-bg);
+      color: var(--accent);
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    /* ===== 卡片 ===== */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+    .card h3 {
+      font-size: 16px;
+      color: var(--accent2);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card p { margin-bottom: 10px; color: var(--text); }
+    .card p:last-child { margin-bottom: 0; }
+
+    /* ===== 代码块 ===== */
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px 22px;
+      overflow-x: auto;
+      margin: 16px 0;
+      font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+      font-size: 13.5px;
+      line-height: 1.7;
+    }
+    code { font-family: inherit; }
+
+    /* 语法着色 */
+    .kw  { color: #c792ea; }  /* 关键字 */
+    .str { color: #c3e88d; }  /* 字符串 */
+    .num { color: #f78c6c; }  /* 数字 */
+    .cmt { color: #546e7a; font-style: italic; }  /* 注释 */
+    .fn  { color: #82aaff; }  /* 函数名 */
+    .var { color: #eeffff; }  /* 变量 */
+    .op  { color: var(--accent); }  /* 运算符 */
+    .typ { color: var(--accent2); }  /* 类型 */
+    .out { color: var(--accent3); }  /* 输出 */
+
+    /* ===== 提示框 ===== */
+    .tip, .warn, .info {
+      border-radius: 10px;
+      padding: 14px 18px;
+      margin: 16px 0;
+      font-size: 14px;
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+    .tip  { background: #0d3321; border-left: 4px solid var(--accent3); }
+    .warn { background: #3a2500; border-left: 4px solid var(--accent2); }
+    .info { background: #0d1e3a; border-left: 4px solid var(--accent); }
+    .tip .icon, .warn .icon, .info .icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+
+    /* ===== 对比表格 ===== */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 14px;
+    }
+    th {
+      background: var(--surface);
+      color: var(--accent);
+      padding: 12px 16px;
+      text-align: left;
+      border-bottom: 2px solid var(--border);
+      font-weight: 600;
+    }
+    td {
+      padding: 11px 16px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+      vertical-align: top;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(97, 218, 251, 0.04); }
+    .td-kw { color: #c792ea; font-family: 'Cascadia Code','Fira Code',monospace; font-weight: 600; }
+    .td-type { color: var(--accent2); }
+    .td-good { color: var(--accent3); }
+    .td-bad  { color: var(--accent4); }
+
+    /* ===== 两列网格 ===== */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 600px) { .grid-2 { grid-template-columns: 1fr; } }
+
+    /* ===== 练习区 ===== */
+    .practice {
+      background: linear-gradient(135deg, #0d2238, #1a2d1a);
+      border: 1px solid #2a4a2a;
+      border-radius: 12px;
+      padding: 28px;
+      margin-top: 48px;
+    }
+    .practice h2 {
+      font-size: 20px;
+      color: var(--accent3);
+      margin-bottom: 8px;
+    }
+    .practice p { color: var(--muted); margin-bottom: 20px; font-size: 14px; }
+    .exercise {
+      background: var(--code-bg);
+      border: 1px dashed #2a4a2a;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+    .exercise .q {
+      color: var(--accent2);
+      font-weight: 600;
+      margin-bottom: 12px;
+      font-size: 14px;
+    }
+    .exercise pre { margin: 0; }
+
+    /* ===== 交互控制台 ===== */
+    .console-area {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-top: 48px;
+    }
+    .console-header {
+      background: var(--surface);
+      padding: 12px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+    .console-header span { color: var(--accent); font-size: 13px; font-weight: 600; letter-spacing: 1px; }
+    .console-dots { display: flex; gap: 6px; }
+    .dot { width: 12px; height: 12px; border-radius: 50%; }
+    .dot-r { background: #ff5f57; }
+    .dot-y { background: #febc2e; }
+    .dot-g { background: #28c840; }
+    #sandbox-code {
+      width: 100%;
+      background: var(--code-bg);
+      color: var(--accent3);
+      border: none;
+      padding: 18px 20px;
+      font-family: 'Cascadia Code','Fira Code',monospace;
+      font-size: 13.5px;
+      line-height: 1.7;
+      resize: vertical;
+      min-height: 140px;
+      outline: none;
+    }
+    .console-actions {
+      padding: 12px 18px;
+      display: flex;
+      gap: 10px;
+      border-top: 1px solid var(--border);
+    }
+    .btn {
+      padding: 8px 20px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      transition: opacity .2s;
+    }
+    .btn:hover { opacity: .85; }
+    .btn-run { background: var(--accent); color: #0a0e1a; }
+    .btn-clear { background: var(--surface); color: var(--muted); border: 1px solid var(--border); }
+    #output-box {
+      padding: 16px 20px;
+      min-height: 60px;
+      font-family: 'Cascadia Code','Fira Code',monospace;
+      font-size: 13px;
+      color: var(--accent3);
+      border-top: 1px solid var(--border);
+      white-space: pre-wrap;
+    }
+    #output-box .err { color: var(--accent4); }
+
+    /* ===== 进度条 ===== */
+    .progress-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 22px 26px;
+      margin-bottom: 40px;
+    }
+    .progress-card h3 { font-size: 13px; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); margin-bottom: 16px; }
+    .progress-list { display: flex; flex-wrap: wrap; gap: 8px; }
+    .progress-item {
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+    }
+    .pi-done  { background: #0d3321; color: var(--accent3); border: 1px solid #1a4d2a; }
+    .pi-today { background: #1e3a5f; color: var(--accent); border: 1px solid #2a5a8f; }
+    .pi-next  { background: var(--card); color: var(--muted); border: 1px solid var(--border); }
+
+    /* ===== 底部 ===== */
+    .footer {
+      text-align: center;
+      padding: 40px 24px 20px;
+      color: var(--muted);
+      font-size: 13px;
+      border-top: 1px solid var(--border);
+    }
+    .footer strong { color: var(--accent); }
+
+    /* ===== inline code ===== */
+    p code, li code, td code {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      padding: 1px 6px;
+      border-radius: 5px;
+      font-family: 'Cascadia Code','Fira Code',monospace;
+      font-size: 12.5px;
+      color: var(--accent);
+    }
+    ul { padding-left: 20px; }
+    li { margin: 5px 0; }
+
+    /* ===== 事件演示区 ===== */
+    .event-demo {
+      background: #0a0e1a;
+      border: 1px dashed var(--border);
+      border-radius: 10px;
+      padding: 20px;
+      margin: 16px 0;
+    }
+    .event-box {
+      background: var(--card);
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      padding: 20px;
+      margin: 8px 0;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      user-select: none;
+    }
+    .event-box:hover { border-color: var(--accent); background: rgba(97,218,251,0.08); }
+    .event-box.active { background: rgba(126,231,135,0.15); border-color: var(--accent3); }
+    .event-log {
+      background: #000;
+      color: var(--accent3);
+      padding: 12px;
+      border-radius: 6px;
+      font-family: 'Cascadia Code', monospace;
+      font-size: 12px;
+      margin-top: 10px;
+      min-height: 30px;
+      max-height: 150px;
+      overflow-y: auto;
+    }
+    .event-log div { padding: 2px 0; }
+    .event-log .ev-capture { color: var(--accent2); }
+    .event-log .ev-bubble { color: var(--accent); }
+    .event-log .ev-target { color: var(--accent3); }
+  </style>
+</head>
+<body>
+
+<!-- ===== HERO ===== -->
+<div class="hero">
+  <div class="badge">JavaScript 学习路径</div>
+  <h1>Day 06 — <span>事件</span>与异步</h1>
+  <p>掌握 JavaScript 核心特性：事件循环、回调、Promise 与 async/await，让你的程序"非阻塞"地运行。</p>
+  <div class="meta">
+    <span>📅 第 6 天</span>
+    <span>⏱ 预计 55 分钟</span>
+    <span>🎯 目标：CesiumJS 地球开发</span>
+    <span>📊 基础阶段</span>
+  </div>
+</div>
+
+<!-- ===== CONTAINER ===== -->
+<div class="container">
+
+  <!-- 学习进度 -->
+  <div class="progress-card">
+    <h3>📍 学习路线图</h3>
+    <div class="progress-list">
+      <div class="progress-item pi-done">Day 01 · 变量与数据类型</div>
+      <div class="progress-item pi-done">Day 02 · 函数与作用域</div>
+      <div class="progress-item pi-done">Day 03 · 数组与对象</div>
+      <div class="progress-item pi-done">Day 04 · 控制流</div>
+      <div class="progress-item pi-done">Day 05 · DOM 操作</div>
+      <div class="progress-item pi-today">Day 06 · 事件与异步 ← 今天</div>
+      <div class="progress-item pi-next">Day 07 · ES6+ 语法</div>
+      <div class="progress-item pi-next">Day 08 · 模块与类</div>
+      <div class="progress-item pi-next">Day 09 · 原型与继承</div>
+      <div class="progress-item pi-next">…</div>
+      <div class="progress-item pi-next">CesiumJS 阶段 🌍</div>
+    </div>
+  </div>
+
+  <!-- 目录 -->
+  <div class="toc">
+    <h2>📚 本课目录</h2>
+    <ol>
+      <li><a href="#s1">同步 vs 异步：为什么需要异步？</a></li>
+      <li><a href="#s2">事件循环：JS 的"调度员"</a></li>
+      <li><a href="#s3">事件绑定与 Event 对象</a></li>
+      <li><a href="#s4">事件流：捕获与冒泡</a></li>
+      <li><a href="#s5">事件委托：高效处理大量元素</a></li>
+      <li><a href="#s6">回调函数与回调地狱</a></li>
+      <li><a href="#s7">定时器：setTimeout 与 setInterval</a></li>
+      <li><a href="#s8">CesiumJS 关联场景</a></li>
+      <li><a href="#s9">练习题</a></li>
+      <li><a href="#s10">在线练习控制台</a></li>
+    </ol>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 1: 同步 vs 异步                                       -->
+  <!-- ============================================================ -->
+  <div class="section" id="s1">
+    <div class="section-header">
+      <div class="section-num">1</div>
+      <h2>同步 vs 异步：为什么需要异步？</h2>
+      <span class="tag">CONCEPT</span>
+    </div>
+
+    <p>JavaScript 是<strong>单线程</strong>语言，同一时刻只能执行一个任务。如果所有操作都"同步"执行，遇到网络请求、文件读取等耗时操作时，页面会完全卡死。</p>
+
+    <div class="card">
+      <h3>🔄 同步执行</h3>
+      <p>代码按顺序一行一行执行，前一行没完成，后一行<strong>必须等待</strong>。遇到耗时操作时整个程序被"阻塞"。</p>
+<pre><code><span class="cmt">// 同步：每一步都必须等待上一步完成</span>
+<span class="var">console</span>.<span class="fn">log</span>(<span class="str">"任务 1 开始"</span>);
+<span class="var">console</span>.<span class="fn">log</span>(<span class="str">"任务 2 开始"</span>);  <span class="cmt">// 必须等 1 完成</span>
+<span class="var">console</span>.<span class="fn">log</span>(<span class="str">"任务 3 开始"</span>);  <span class="cmt">// 必须等 2 完成</span>
+
+<span class="cmt">// 假设有一个耗时同步操作</span>
+<span class="kw">function</span> <span class="fn">heavySyncTask</span>() {
+  <span class="kw">const</span> start = <span class="var">Date</span>.<span class="fn">now</span>();
+  <span class="kw">while</span> (<span class="var">Date</span>.<span class="fn">now</span>() - start < <span class="num">3000</span>) {} <span class="cmt">// 卡 3 秒</span>
+  <span class="kw">return</span> <span class="str">"完成"</span>;
+}
+<span class="var">console</span>.<span class="fn">log</span>(<span class="str">"开始"</span>);
+<span class="kw">const</span> result = <span class="fn">heavySyncTask</span>();  <span class="cmt">// 阻塞 3 秒</span>
+<span class="var">console</span>.<span class="fn">log</span>(<span class="str">"结果:"</span>, result);</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>⚡ 异步执行</h3>
+      <p>遇到耗时操作时，<strong>不等待</strong>结果，继续执行后续代码。等耗时操作完成后，再回头处理结果（通过回调、Promise 等机制）。</p>
+<pre><code><span class="cmt">// 异步：耗时操作"放后台"，主线程继续工作</span>
+<span class="var">console</span>.<span class="fn">log</span>(<span class="str">"1. 开始"</span>);
+
+<span class="cmt">// setTimeout 是异步的典型例子</span>
+<span class="fn">setTimeout</span>(() => {
+  <span class="var">console</span>.<span class="fn">log</span>(<span class="str">"3. 2秒后执行"</span>);
+}, <span class="num">2000</span>);
+
+<span class="var">console</span>.<span class="fn">log</span>(<span class="str">"2. 立即执行（不等待 setTimeout）"</span>);
+
+<span class="cmt">// 输出顺序：1 → 2 → (2秒后) 3</span></code></pre>
+    </div>
+
+    <div class="tip">
+      <span class="icon">💡</span>
+      <div><strong>核心思想：</strong>异步让程序"在等待时做别的事"。网络请求、定时器、用户交互、文件读取都是典型的异步场景。CesiumJS 加载瓦片数据、相机飞行动画都依赖异步机制。</div>
+    </div>
+
+    <table>
+      <tr>
+        <th>特性</th>
+        <th class="td-bad">同步（Synchronous）</th>
+        <th class="td-good">异步（Asynchronous）</th>
+      </tr>
+      <tr>
+        <td>执行顺序</td>
+        <td>严格顺序，阻塞</td>
+        <td>非阻塞，结果"晚到"</td>
+      </tr>
+      <tr>
+        <td>耗时操作</td>
+        <td>卡住整个程序</td>
+        <td>放后台，主线程继续</td>
+      </tr>
+      <tr>
+        <td>用户体验</td>
+        <td>页面冻结、卡顿</td>
+        <td>流畅、响应快</td>
+      </tr>
+      <tr>
+        <td>典型应用</td>
+        <td>数学计算、循环</td>
+        <td>网络请求、定时器、事件</td>
+      </tr>
+    </table>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 2: 事件循环                                           -->
+  <!-- ============================================================ -->
+  <div class="section" id="s2">
+    <div class="section-header">
+      <div class="section-num">2</div>
+      <h2>事件循环：JS 的"调度员"</h2>
+      <span class="tag">EVENT LOOP</span>
+    </div>
+
+    <p>JavaScript 通过<strong>事件循环（Event Loop）</strong>机制实现异步。它是一个不断循环的"调度员"，负责把异步任务的回调放到合适时机执行。</p>
+
+    <div class="card">
+      <h3>🏗️ 运行机制：调用栈 + 任务队列</h3>
+      <p>理解事件循环需要知道两个关键结构：</p>
+      <ul>
+        <li><strong>调用栈（Call Stack）</strong>：当前正在执行的函数调用，LIFO（后进先出）</li>
+        <li><strong>任务队列（Task Queue）</strong>：等待执行的异步回调，FIFO（先进先出）</li>
+        <li><strong>微任务队列（Microtask Queue）</strong>：优先级更高的任务队列（Promise 回调）</li>
+      </ul>
+<pre><code><span class="cmt">/* 事件循环的执行顺序规则：
+   1. 执行调用栈中的同步代码
+   2. 同步代码执行完毕后，先清空微任务队列
+   3. 从宏任务队列中取一个任务执行
+   4. 重复 2、3
+*/</span>
+
+<span class="var">console</span>.<span class="fn">log</span>(<span class="str">"1. 同步"</span>);
+
+<span class="fn">setTimeout</span>(() => {
+  <span class="var">console</span>.<span class="fn">log</span>(<span class="str">"3. setTimeout (宏任务)"</span>);
+}, <span class="num">0</span>);
+
+<span class="var">Promise</span>.<span class="fn">resolve</span>().<span class="fn">then</span>(() => {
+  <span class="var">console</span>.<span class="fn">log</span>(<span class="str">"2. Promise (微任务)"</span>);
+});
+
+<span class="var">console</span>.<span class="fn">log</span>(<span class="str">"4. 同步结束"</span>);
+
+<span class="cmt">// 输出顺序：1 → 4 → 2 → 3
+// 关键：微任务比宏任务优先执行！</span></code></pre>
+    </div>
+
+    <div class="info">
+      <span class="icon">ℹ️</span>
+      <div><strong>宏任务 vs 微任务：</strong><code>setTimeout</code>、<code>setInterval</code>、<code>I/O</code> 是宏任务；<code>Promise.then</code>、<code>queueMicrotask</code>、<code>MutationObserver</code> 是微任务。每一轮事件循环中，微任务队列会<strong>全部清空</strong>，然后才执行一个宏任务。</div>
+    </div>
+
+    <div class="card">
+      <h3>🎯 经典面试题：执行顺序</h3>
+<pre><code><span class="var">console</span>.<span class="fn">log</span>(<span class="str">"A"</span>);
+
+<span class="fn">setTimeout</span>(() => <span class="var">console</span>.<span class="fn">log</span>(<span class="str">"B"</span>), <span class="num">0</span>);
+
+<span class="kw">new</span> <span class="typ">Promise</span>((resolve) => {
+  <span class="var">console</span>.<span class="fn">log</span>(<span class="str">"C"</span>);  <span class="cmt">// 同步执行</span>
+  <span class="fn">resolve</span>();
+}).<span class="fn">then</span>(() => <span class="var">console</span>.<span class="fn">log</span>(<span class="str">"D"</span>));
+
+<span class="var">console</span>.<span class="fn">log</span>(<span class="str">"E"</span>);
+
+<span class="cmt">// 答案：A → C → E → D → B
+// 解析：同步代码 A、C、E 先执行
+//       然后微任务 D
+//       最后宏任务 B</span></code></pre>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 3: 事件绑定与 Event 对象                             -->
+  <!-- ============================================================ -->
+  <div class="section" id="s3">
+    <div class="section-header">
+      <div class="section-num">3</div>
+      <h2>事件绑定与 Event 对象</h2>
+      <span class="tag">EVENTS</span>
+    </div>
+
+    <p>用户点击、鼠标移动、键盘按键、滚动页面……这些<strong>事件（Event）</strong>都是网页交互的基础。JavaScript 通过<strong>事件监听器（Event Listener）</strong>来响应它们。</p>
+
+    <div class="card">
+      <h3>📌 三种事件绑定方式</h3>
+
+      <p><strong>① HTML 内联绑定（不推荐）</strong></p>
+<pre><code><span class="cmt">&lt;!-- HTML 中直接写 onclick --&gt;</span>
+<span class="op">&lt;</span><span class="var">button</span> <span class="var">onclick</span><span class="op">=</span><span class="str">"handleClick()"</span><span class="op">&gt;</span>点击我<span class="op">&lt;/</span><span class="var">button</span><span class="op">&gt;</span></code></pre>
+
+      <p><strong>② DOM 属性绑定（早期方案）</strong></p>
+<pre><code><span class="kw">const</span> btn = <span class="var">document</span>.<span class="fn">getElementById</span>(<span class="str">"myBtn"</span>);
+btn.onclick = <span class="kw">function</span>() {
+  <span class="var">console</span>.<span class="fn">log</span>(<span class="str">"被点击了！"</span>);
+};
+<span class="cmt">// 缺点：只能绑定一个函数，后绑定的会覆盖前面的</span></code></pre>
+
+      <p><strong>③ addEventListener（推荐）</strong></p>
+<pre><code><span class="kw">const</span> btn = <span class="var">document</span>.<span class="fn">getElementById</span>(<span class="str">"myBtn"</span>);
+
+<span class="cmt">// 可以绑定多个监听器，按顺序执行</span>
+btn.<span class="fn">addEventListener</span>(<span class="str">"click"</span>, () => {
+  <span class="var">console</span>.<span class="fn">log</span>(<span class="str">"第一个监听器"</span>);
+});
+
+btn.<span class="fn">addEventListener</span>(<span class="str">"click"</span>, () => {
+  <span class="var">console</span>.<span class="fn">log</span>(<span class="str">"第二个监听器"</span>);
+});
+
+<span class="cmt">// 移除监听器（需要先保存引用）</span>
+<span class="kw">const</span> handler = () => <span class="var">console</span>.<span class="fn">log</span>(<span class="str">"一次性"</span>);
+btn.<span class="fn">addEventListener</span>(<span class="str">"click"</span>, handler);
+btn.<span class="fn">removeEventListener</span>(<span class="str">"click"</span>, handler);</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>🎁 Event 对象：事件的"身份证"</h3>
+      <p>当事件触发时，浏览器会创建一个<strong>Event 对象</strong>，传递给监听器函数，包含事件的所有信息：</p>
+<pre><code><span class="var">document</span>.<span class="fn">addEventListener</span>(<span class="str">"click"</span>, (event) => {
+  <span class="var">console</span>.<span class="fn">log</span>(<span class="str">"事件类型:"</span>, event.type);           <span class="cmt">// "click"</span>
+  <span class="var">console</span>.<span class="fn">log</span>(<span class="str">"触发元素:"</span>, event.target.tagName); <span class="cmt">// 被点击的标签</span>
+  <span class="var">console</span>.<span class="fn">log</span>(<span class="str">"鼠标坐标:"</span>, event.clientX, event.clientY);
+  <span class="var">console</span>.<span class="fn">log</span>(<span class="str">"是否按下Ctrl:"</span>, event.ctrlKey);
+  <span class="var">console</span>.<span class="fn">log</span>(<span class="str">"时间戳:"</span>, event.timeStamp);
+});
+
+<span class="cmt">// 常用属性：</span>
+<span class="cmt">// event.target      - 实际触发事件的元素</span>
+<span class="cmt">// event.currentTarget - 绑定监听器的元素</span>
+<span class="cmt">// event.preventDefault() - 阻止默认行为（如表单提交）</span>
+<span class="cmt">// event.stopPropagation() - 停止事件传播</span></code></pre>
+    </div>
+
+    <div class="card">
+      <h3>📋 常用事件类型</h3>
+      <table>
+        <tr><th>类别</th><th>事件名</th><th>触发时机</th></tr>
+        <tr><td rowspan="3">鼠标</td><td class="td-kw">click</td><td>点击（左键按下+释放）</td></tr>
+        <tr><td class="td-kw">dblclick</td><td>双击</td></tr>
+        <tr><td class="td-kw">mouseenter / mouseleave</td><td>鼠标进入/离开元素</td></tr>
+        <tr><td rowspan="2">键盘</td><td class="td-kw">keydown / keyup</td><td>按键按下/释放</td></tr>
+        <tr><td class="td-kw">input / change</td><td>输入框内容改变</td></tr>
+        <tr><td rowspan="2">表单</td><td class="td-kw">submit</td><td>表单提交</td></tr>
+        <tr><td class="td-kw">focus / blur</td><td>元素获焦/失焦</td></tr>
+        <tr><td rowspan="2">窗口</td><td class="td-kw">scroll</td><td>页面滚动</td></tr>
+        <tr><td class="td-kw">resize</td><td>窗口大小改变</td></tr>
+        <tr><td rowspan="2">资源</td><td class="td-kw">load</td><td>资源加载完成</td></tr>
+        <tr><td class="td-kw">error</td><td>加载失败</td></tr>
+      </table>
+    </div>
+
+    <div class="event-demo">
+      <p style="color:var(--accent);margin-bottom:10px;"><strong>🎮 实时演示：点击下面的盒子试试</strong></p>
+      <div class="event-box" id="demo-box-1">点击我（普通按钮）</div>
+      <div class="event-log" id="demo-log-1">// 事件日志...</div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 4: 事件流                                             -->
+  <!-- ============================================================ -->
+  <div class="section" id="s4">
+    <div class="section-header">
+      <div class="section-num">4</div>
+      <h2>事件流：捕获与冒泡</h2>
+      <span class="tag">EVENT FLOW</span>
+    </div>
+
+    <p>当点击一个嵌套元素时，事件其实在 DOM 树中"走"了两遍：</p>
+
+    <div class="card">
+      <h3>🌊 三个阶段</h3>
+      <ol>
+        <li><strong>捕获阶段（Capturing）</strong>：事件从 <code>window</code> 一路向下传到目标元素</li>
+        <li><strong>目标阶段（Target）</strong>：事件到达目标元素</li>
+        <li><strong>冒泡阶段（Bubbling）</strong>：事件从目标元素向上冒泡到 <code>window</code></li>
+      </ol>
+<pre><code><span class="cmt">&lt;!-- DOM 结构 --&gt;</span>
+<span class="op">&lt;</span><span class="var">div</span> <span class="var">id</span><span class="op">=</span><span class="str">"outer"</span><span class="op">&gt;</span>      <span class="cmt">&lt;!-- 外层 --&gt;</span>
+  <span class="op">&lt;</span><span class="var">div</span> <span class="var">id</span><span class="op">=</span><span class="str">"inner"</span><span class="op">&gt;</span>    <span class="cmt">&lt;!-- 内层 --&gt;</span>
+    <span class="op">&lt;</span><span class="var">button</span> <span class="var">id</span><span class="op">=</span><span class="str">"btn"</span><span class="op">&gt;</span>点击<span class="op">&lt;/</span><span class="var">button</span><span class="op">&gt;</span>
+  <span class="op">&lt;/</span><span class="var">div</span><span class="op">&gt;</span>
+<span class="op">&lt;/</span><span class="var">div</span><span class="op">&gt;</span>
+
+<span class="cmt">/* 点击按钮时，事件传播路径：
+   window → document → html → body → outer → inner → btn (捕获)
+   btn (目标)
+   btn → inner → outer → body → html → document → window (冒泡)
+*/</span></code></pre>
+    </div>
+
+    <div class="card">
+      <h3>🎯 第三个参数：useCapture</h3>
+<pre><code><span class="cmt">// addEventListener(type, listener, useCapture)</span>
+<span class="cmt">// useCapture: false（默认）= 冒泡阶段触发</span>
+<span class="cmt">// useCapture: true = 捕获阶段触发</span>
+
+<span class="kw">const</span> outer = <span class="var">document</span>.<span class="fn">getElementById</span>(<span class="str">"outer"</span>);
+<span class="kw">const</span> inner = <span class="var">document</span>.<span class="fn">getElementById</span>(<span class="str">"inner"</span>);
+<span class="kw">const</span> btn = <span class="var">document</span>.<span class="fn">getElementById</span>(<span class="str">"btn"</span>);
+
+<span class="cmt">// 捕获阶段（从上到下）</span>
+outer.<span class="fn">addEventListener</span>(<span class="str">"click"</span>, () => <span class="var">console</span>.<span class="fn">log</span>(<span class="str">"1. outer 捕获"</span>), <span class="kw">true</span>);
+inner.<span class="fn">addEventListener</span>(<span class="str">"click"</span>, () => <span class="var">console</span>.<span class="fn">log</span>(<span class="str">"2. inner 捕获"</span>), <span class="kw">true</span>);
+
+<span class="cmt">// 冒泡阶段（从下到上）</span>
+inner.<span class="fn">addEventListener</span>(<span class="str">"click"</span>, () => <span class="var">console</span>.<span class="fn">log</span>(<span class="str">"3. inner 冒泡"</span>));
+outer.<span class="fn">addEventListener</span>(<span class="str">"click"</span>, () => <span class="var">console</span>.<span class="fn">log</span>(<span class="str">"4. outer 冒泡"</span>));
+
+<span class="cmt">// 点击 button 时的输出顺序：1 → 2 → 3 → 4</span></code></pre>
+    </div>
+
+    <div class="card">
+      <h3>🚫 停止传播</h3>
+<pre><code><span class="cmt">// 阻止事件继续传播（不再触发上层/下层元素）</span>
+btn.<span class="fn">addEventListener</span>(<span class="str">"click"</span>, (e) => {
+  e.<span class="fn">stopPropagation</span>();
+  <span class="var">console</span>.<span class="fn">log</span>(<span class="str">"事件到此为止"</span>);
+});
+
+<span class="cmt">// 阻止默认行为（保留事件传播）</span>
+<span class="var">document</span>.<span class="fn">querySelector</span>(<span class="str">"a"</span>).<span class="fn">addEventListener</span>(<span class="str">"click"</span>, (e) => {
+  e.<span class="fn">preventDefault</span>();  <span class="cmt">// 阻止链接跳转</span>
+});
+
+<span class="cmt">// 两者同时阻止</span>
+e.<span class="fn">stopPropagation</span>();
+e.<span class="fn">preventDefault</span>();</code></pre>
+    </div>
+
+    <div class="event-demo">
+      <p style="color:var(--accent);margin-bottom:10px;"><strong>🎮 事件流演示：点击不同层级观察捕获与冒泡</strong></p>
+      <div class="event-box" id="ev-outer" style="background:#1a2030;">
+        外层 div
+        <div class="event-box" id="ev-inner" style="margin-top:10px;background:#252a3a;">
+          中层 div
+          <div class="event-box" id="ev-target" style="margin-top:10px;background:#2f3548;">
+            🎯 点击这里（目标）
+          </div>
+        </div>
+      </div>
+      <div class="event-log" id="ev-flow-log">// 事件流日志...</div>
+    </div>
+
+    <div class="warn">
+      <span class="icon">⚠️</span>
+      <div><strong>target vs currentTarget：</strong><code>event.target</code> 是<strong>实际触发</strong>事件的元素（最深层的），<code>event.currentTarget</code> 是<strong>绑定监听器</strong>的元素。在事件委托中这个区别至关重要。</div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 5: 事件委托                                           -->
+  <!-- ============================================================ -->
+  <div class="section" id="s5">
+    <div class="section-header">
+      <div class="section-num">5</div>
+      <h2>事件委托：高效处理大量元素</h2>
+      <span class="tag">DELEGATION</span>
+    </div>
+
+    <p>如果给 1000 个列表项都绑定点击事件，性能会很差。<strong>事件委托</strong>利用事件冒泡，只在<strong>父元素</strong>上绑定一次监听器，通过 <code>event.target</code> 判断是哪个子元素触发的。</p>
+
+    <div class="card">
+      <h3>❌ 传统方式：每个元素都绑定</h3>
+<pre><code><span class="cmt">// 假设有 1000 个 li</span>
+<span class="kw">const</span> items = <span class="var">document</span>.<span class="fn">querySelectorAll</span>(<span class="str">"li"</span>);
+items.<span class="fn">forEach</span>(item => {
+  item.<span class="fn">addEventListener</span>(<span class="str">"click"</span>, () => {
+    <span class="var">console</span>.<span class="fn">log</span>(<span class="str">"点击了："</span>, item.textContent);
+  });
+});
+<span class="cmt">// 问题：1000 个监听器，内存占用大</span>
+<span class="cmt">// 新增 li 后还要重新绑定</span></code></pre>
+    </div>
+
+    <div class="card">
+      <h3>✅ 事件委托：只在父元素绑定一次</h3>
+<pre><code><span class="cmt">// 利用事件冒泡，只在 ul 上绑定一个监听器</span>
+<span class="kw">const</span> list = <span class="var">document</span>.<span class="fn">getElementById</span>(<span class="str">"myList"</span>);
+
+list.<span class="fn">addEventListener</span>(<span class="str">"click"</span>, (e) => {
+  <span class="cmt">// 检查点击的是不是 li</span>
+  <span class="kw">if</span> (e.target.tagName === <span class="str">"LI"</span>) {
+    <span class="var">console</span>.<span class="fn">log</span>(<span class="str">"点击了："</span>, e.target.textContent);
+  }
+});
+
+<span class="cmt">/* 优势：
+   1. 性能好 - 只绑定 1 个监听器
+   2. 动态生效 - 后续新增的 li 也能响应
+   3. 内存省 - 监听器数量少
+*/</span></code></pre>
+    </div>
+
+    <div class="tip">
+      <span class="icon">💡</span>
+      <div><strong>CesiumJS 中的应用：</strong>CesiumJS 的 InfoBox（点击实体弹出的信息框）、图层面板工具栏，都是用事件委托实现的。地球上有上万个 Entity，逐个绑定事件是不可能的。</div>
+    </div>
+
+    <div class="card">
+      <h3>🎯 更稳健的事件委托（用 data-* 属性）</h3>
+<pre><code><span class="cmt">&lt;!-- HTML --&gt;</span>
+<span class="op">&lt;</span><span class="var">ul</span> <span class="var">id</span><span class="op">=</span><span class="str">"toolbar"</span><span class="op">&gt;</span>
+  <span class="op">&lt;</span><span class="var">li</span> <span class="var">data-action</span><span class="op">=</span><span class="str">"zoom-in"</span><span class="op">&gt;</span>放大<span class="op">&lt;/</span><span class="var">li</span><span class="op">&gt;</span>
+  <span class="op">&lt;</span><span class="var">li</span> <span class="var">data-action</span><span class="op">=</span><span class="str">"zoom-out"</span><span class="op">&gt;</span>缩小<span class="op">&lt;/</span><span class="var">li</span><span class="op">&gt;</span>
+  <span class="op">&lt;</span><span class="var">li</span> <span class="var">data-action</span><span class="op">=</span><span class="str">"reset"</span><span class="op">&gt;</span>复位<span class="op">&lt;/</span><span class="var">li</span><span class="op">&gt;</span>
+<span class="op">&lt;/</span><span class="var">ul</span><span class="op">&gt;</span>
+
+<span class="cmt">// JS：用 data-* 属性分发到不同处理器</span>
+<span class="kw">const</span> actions = {
+  <span class="str">"zoom-in"</span>: () => <span class="var">console</span>.<span class="fn">log</span>(<span class="str">"放大地图"</span>),
+  <span class="str">"zoom-out"</span>: () => <span class="var">console</span>.<span class="fn">log</span>(<span class="str">"缩小地图"</span>),
+  <span class="str">"reset"</span>: () => <span class="var">console</span>.<span class="fn">log</span>(<span class="str">"复位视角"</span>)
+};
+
+<span class="var">document</span>.<span class="fn">getElementById</span>(<span class="str">"toolbar"</span>).<span class="fn">addEventListener</span>(<span class="str">"click"</span>, (e) => {
+  <span class="kw">const</span> action = e.target.dataset.action;
+  <span class="kw">if</span> (action && actions[action]) {
+    actions[action]();
+  }
+});</code></pre>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 6: 回调函数与回调地狱                                -->
+  <!-- ============================================================ -->
+  <div class="section" id="s6">
+    <div class="section-header">
+      <div class="section-num">6</div>
+      <h2>回调函数与回调地狱</h2>
+      <span class="tag">CALLBACK</span>
+    </div>
+
+    <p><strong>回调函数（Callback）</strong>是异步编程最基本的形式：把一个函数作为参数传递给异步操作，<strong>操作完成后调用它</strong>。</p>
+
+    <div class="card">
+      <h3>✅ 简单回调示例</h3>
+<pre><code><span class="cmt">// 异步读取文件，操作完成后调用回调</span>
+<span class="fn">fetch</span>(<span class="str">"https://api.example.com/data"</span>)
+  .<span class="fn">then</span>(response => response.<span class="fn">json</span>())
+  .<span class="fn">then</span>(data => <span class="var">console</span>.<span class="fn">log</span>(data));
+
+<span class="cmt">// 模拟：异步获取数据（用 setTimeout 模拟）</span>
+<span class="kw">function</span> <span class="fn">getUserData</span>(userId, callback) {
+  <span class="fn">setTimeout</span>(() => {
+    <span class="kw">const</span> user = { id: userId, name: <span class="str">"张三"</span>, age: <span class="num">28</span> };
+    <span class="fn">callback</span>(user);
+  }, <span class="num">1000</span>);
+}
+
+<span class="fn">getUserData</span>(<span class="num">1</span>, (user) => {
+  <span class="var">console</span>.<span class="fn">log</span>(<span class="str">"用户:"</span>, user.name);
+});</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>💀 回调地狱（Callback Hell）</h3>
+      <p>当多个异步操作有<strong>依赖关系</strong>时（一个的结果是另一个的输入），回调会层层嵌套，形成"金字塔"：</p>
+<pre><code><span class="cmt">// 经典回调地狱：获取用户 → 获取订单 → 获取商品 → 渲染页面</span>
+<span class="fn">getUser</span>(userId, (user) => {
+  <span class="fn">getOrders</span>(user.id, (orders) => {
+    <span class="fn">getProducts</span>(orders[<span class="num">0</span>].productId, (product) => {
+      <span class="fn">getReviews</span>(product.id, (reviews) => {
+        <span class="fn">renderPage</span>(user, orders, product, reviews, () => {
+          <span class="var">console</span>.<span class="fn">log</span>(<span class="str">"终于渲染完了..."</span>);
+        });
+      });
+    });
+  });
+});
+
+<span class="cmt">/* 问题：
+   1. 代码横向膨胀，难以阅读
+   2. 错误处理要写多次
+   3. 维护噩梦
+*/</span></code></pre>
+    </div>
+
+    <div class="info">
+      <span class="icon">ℹ️</span>
+      <div><strong>解决方案：</strong>ES6 引入的 <code>Promise</code> 把回调地狱"摊平"成链式调用，ES2017 引入的 <code>async/await</code> 进一步让异步代码看起来像同步代码（Day 11 会深入学习）。</div>
+    </div>
+
+    <div class="card">
+      <h3>🔄 用 Promise 改善（预览）</h3>
+<pre><code><span class="cmt">// 同样逻辑用 Promise 写</span>
+<span class="fn">getUser</span>(userId)
+  .<span class="fn">then</span>(user => <span class="fn">getOrders</span>(user.id))
+  .<span class="fn">then</span>(orders => <span class="fn">getProducts</span>(orders[<span class="num">0</span>].productId))
+  .<span class="fn">then</span>(product => <span class="fn">getReviews</span>(product.id))
+  .<span class="fn">then</span>(reviews => <span class="fn">renderPage</span>(reviews))
+  .<span class="fn">catch</span>(err => <span class="var">console</span>.<span class="fn">error</span>(err));
+<span class="cmt">// 链式调用，扁平清晰！</span></code></pre>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 7: 定时器                                             -->
+  <!-- ============================================================ -->
+  <div class="section" id="s7">
+    <div class="section-header">
+      <div class="section-num">7</div>
+      <h2>定时器：setTimeout 与 setInterval</h2>
+      <span class="tag">TIMERS</span>
+    </div>
+
+    <p>定时器是 JavaScript 内置的异步机制，<strong>不阻塞</strong>主线程。</p>
+
+    <div class="card">
+      <h3>⏰ setTimeout：延时执行</h3>
+<pre><code><span class="cmt">// setTimeout(回调, 延迟毫秒数, ...参数)</span>
+<span class="kw">const</span> timerId = <span class="fn">setTimeout</span>(() => {
+  <span class="var">console</span>.<span class="fn">log</span>(<span class="str">"2秒后执行"</span>);
+}, <span class="num">2000</span>);
+
+<span class="cmt">// 取消未执行的定时器</span>
+<span class="fn">clearTimeout</span>(timerId);
+
+<span class="cmt">// 传额外参数</span>
+<span class="fn">setTimeout</span>((name, age) => {
+  <span class="var">console</span>.<span class="fn">log</span>(<span class="str">`Hello ${name}, ${age}`</span>);
+}, <span class="num">1000</span>, <span class="str">"张三"</span>, <span class="num">28</span>);</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>🔁 setInterval：循环执行</h3>
+<pre><code><span class="cmt">// 每隔 1 秒执行一次</span>
+<span class="kw">let</span> count = <span class="num">0</span>;
+<span class="kw">const</span> intervalId = <span class="fn">setInterval</span>(() => {
+  count++;
+  <span class="var">console</span>.<span class="fn">log</span>(<span class="str">`第 ${count} 次`</span>);
+  <span class="kw">if</span> (count >= <span class="num">5</span>) {
+    <span class="fn">clearInterval</span>(intervalId);  <span class="cmt">// 停止</span>
+  }
+}, <span class="num">1000</span>);
+
+<span class="cmt">// ⚠️ 注意：setInterval 不保证精确间隔</span>
+<span class="cmt">// 如果回调耗时 1.5 秒，间隔会变成 2.5 秒</span></code></pre>
+    </div>
+
+    <div class="card">
+      <h3>🎬 requestAnimationFrame：动画专用</h3>
+      <p>专门为动画设计，<strong>与浏览器刷新频率同步</strong>（通常 60fps = 每 16.67ms 一次）。</p>
+<pre><code><span class="kw">let</span> angle = <span class="num">0</span>;
+<span class="kw">function</span> <span class="fn">animate</span>() {
+  angle += <span class="num">1</span>;
+  <span class="var">console</span>.<span class="fn">log</span>(<span class="str">`当前角度：${angle}°`</span>);
+
+  <span class="cmt">// 继续下一帧</span>
+  <span class="fn">requestAnimationFrame</span>(animate);
+}
+<span class="fn">requestAnimationFrame</span>(animate);
+
+<span class="cmt">/* 优势：
+   - 与显示器刷新率同步，不掉帧
+   - 页面隐藏时自动暂停（省电）
+   - 适合做 CesiumJS 的相机动画、模型旋转
+*/</span></code></pre>
+    </div>
+
+    <div class="warn">
+      <span class="icon">⚠️</span>
+      <div><strong>定时器的"坑"：</strong>浏览器的最小延迟通常是 <code>4ms</code>（嵌套 5 层以上）；标签页在后台时，<code>setTimeout</code>/<code>setInterval</code> 会被节流到 1 秒一次；<code>this</code> 在回调中可能丢失（用箭头函数解决）。</div>
+    </div>
+
+    <table>
+      <tr><th>API</th><th>用途</th><th>取消方式</th></tr>
+      <tr><td class="td-kw">setTimeout</td><td>延迟执行一次</td><td>clearTimeout(id)</td></tr>
+      <tr><td class="td-kw">setInterval</td><td>周期性执行</td><td>clearInterval(id)</td></tr>
+      <tr><td class="td-kw">requestAnimationFrame</td><td>动画帧</td><td>cancelAnimationFrame(id)</td></tr>
+    </table>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 8: CesiumJS 关联场景                                  -->
+  <!-- ============================================================ -->
+  <div class="section" id="s8">
+    <div class="section-header">
+      <div class="section-num">8</div>
+      <h2>CesiumJS 关联场景</h2>
+      <span class="tag">CESIUMJS</span>
+    </div>
+
+    <p>今天学的事件与异步机制，在 CesiumJS 开发中几乎<strong>无处不在</strong>。下面看几个真实场景：</p>
+
+    <div class="card">
+      <h3>🌍 场景 1：监听鼠标事件获取地理坐标</h3>
+      <p>用户点击地球时，把屏幕坐标转换为经纬度：</p>
+<pre><code><span class="cmt">// CesiumJS 经典用法</span>
+<span class="kw">const</span> viewer = <span class="kw">new</span> <span class="typ">Cesium</span>.<span class="typ">Viewer</span>(<span class="str">"cesiumContainer"</span>);
+
+<span class="cmt">// 用事件委托方式监听屏幕点击</span>
+<span class="kw">const</span> handler = <span class="kw">new</span> <span class="typ">Cesium</span>.<span class="typ">ScreenSpaceEventHandler</span>(viewer.scene.canvas);
+
+handler.<span class="fn">setInputAction</span>((click) => {
+  <span class="cmt">// click.position 是屏幕坐标 {x, y}</span>
+  <span class="kw">const</span> cartesian = viewer.scene.camera.<span class="fn">pickEllipsoid</span>(
+    click.position,
+    viewer.scene.globe.ellipsoid
+  );
+
+  <span class="kw">if</span> (cartesian) {
+    <span class="cmt">// 把 3D 笛卡尔坐标转成经纬度</span>
+    <span class="kw">const</span> cartographic = <span class="typ">Cesium</span>.<span class="typ">Cartographic</span>.<span class="fn">fromCartesian</span>(cartesian);
+    <span class="kw">const</span> lon = <span class="typ">Cesium</span>.<span class="typ">Math</span>.<span class="fn">toDegrees</span>(cartographic.longitude);
+    <span class="kw">const</span> lat = <span class="typ">Cesium</span>.<span class="typ">Math</span>.<span class="fn">toDegrees</span>(cartographic.latitude);
+
+    <span class="var">console</span>.<span class="fn">log</span>(<span class="str">`点击位置: ${lon.toFixed(4)}°E, ${lat.toFixed(4)}°N`</span>);
+  }
+}, <span class="typ">Cesium</span>.<span class="typ">ScreenSpaceEventType</span>.LEFT_CLICK);</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>⏱️ 场景 2：相机飞行动画（异步 + 事件）</h3>
+      <p>调用 <code>flyTo</code> 后，相机在指定时间内飞向目标，可以监听完成事件：</p>
+<pre><code><span class="cmt">// 异步相机飞行，1 秒后到达北京上空</span>
+viewer.camera.<span class="fn">flyTo</span>({
+  destination: <span class="typ">Cesium</span>.<span class="typ">Cartesian3</span>.<span class="fn">fromDegrees</span>(<span class="num">116.40</span>, <span class="num">39.90</span>, <span class="num">50000</span>),
+  duration: <span class="num">1.0</span>,
+  complete: () => {              <span class="cmt">// 飞行完成（异步回调）</span>
+    <span class="var">console</span>.<span class="fn">log</span>(<span class="str">"已到达北京！"</span>);
+  },
+  cancel: () => {                <span class="cmt">// 被用户取消（异步回调）</span>
+    <span class="var">console</span>.<span class="fn">log</span>(<span class="str">"飞行被取消"</span>);
+  }
+});
+
+<span class="cmt">// 监听每一帧（用 requestAnimationFrame 思想）</span>
+viewer.scene.<span class="fn">preRender</span>.<span class="fn">addEventListener</span>(() => {
+  <span class="cmt">// 每一帧渲染前触发，60fps 频率</span>
+  <span class="kw">const</span> height = viewer.camera.positionCartographic.height;
+  <span class="var">console</span>.<span class="fn">log</span>(<span class="str">`当前高度: ${height.toFixed(0)}m`</span>);
+});</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>📡 场景 3：异步加载 3D Tiles 数据</h3>
+      <p>CesiumJS 加载大规模 3D 模型（如倾斜摄影、点云）都是异步的：</p>
+<pre><code><span class="cmt">// 异步加载 3D Tiles 瓦片数据</span>
+<span class="kw">const</span> tileset = <span class="kw">await</span> <span class="typ">Cesium</span>.<span class="typ">Cesium3DTileset</span>.<span class="fn">fromUrl</span>(
+  <span class="str">"./data/tiles/tileset.json"</span>,
+  {
+    <span class="cmt">// 加载完成的回调</span>
+    onLoaded: (tileset) => {
+      <span class="var">console</span>.<span class="fn">log</span>(<span class="str">"3D 瓦片加载完成"</span>);
+      viewer.scene.primitives.<span class="fn">add</span>(tileset);
+    }
+  }
+);
+
+<span class="cmt">// 监听加载进度（事件）</span>
+tileset.loadProgress.<span class="fn">addEventListener</span>((numberOfPendingRequests) => {
+  <span class="var">console</span>.<span class="fn">log</span>(<span class="str">`还有 ${numberOfPendingRequests} 个瓦片在加载...`</span>);
+});</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>🎯 场景 4：实体点击事件委托</h3>
+      <p>当场景中有多个 Entity（点、线、面、模型）时，监听点击事件：</p>
+<pre><code><span class="cmt">// CesiumJS 的 ScreenSpaceEventHandler 内部就是事件委托</span>
+handler.<span class="fn">setInputAction</span>((click) => {
+  <span class="cmt">// pick 找到被点击的 Entity</span>
+  <span class="kw">const</span> picked = viewer.scene.<span class="fn">pick</span>(click.position);
+
+  <span class="kw">if</span> (picked &amp;&amp; picked.id) {
+    <span class="cmt">// clicked on a Cesium Entity</span>
+    <span class="kw">const</span> entity = picked.id;
+    <span class="var">console</span>.<span class="fn">log</span>(<span class="str">`点击了: ${entity.name}`</span>);
+
+    <span class="cmt">// 根据类型分发处理</span>
+    <span class="kw">if</span> (entity.point)   <span class="fn">showPointInfo</span>(entity);
+    <span class="kw">if</span> (entity.billboard) <span class="fn">showBillboardInfo</span>(entity);
+    <span class="kw">if</span> (entity.model)   <span class="fn">showModelInfo</span>(entity);
+  }
+}, <span class="typ">Cesium</span>.<span class="typ">ScreenSpaceEventType</span>.LEFT_CLICK);</code></pre>
+    </div>
+
+    <div class="tip">
+      <span class="icon">💡</span>
+      <div><strong>学习路线：</strong>掌握今天的事件和异步基础后，后续学习 Promise/async/await 时，CesiumJS 的所有"返回 Promise 的 API"（如 <code>Cesium3DTileset.fromUrl</code>、<code>IonResource.fromAssetId</code>）就能用上了。今天的事件绑定是 CesiumJS 交互的根基。</div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 9: 练习题                                             -->
+  <!-- ============================================================ -->
+  <div class="section" id="s9">
+    <div class="practice">
+      <h2>💪 练习题</h2>
+      <p>尝试在下面的在线沙盒中独立完成，然后看答案提示。</p>
+
+      <div class="exercise">
+        <div class="q">练习 1：输出顺序分析</div>
+        <p>请判断以下代码的输出顺序，并在沙盒中验证：</p>
+<pre><code><span class="var">console</span>.<span class="fn">log</span>(<span class="str">"start"</span>);
+
+<span class="fn">setTimeout</span>(() => <span class="var">console</span>.<span class="fn">log</span>(<span class="str">"timeout"</span>), <span class="num">0</span>);
+
+<span class="var">Promise</span>.<span class="fn">resolve</span>().<span class="fn">then</span>(() => <span class="var">console</span>.<span class="fn">log</span>(<span class="str">"promise1"</span>));
+
+<span class="var">console</span>.<span class="fn">log</span>(<span class="str">"end"</span>);
+
+<span class="var">Promise</span>.<span class="fn">resolve</span>().<span class="fn">then</span>(() => <span class="var">console</span>.<span class="fn">log</span>(<span class="str">"promise2"</span>));
+
+<span class="fn">setTimeout</span>(() => <span class="var">console</span>.<span class="fn">log</span>(<span class="str">"timeout2"</span>), <span class="num">0</span>);
+
+<span class="cmt">// 你的答案：____________________________________</span>
+<span class="cmt">// 提示：微任务比宏任务优先</span></code></pre>
+      </div>
+
+      <div class="exercise">
+        <div class="q">练习 2：模拟 CesiumJS 点击事件</div>
+        <p>写一个函数，模拟"点击地球获取坐标"的事件处理流程：</p>
+<pre><code><span class="cmt">// 模拟场景对象</span>
+<span class="kw">const</span> earth = {
+  cities: [
+    { name: <span class="str">"北京"</span>, lon: <span class="num">116.40</span>, lat: <span class="num">39.90</span> },
+    { name: <span class="str">"上海"</span>, lon: <span class="num">121.47</span>, lat: <span class="num">31.23</span> },
+    { name: <span class="str">"广州"</span>, lon: <span class="num">113.27</span>, lat: <span class="num">23.13</span> }
+  ]
+};
+
+<span class="cmt">// 模拟用户点击 (lon, lat)</span>
+<span class="kw">function</span> <span class="fn">simulateClick</span>(earth, clickLon, clickLat) {
+  <span class="cmt">// TODO: 找到距离点击位置最近的城市，并返回</span>
+  <span class="cmt">// 返回: { cityName, distance } 距离用经纬度欧氏距离即可</span>
+}
+
+<span class="cmt">// 测试：点击 (117, 40) 应该返回"北京"</span>
+<span class="var">console</span>.<span class="fn">log</span>(<span class="fn">simulateClick</span>(earth, <span class="num">117</span>, <span class="num">40</span>));</code></pre>
+      </div>
+
+      <div class="exercise">
+        <div class="q">练习 3：事件委托实现工具栏</div>
+        <p>用事件委托实现一个简单的工具栏，点击不同按钮触发不同行为：</p>
+<pre><code><span class="cmt">// 模拟工具栏场景：3 个按钮，点击时执行不同动画</span>
+<span class="kw">const</span> actions = {
+  <span class="str">"fly-beijing"</span>: () =&gt; <span class="str">"飞向北京"</span>,
+  <span class="str">"fly-shanghai"</span>: () =&gt; <span class="str">"飞向上海"</span>,
+  <span class="str">"reset-view"</span>: () =&gt; <span class="str">"复位视角"</span>
+};
+
+<span class="cmt">// 模拟 3 个按钮对象</span>
+<span class="kw">const</span> buttons = [
+  { id: <span class="num">1</span>, action: <span class="str">"fly-beijing"</span>, label: <span class="str">"飞向北京"</span> },
+  { id: <span class="num">2</span>, action: <span class="str">"fly-shanghai"</span>, label: <span class="str">"飞向上海"</span> },
+  { id: <span class="num">3</span>, action: <span class="str">"reset-view"</span>, label: <span class="str">"复位视角"</span> }
+];
+
+<span class="cmt">// TODO: 用事件委托方式：传入被点击的按钮 id，输出对应行为</span>
+<span class="kw">function</span> <span class="fn">handleButtonClick</span>(clickedId) {
+  <span class="cmt">// 你的代码（不要用 if-else 链）</span>
+}
+
+<span class="cmt">// 模拟点击按钮 1</span>
+<span class="fn">handleButtonClick</span>(<span class="num">1</span>);  <span class="cmt">// 应输出: 飞向北京</span>
+<span class="fn">handleButtonClick</span>(<span class="num">3</span>);  <span class="cmt">// 应输出: 复位视角</span></code></pre>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 10: 交互控制台                                        -->
+  <!-- ============================================================ -->
+  <div class="section" id="s10">
+    <div class="section-header">
+      <div class="section-num">▶</div>
+      <h2>在线练习控制台</h2>
+      <span class="tag">SANDBOX</span>
+    </div>
+
+    <p>在下面写代码并点击"运行"（或按 <code>Ctrl+Enter</code>）查看输出：</p>
+
+    <div class="console-area">
+      <div class="console-header">
+        <div class="console-dots">
+          <div class="dot dot-r"></div>
+          <div class="dot dot-y"></div>
+          <div class="dot dot-g"></div>
+        </div>
+        <span>JavaScript 沙盒 · Day 06</span>
+        <span style="color:var(--muted);font-size:11px;">Ctrl+Enter 运行</span>
+      </div>
+<textarea id="sandbox-code" spellcheck="false">// ================================================
+// Day 06 沙盒：事件循环 / 回调 / 定时器
+// ================================================
+
+// ① 同步 vs 异步：观察执行顺序
+console.log("1. 同步开始");
+
+setTimeout(() => {
+  console.log("4. setTimeout 1秒后（异步）");
+}, 1000);
+
+Promise.resolve().then(() => {
+  console.log("3. Promise（微任务）");
+});
+
+console.log("2. 同步结束");
+
+// ② 用 setInterval 模拟倒计时
+console.log("\n--- 倒计时开始 ---");
+let seconds = 3;
+const timer = setInterval(() => {
+  console.log(`剩余: ${seconds} 秒`);
+  seconds--;
+  if (seconds < 0) {
+    clearInterval(timer);
+    console.log("时间到！");
+  }
+}, 500);
+
+// ③ 模拟事件监听（用函数模拟）
+console.log("\n--- 模拟事件处理 ---");
+const eventHandlers = [];
+function onClick(handler) {
+  eventHandlers.push(handler);
+}
+function triggerClick(eventData) {
+  eventHandlers.forEach(h => h(eventData));
+}
+
+onClick((e) => console.log("监听器1:", e));
+onClick((e) => console.log("监听器2:", e));
+triggerClick({ x: 100, y: 200, target: "button" });
+
+// ④ 模拟 CesiumJS 风格：异步加载数据
+console.log("\n--- 模拟异步加载 3D Tiles ---");
+function loadTileset(url, callback) {
+  console.log(`开始加载: ${url}`);
+  setTimeout(() => {
+    callback({ name: "城市瓦片", count: 1500 });
+  }, 800);
+}
+
+loadTileset("https://example.com/tileset.json", (result) => {
+  console.log("加载完成:", result);
+});
+</textarea>
+      <div class="console-actions">
+        <button class="btn btn-run" onclick="runCode()">▶ 运行</button>
+        <button class="btn btn-clear" onclick="clearOutput()">清空输出</button>
+        <button class="btn btn-clear" onclick="resetCode()">重置代码</button>
+      </div>
+      <div id="output-box">// 点击"运行"查看输出结果...</div>
+    </div>
+  </div>
+
+
+  <!-- 今日总结 -->
+  <div class="card" style="border-color:var(--accent);border-left-width:4px;">
+    <h3 style="color:var(--accent)">📋 今日知识点总结</h3>
+    <ul style="margin-top:12px;">
+      <li>✅ 同步代码按顺序阻塞执行；异步代码"不等待"，结果通过回调或 Promise 传递</li>
+      <li>✅ 事件循环机制：执行栈 → 清空微任务 → 取一个宏任务 → 重复</li>
+      <li>✅ <code>addEventListener(type, handler, useCapture)</code> 是推荐的事件绑定方式，第三个参数控制捕获或冒泡</li>
+      <li>✅ 事件流三阶段：捕获 → 目标 → 冒泡；用 <code>stopPropagation</code> 阻止传播</li>
+      <li>✅ 事件委托利用冒泡，在父元素上统一处理子元素事件，性能更好且支持动态元素</li>
+      <li>✅ 回调函数是异步基础，但多层嵌套会形成"回调地狱"</li>
+      <li>✅ <code>setTimeout</code>/<code>setInterval</code>/<code>requestAnimationFrame</code> 三种定时器适用不同场景</li>
+      <li>✅ CesiumJS 的相机飞行、3D Tiles 加载、实体点击全部依赖事件与异步机制</li>
+    </ul>
+  </div>
+
+</div><!-- /container -->
+
+<!-- ===== FOOTER ===== -->
+<div class="footer">
+  <p>🚀 <strong>每日JS</strong> — JavaScript → CesiumJS 学习路径</p>
+  <p style="margin-top:6px;">Day 06 / 事件与异步 · 明天继续：<strong>ES6+ 语法</strong></p>
+</div>
+
+
+<!-- ===== SCRIPT ===== -->
+<script>
+  const DEFAULT_CODE = document.getElementById('sandbox-code').value;
+
+  function runCode() {
+    const code = document.getElementById('sandbox-code').value;
+    const outputBox = document.getElementById('output-box');
+    const logs = [];
+
+    // 拦截 console.log
+    const origLog = console.log;
+    const origError = console.error;
+    const origWarn = console.warn;
+
+    console.log = (...args) => {
+      logs.push(args.map(a => {
+        if (typeof a === 'object' && a !== null) {
+          try { return JSON.stringify(a, null, 2); } catch { return String(a); }
+        }
+        return String(a);
+      }).join(' '));
+      origLog(...args);
+    };
+    console.error = (...args) => {
+      logs.push('❌ ' + args.join(' '));
+      origError(...args);
+    };
+    console.warn = (...args) => {
+      logs.push('⚠️ ' + args.join(' '));
+      origWarn(...args);
+    };
+
+    try {
+      eval(code);
+      outputBox.innerHTML = logs.length
+        ? logs.map(l => `<span>${escHtml(l)}</span>`).join('\n')
+        : '<span style="color:var(--muted)">// 代码运行成功（无输出）</span>';
+    } catch(e) {
+      outputBox.innerHTML = `<span class="err">❌ ${escHtml(e.message)}</span>`;
+    } finally {
+      console.log = origLog;
+      console.error = origError;
+      console.warn = origWarn;
+    }
+  }
+
+  function clearOutput() {
+    document.getElementById('output-box').innerHTML = '// 输出已清空...';
+  }
+
+  function resetCode() {
+    document.getElementById('sandbox-code').value = DEFAULT_CODE;
+    clearOutput();
+  }
+
+  function escHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  // Ctrl+Enter 运行
+  document.getElementById('sandbox-code').addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      e.preventDefault();
+      runCode();
+    }
+  });
+
+  // ===== 事件演示区 1：基础点击 =====
+  (function() {
+    const box = document.getElementById('demo-box-1');
+    const log = document.getElementById('demo-log-1');
+    if (!box || !log) return;
+    let count = 0;
+    box.addEventListener('click', (e) => {
+      count++;
+      const line = document.createElement('div');
+      line.innerHTML = `✅ [${count}] ${new Date().toLocaleTimeString()} - target: &lt;${e.target.tagName}&gt;`;
+      log.appendChild(line);
+      log.scrollTop = log.scrollHeight;
+      box.classList.add('active');
+      setTimeout(() => box.classList.remove('active'), 200);
+    });
+  })();
+
+  // ===== 事件演示区 2：捕获/冒泡 =====
+  (function() {
+    const outer = document.getElementById('ev-outer');
+    const inner = document.getElementById('ev-inner');
+    const target = document.getElementById('ev-target');
+    const log = document.getElementById('ev-flow-log');
+    if (!outer || !inner || !target || !log) return;
+
+    function addLog(text, cls) {
+      const line = document.createElement('div');
+      line.className = cls || '';
+      line.textContent = text;
+      log.appendChild(line);
+      // 限制最多 12 条
+      while (log.children.length > 12) log.removeChild(log.firstChild);
+      log.scrollTop = log.scrollHeight;
+    }
+
+    // 捕获阶段
+    outer.addEventListener('click', () => addLog('1️⃣ outer 捕获阶段', 'ev-capture'), true);
+    inner.addEventListener('click', () => addLog('2️⃣ inner 捕获阶段', 'ev-capture'), true);
+
+    // 冒泡阶段
+    inner.addEventListener('click', () => addLog('3️⃣ inner 冒泡阶段', 'ev-bubble'), false);
+    outer.addEventListener('click', () => addLog('4️⃣ outer 冒泡阶段', 'ev-bubble'), false);
+
+    target.addEventListener('click', (e) => {
+      addLog('🎯 target 阶段 - event.target.id = ' + e.target.id, 'ev-target');
+    });
+  })();
+</script>
+</body>
+</html>

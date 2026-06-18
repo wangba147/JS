@@ -1,0 +1,1348 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>JavaScript 每日学习 — Day 08：模块与类</title>
+  <style>
+    /* ===== 全局 ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0f1117;
+      --surface:   #1a1d27;
+      --card:      #21253a;
+      --border:    #2e3350;
+      --accent:    #61dafb;
+      --accent2:   #f7c948;
+      --accent3:   #7ee787;
+      --accent4:   #ff7b72;
+      --text:      #cdd3e0;
+      --muted:     #6e7a96;
+      --tag-bg:    #1e3a5f;
+      --code-bg:   #161b2e;
+    }
+
+    body {
+      font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.75;
+      font-size: 15px;
+    }
+
+    /* ===== 顶部 Banner ===== */
+    .hero {
+      background: linear-gradient(135deg, #0d1b3e 0%, #1a2d5a 50%, #0f2040 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 52px 24px 40px;
+      text-align: center;
+    }
+    .hero .badge {
+      display: inline-block;
+      background: var(--accent);
+      color: #0a0e1a;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 4px 12px;
+      border-radius: 20px;
+      margin-bottom: 16px;
+    }
+    .hero h1 {
+      font-size: clamp(24px, 5vw, 42px);
+      font-weight: 800;
+      color: #fff;
+      line-height: 1.2;
+      margin-bottom: 12px;
+    }
+    .hero h1 span { color: var(--accent); }
+    .hero p {
+      color: var(--muted);
+      font-size: 15px;
+      max-width: 560px;
+      margin: 0 auto 24px;
+    }
+    .hero .meta {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      flex-wrap: wrap;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .hero .meta span { display: flex; align-items: center; gap: 5px; }
+
+    /* ===== 布局 ===== */
+    .container { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; }
+
+    /* ===== 目录卡片 ===== */
+    .toc {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--accent);
+      border-radius: 12px;
+      padding: 24px 28px;
+      margin-bottom: 40px;
+    }
+    .toc h2 { font-size: 14px; letter-spacing: 1px; text-transform: uppercase; color: var(--accent); margin-bottom: 14px; }
+    .toc ol { padding-left: 20px; }
+    .toc li { margin: 6px 0; }
+    .toc a { color: var(--text); text-decoration: none; }
+    .toc a:hover { color: var(--accent); }
+
+    /* ===== 章节标题 ===== */
+    .section { margin-bottom: 52px; }
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 24px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    .section-num {
+      width: 38px; height: 38px;
+      border-radius: 10px;
+      background: var(--accent);
+      color: #0a0e1a;
+      font-weight: 800;
+      font-size: 16px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .section-header h2 {
+      font-size: 22px;
+      font-weight: 700;
+      color: #fff;
+    }
+    .section-header .tag {
+      font-size: 11px;
+      background: var(--tag-bg);
+      color: var(--accent);
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    /* ===== 卡片 ===== */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+    .card h3 {
+      font-size: 16px;
+      color: var(--accent2);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card p { margin-bottom: 10px; color: var(--text); }
+    .card p:last-child { margin-bottom: 0; }
+
+    /* ===== 代码块 ===== */
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px 22px;
+      overflow-x: auto;
+      margin: 16px 0;
+      font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+      font-size: 13.5px;
+      line-height: 1.7;
+    }
+    code { font-family: inherit; }
+
+    /* 语法着色 */
+    .kw  { color: #c792ea; }
+    .str { color: #c3e88d; }
+    .num { color: #f78c6c; }
+    .cmt { color: #546e7a; font-style: italic; }
+    .fn  { color: #82aaff; }
+    .var { color: #eeffff; }
+    .op  { color: var(--accent); }
+    .typ { color: var(--accent2); }
+    .out { color: var(--accent3); }
+    .prp { color: #ffcb6b; }
+
+    /* ===== 提示框 ===== */
+    .tip, .warn, .info {
+      border-radius: 10px;
+      padding: 14px 18px;
+      margin: 16px 0;
+      font-size: 14px;
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+    .tip  { background: #0d3321; border-left: 4px solid var(--accent3); }
+    .warn { background: #3a2500; border-left: 4px solid var(--accent2); }
+    .info { background: #0d1e3a; border-left: 4px solid var(--accent); }
+    .tip .icon, .warn .icon, .info .icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+
+    /* ===== 对比表格 ===== */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 14px;
+    }
+    th {
+      background: var(--surface);
+      color: var(--accent);
+      padding: 12px 16px;
+      text-align: left;
+      border-bottom: 2px solid var(--border);
+      font-weight: 600;
+    }
+    td {
+      padding: 11px 16px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+      vertical-align: top;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(97, 218, 251, 0.04); }
+    .td-kw { color: #c792ea; font-family: 'Cascadia Code','Fira Code',monospace; font-weight: 600; }
+    .td-type { color: var(--accent2); }
+    .td-good { color: var(--accent3); }
+    .td-bad  { color: var(--accent4); }
+
+    /* ===== 两列网格 ===== */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 600px) { .grid-2 { grid-template-columns: 1fr; } }
+
+    /* ===== 练习区 ===== */
+    .practice {
+      background: linear-gradient(135deg, #0d2238, #1a2d1a);
+      border: 1px solid #2a4a2a;
+      border-radius: 12px;
+      padding: 28px;
+      margin-top: 48px;
+    }
+    .practice h2 {
+      font-size: 20px;
+      color: var(--accent3);
+      margin-bottom: 8px;
+    }
+    .practice p { color: var(--muted); margin-bottom: 20px; font-size: 14px; }
+    .exercise {
+      background: var(--code-bg);
+      border: 1px dashed #2a4a2a;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+    .exercise .q {
+      color: var(--accent2);
+      font-weight: 600;
+      margin-bottom: 12px;
+      font-size: 14px;
+    }
+    .exercise pre { margin: 0; }
+
+    /* ===== 交互控制台 ===== */
+    .console-area {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-top: 48px;
+    }
+    .console-header {
+      background: var(--surface);
+      padding: 12px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+    .console-header span { color: var(--accent); font-size: 13px; font-weight: 600; letter-spacing: 1px; }
+    .console-dots { display: flex; gap: 6px; }
+    .dot { width: 12px; height: 12px; border-radius: 50%; }
+    .dot-r { background: #ff5f57; }
+    .dot-y { background: #febc2e; }
+    .dot-g { background: #28c840; }
+    #sandbox-code {
+      width: 100%;
+      background: var(--code-bg);
+      color: var(--accent3);
+      border: none;
+      padding: 18px 20px;
+      font-family: 'Cascadia Code','Fira Code',monospace;
+      font-size: 13.5px;
+      line-height: 1.7;
+      resize: vertical;
+      min-height: 160px;
+      outline: none;
+    }
+    .console-actions {
+      padding: 12px 18px;
+      display: flex;
+      gap: 10px;
+      border-top: 1px solid var(--border);
+    }
+    .btn {
+      padding: 8px 20px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      transition: opacity .2s;
+    }
+    .btn:hover { opacity: .85; }
+    .btn-run { background: var(--accent); color: #0a0e1a; }
+    .btn-clear { background: var(--surface); color: var(--muted); border: 1px solid var(--border); }
+    #output-box {
+      padding: 16px 20px;
+      min-height: 60px;
+      font-family: 'Cascadia Code','Fira Code',monospace;
+      font-size: 13px;
+      color: var(--accent3);
+      border-top: 1px solid var(--border);
+      white-space: pre-wrap;
+    }
+    #output-box .err { color: var(--accent4); }
+
+    /* ===== 进度条 ===== */
+    .progress-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 22px 26px;
+      margin-bottom: 40px;
+    }
+    .progress-card h3 { font-size: 13px; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); margin-bottom: 16px; }
+    .progress-list { display: flex; flex-wrap: wrap; gap: 8px; }
+    .progress-item {
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+    }
+    .pi-done  { background: #0d3321; color: var(--accent3); border: 1px solid #1a4d2a; }
+    .pi-today { background: #1e3a5f; color: var(--accent); border: 1px solid #2a5a8f; }
+    .pi-next  { background: var(--card); color: var(--muted); border: 1px solid var(--border); }
+
+    /* ===== 底部 ===== */
+    .footer {
+      text-align: center;
+      padding: 40px 24px 20px;
+      color: var(--muted);
+      font-size: 13px;
+      border-top: 1px solid var(--border);
+    }
+    .footer strong { color: var(--accent); }
+
+    /* ===== inline code ===== */
+    p code, li code, td code {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      padding: 1px 6px;
+      border-radius: 5px;
+      font-family: 'Cascadia Code','Fira Code',monospace;
+      font-size: 12.5px;
+      color: var(--accent);
+    }
+    ul { padding-left: 20px; }
+    li { margin: 5px 0; }
+  </style>
+</head>
+<body>
+
+<!-- ===== HERO ===== -->
+<div class="hero">
+  <div class="badge">JavaScript 学习路径</div>
+  <h1>Day 08 — <span>模块</span>与类</h1>
+  <p>从"过程式"到"面向对象"——用类组织代码，用模块拆分工程。这是大型项目的基石。</p>
+  <div class="meta">
+    <span>&#128197; 第 8 天</span>
+    <span>&#9201; 预计 50 分钟</span>
+    <span>&#127919; 目标：CesiumJS 地球开发</span>
+    <span>&#128202; 基础阶段 · 接近尾声</span>
+  </div>
+</div>
+
+<!-- ===== CONTAINER ===== -->
+<div class="container">
+
+  <!-- 学习进度 -->
+  <div class="progress-card">
+    <h3>&#128205; 学习路线图</h3>
+    <div class="progress-list">
+      <div class="progress-item pi-done">Day 01 · 变量与数据类型</div>
+      <div class="progress-item pi-done">Day 02 · 函数与作用域</div>
+      <div class="progress-item pi-done">Day 03 · 数组与对象</div>
+      <div class="progress-item pi-done">Day 04 · 控制流</div>
+      <div class="progress-item pi-done">Day 05 · DOM 操作</div>
+      <div class="progress-item pi-done">Day 06 · 事件与异步</div>
+      <div class="progress-item pi-done">Day 07 · ES6+ 语法</div>
+      <div class="progress-item pi-today">Day 08 · 模块与类 &#8592; 今天</div>
+      <div class="progress-item pi-next">Day 09 · 原型与继承</div>
+      <div class="progress-item pi-next">Day 10 · 错误处理与调试</div>
+      <div class="progress-item pi-next">Day 11 · 异步编程</div>
+      <div class="progress-item pi-next">Day 12 · 浏览器API</div>
+      <div class="progress-item pi-next">CesiumJS 阶段 &#127758;</div>
+    </div>
+  </div>
+
+  <!-- 目录 -->
+  <div class="toc">
+    <h2>&#128218; 本课目录</h2>
+    <ol>
+      <li><a href="#s1">为什么需要类与模块</a></li>
+      <li><a href="#s2">class 基本语法</a></li>
+      <li><a href="#s3">构造函数 constructor</a></li>
+      <li><a href="#s4">实例方法与 this</a></li>
+      <li><a href="#s5">静态方法与属性</a></li>
+      <li><a href="#s6">私有字段（#）</a></li>
+      <li><a href="#s7">getter / setter</a></li>
+      <li><a href="#s8">类的继承 extends</a></li>
+      <li><a href="#s9">ES6 模块：import / export</a></li>
+      <li><a href="#s10">CesiumJS 关联场景</a></li>
+      <li><a href="#s11">练习题</a></li>
+      <li><a href="#s12">在线练习控制台</a></li>
+    </ol>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 1: 为什么需要类与模块                                  -->
+  <!-- ============================================================ -->
+  <div class="section" id="s1">
+    <div class="section-header">
+      <div class="section-num">1</div>
+      <h2>为什么需要类与模块</h2>
+      <span class="tag">MOTIVATION</span>
+    </div>
+
+    <div class="card">
+      <h3>&#129300; 从混乱到有序</h3>
+      <p>到目前为止，我们写的代码都是"散装"的——函数、变量都丢在全局作用域。当代码量超过几百行，这种方式就会崩溃：</p>
+      <ul>
+        <li><strong>命名冲突：</strong>多个文件里都有 <code>getData()</code> 函数，互相覆盖</li>
+        <li><strong>依赖混乱：</strong>不知道谁依赖谁，加载顺序错了就报错</li>
+        <li><strong>难以复用：</strong>相似功能的代码到处复制粘贴</li>
+        <li><strong>难以维护：</strong>改一个地方可能影响全局</li>
+      </ul>
+      <p>类的本质是<strong>将数据（属性）和行为（方法）打包在一起</strong>。模块的本质是<strong>将相关的类、函数、变量封装在独立文件中</strong>。</p>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <h3>&#10060; 散装代码（不推荐）</h3>
+<pre><code><span class="cmt">// 全局变量到处都是</span>
+<span class="kw">let</span> <span class="var">viewerLat</span> <span class="op">=</span> <span class="num">39.9</span>;
+<span class="kw">let</span> <span class="var">viewerLon</span> <span class="op">=</span> <span class="num">116.4</span>;
+<span class="kw">let</span> <span class="var">viewerZoom</span> <span class="op">=</span> <span class="num">15</span>;
+
+<span class="kw">function</span> <span class="fn">setView</span>(<span class="var">lat</span>, <span class="var">lon</span>, <span class="var">zoom</span>) {
+  <span class="var">viewerLat</span> <span class="op">=</span> <span class="var">lat</span>;
+  <span class="var">viewerLon</span> <span class="op">=</span> <span class="var">lon</span>;
+  <span class="var">viewerZoom</span> <span class="op">=</span> <span class="var">zoom</span>;
+}
+
+<span class="kw">function</span> <span class="fn">getView</span>() {
+  <span class="kw">return</span> { <span class="var">lat</span>: <span class="var">viewerLat</span>, <span class="var">lon</span>: <span class="var">viewerLon</span>, <span class="var">zoom</span>: <span class="var">viewerZoom</span> };
+}
+</code></pre>
+      </div>
+      <div class="card">
+        <h3>&#9989; 类 + 模块（推荐）</h3>
+<pre><code><span class="cmt">// CameraView.js 模块</span>
+<span class="kw">export</span> <span class="kw">class</span> <span class="typ">CameraView</span> {
+  <span class="var">#lat</span>;
+  <span class="var">#lon</span>;
+  <span class="var">#zoom</span>;
+
+  <span class="fn">constructor</span>(<span class="var">lat</span>, <span class="var">lon</span>, <span class="var">zoom</span>) {
+    <span class="kw">this</span>.<span class="prp">#lat</span> <span class="op">=</span> <span class="var">lat</span>;
+    <span class="kw">this</span>.<span class="prp">#lon</span> <span class="op">=</span> <span class="var">lon</span>;
+    <span class="kw">this</span>.<span class="prp">#zoom</span> <span class="op">=</span> <span class="var">zoom</span>;
+  }
+
+  <span class="fn">setView</span>(<span class="var">lat</span>, <span class="var">lon</span>, <span class="var">zoom</span>) {
+    <span class="kw">this</span>.<span class="prp">#lat</span> <span class="op">=</span> <span class="var">lat</span>;
+    <span class="kw">this</span>.<span class="prp">#lon</span> <span class="op">=</span> <span class="var">lon</span>;
+    <span class="kw">this</span>.<span class="prp">#zoom</span> <span class="op">=</span> <span class="var">zoom</span>;
+  }
+
+  <span class="fn">getView</span>() {
+    <span class="kw">return</span> { <span class="var">lat</span>: <span class="kw">this</span>.<span class="prp">#lat</span>, <span class="var">lon</span>: <span class="kw">this</span>.<span class="prp">#lon</span>, <span class="var">zoom</span>: <span class="kw">this</span>.<span class="prp">#zoom</span> };
+  }
+}
+</code></pre>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 2: class 基本语法                                     -->
+  <!-- ============================================================ -->
+  <div class="section" id="s2">
+    <div class="section-header">
+      <div class="section-num">2</div>
+      <h2>class 基本语法</h2>
+      <span class="tag">SYNTAX</span>
+    </div>
+
+    <div class="card">
+      <h3>&#128295; class 关键字</h3>
+      <p>ES6 引入 <code>class</code> 关键字，让面向对象编程更直观。注意：这只是<strong>语法糖</strong>，底层仍是原型继承。</p>
+<pre><code><span class="cmt">// 定义一个类（首字母通常大写）</span>
+<span class="kw">class</span> <span class="typ">Marker</span> {
+  <span class="cmt">// 构造函数：创建实例时自动调用</span>
+  <span class="fn">constructor</span>(<span class="var">name</span>, <span class="var">lat</span>, <span class="var">lon</span>) {
+    <span class="kw">this</span>.<span class="prp">name</span> <span class="op">=</span> <span class="var">name</span>;
+    <span class="kw">this</span>.<span class="prp">lat</span>  <span class="op">=</span> <span class="var">lat</span>;
+    <span class="kw">this</span>.<span class="prp">lon</span>  <span class="op">=</span> <span class="var">lon</span>;
+  }
+
+  <span class="cmt">// 实例方法</span>
+  <span class="fn">getPosition</span>() {
+    <span class="kw">return</span> <span class="str">`<span class="op">${</span><span class="kw">this</span>.<span class="prp">name</span><span class="op">}</span>: (<span class="op">${</span><span class="kw">this</span>.<span class="prp">lat</span><span class="op">}</span>, <span class="op">${</span><span class="kw">this</span>.<span class="prp">lon</span><span class="op">}</span>)`</span>;
+  }
+}
+
+<span class="cmt">// 使用 new 关键字创建实例</span>
+<span class="kw">const</span> <span class="var">m1</span> <span class="op">=</span> <span class="kw">new</span> <span class="typ">Marker</span>(<span class="str">'北京'</span>, <span class="num">39.9</span>, <span class="num">116.4</span>);
+<span class="kw">const</span> <span class="var">m2</span> <span class="op">=</span> <span class="kw">new</span> <span class="typ">Marker</span>(<span class="str">'上海'</span>, <span class="num">31.2</span>, <span class="num">121.5</span>);
+
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">m1</span>.<span class="fn">getPosition</span>()); <span class="cmt">// "北京: (39.9, 116.4)"</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">m2</span>.<span class="fn">getPosition</span>()); <span class="cmt">// "上海: (31.2, 121.5)"</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="kw">typeof</span> <span class="typ">Marker</span>);         <span class="cmt">// "function" ← 类本质是函数</span>
+</code></pre>
+    </div>
+
+    <div class="info">
+      <span class="icon">&#8505;&#65039;</span>
+      <div><strong>关键点：</strong><code>new</code> 关键字是必须的。不用 <code>new</code> 调用类会抛出 <code>TypeError</code>。这与普通函数不同。</div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 3: 构造函数 constructor                               -->
+  <!-- ============================================================ -->
+  <div class="section" id="s3">
+    <div class="section-header">
+      <div class="section-num">3</div>
+      <h2>构造函数 constructor</h2>
+      <span class="tag">CONSTRUCTOR</span>
+    </div>
+
+    <div class="card">
+      <h3>&#127959;&#65039; 对象的"出生过程"</h3>
+      <p><code>constructor</code> 是类的特殊方法，在 <code>new</code> 创建实例时自动调用，用于初始化对象属性。一个类只能有一个构造函数。</p>
+<pre><code><span class="kw">class</span> <span class="typ">GeoPoint</span> {
+  <span class="fn">constructor</span>(<span class="var">lat</span>, <span class="var">lon</span>, <span class="var">altitude</span> <span class="op">=</span> <span class="num">0</span>) {
+    <span class="kw">this</span>.<span class="prp">latitude</span>  <span class="op">=</span> <span class="var">lat</span>;
+    <span class="kw">this</span>.<span class="prp">longitude</span> <span class="op">=</span> <span class="var">lon</span>;
+    <span class="kw">this</span>.<span class="prp">altitude</span>  <span class="op">=</span> <span class="var">altitude</span>; <span class="cmt">// 默认值 0</span>
+    <span class="kw">this</span>.<span class="prp">timestamp</span>  <span class="op">=</span> <span class="fn">Date</span>.<span class="fn">now</span>();   <span class="cmt">// 自动记录创建时间</span>
+  }
+
+  <span class="fn">info</span>() {
+    <span class="kw">return</span> <span class="str">`坐标：(<span class="op">${</span><span class="kw">this</span>.<span class="prp">latitude</span><span class="op">}</span>, <span class="op">${</span><span class="kw">this</span>.<span class="prp">longitude</span><span class="op">}</span>, <span class="op">${</span><span class="kw">this</span>.<span class="prp">altitude</span><span class="op">}</span>m)`</span>;
+  }
+}
+
+<span class="kw">const</span> <span class="var">p1</span> <span class="op">=</span> <span class="kw">new</span> <span class="typ">GeoPoint</span>(<span class="num">30.5</span>, <span class="num">114.3</span>);      <span class="cmt">// altitude = 0（默认值）</span>
+<span class="kw">const</span> <span class="var">p2</span> <span class="op">=</span> <span class="kw">new</span> <span class="typ">GeoPoint</span>(<span class="num">30.5</span>, <span class="num">114.3</span>, <span class="num">8848</span>); <span class="cmt">// altitude = 8848</span>
+
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">p1</span>.<span class="fn">info</span>()); <span class="cmt">// "坐标：(30.5, 114.3, 0m)"</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">p2</span>.<span class="fn">info</span>()); <span class="cmt">// "坐标：(30.5, 114.3, 8848m)"</span>
+</code></pre>
+    </div>
+
+    <div class="tip">
+      <span class="icon">&#128161;</span>
+      <div><strong>可以不写 constructor：</strong>如果你不写 <code>constructor</code>，JavaScript 会自动生成一个空的 <code>constructor() {}</code>，相当于无参构造。</div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 4: 实例方法与 this                                    -->
+  <!-- ============================================================ -->
+  <div class="section" id="s4">
+    <div class="section-header">
+      <div class="section-num">4</div>
+      <h2>实例方法与 this</h2>
+      <span class="tag">METHODS</span>
+    </div>
+
+    <div class="card">
+      <h3>&#128269; this 的指向</h3>
+      <p>在类的方法中，<code>this</code> 指向<strong>调用该方法的实例对象</strong>。但要注意——JavaScript 中 <code>this</code> 是动态的，容易丢失上下文。</p>
+<pre><code><span class="kw">class</span> <span class="typ">Layer</span> {
+  <span class="fn">constructor</span>(<span class="var">name</span>) {
+    <span class="kw">this</span>.<span class="prp">name</span> <span class="op">=</span> <span class="var">name</span>;
+    <span class="kw">this</span>.<span class="prp">visible</span> <span class="op">=</span> <span class="kw">true</span>;
+  }
+
+  <span class="fn">toggle</span>() {
+    <span class="kw">this</span>.<span class="prp">visible</span> <span class="op">=</span> <span class="op">!</span><span class="kw">this</span>.<span class="prp">visible</span>;
+    <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">`<span class="op">${</span><span class="kw">this</span>.<span class="prp">name</span><span class="op">}</span>: <span class="op">${</span><span class="kw">this</span>.<span class="prp">visible</span> <span class="op">?</span> <span class="str">'显示'</span> <span class="op">:</span> <span class="str">'隐藏'</span><span class="op">}</span>`</span>);
+  }
+}
+
+<span class="kw">const</span> <span class="var">layer</span> <span class="op">=</span> <span class="kw">new</span> <span class="typ">Layer</span>(<span class="str">'建筑模型'</span>);
+<span class="var">layer</span>.<span class="fn">toggle</span>(); <span class="cmt">// "建筑模型: 隐藏"</span>
+<span class="var">layer</span>.<span class="fn">toggle</span>(); <span class="cmt">// "建筑模型: 显示"</span>
+
+<span class="cmt">// ⚠️ 陷阱：this 丢失</span>
+<span class="kw">const</span> <span class="var">fn</span> <span class="op">=</span> <span class="var">layer</span>.<span class="var">toggle</span>;
+<span class="cmt">// fn(); ← 报错！this 变成了 undefined（严格模式）</span>
+
+<span class="cmt">// ✅ 修复方案1：箭头函数属性（推荐）</span>
+<span class="kw">class</span> <span class="typ">Layer2</span> {
+  <span class="fn">constructor</span>(<span class="var">name</span>) { <span class="kw">this</span>.<span class="prp">name</span> <span class="op">=</span> <span class="var">name</span>; }
+  <span class="var">toggle</span> <span class="op">=</span> () <span class="op">=></span> { <span class="cmt">// 箭头函数绑定 this</span>
+    <span class="fn">console</span>.<span class="fn">log</span>(<span class="kw">this</span>.<span class="prp">name</span>);
+  };
+}
+
+<span class="cmt">// ✅ 修复方案2：.bind()</span>
+<span class="kw">const</span> <span class="var">fn2</span> <span class="op">=</span> <span class="var">layer</span>.<span class="var">toggle</span>.<span class="fn">bind</span>(<span class="var">layer</span>);
+<span class="var">fn2</span>(); <span class="cmt">// 正常工作</span>
+</code></pre>
+    </div>
+
+    <div class="warn">
+      <span class="icon">&#9888;&#65039;</span>
+      <div><strong>this 丢失是高频坑：</strong>当你把方法作为回调传递（如事件监听器、<code>setTimeout</code>）时，<code>this</code> 很容易丢失。箭头函数属性是最简洁的解决方案。</div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 5: 静态方法与属性                                     -->
+  <!-- ============================================================ -->
+  <div class="section" id="s5">
+    <div class="section-header">
+      <div class="section-num">5</div>
+      <h2>静态方法与属性</h2>
+      <span class="tag">STATIC</span>
+    </div>
+
+    <div class="card">
+      <h3>&#128218; 属于类本身，不属于实例</h3>
+      <p><code>static</code> 关键字定义的方法和属性，<strong>只能通过类名访问</strong>，不能通过实例访问。适合定义工具函数、常量、工厂方法等。</p>
+<pre><code><span class="kw">class</span> <span class="typ">GeoUtils</span> {
+  <span class="cmt">// 静态属性（ES2022+）</span>
+  <span class="kw">static</span> <span class="var">EARTH_RADIUS</span> <span class="op">=</span> <span class="num">6371</span>;        <span class="cmt">// km</span>
+  <span class="kw">static</span> <span class="var">KM_PER_DEGREE</span> <span class="op">=</span> <span class="num">111.32</span>;    <span class="cmt">// 每度约 111km</span>
+
+  <span class="cmt">// 静态方法：度数转弧度</span>
+  <span class="kw">static</span> <span class="fn">toRadians</span>(<span class="var">degrees</span>) {
+    <span class="kw">return</span> <span class="var">degrees</span> <span class="op">*</span> <span class="fn">Math</span>.<span class="var">PI</span> <span class="op">/</span> <span class="num">180</span>;
+  }
+
+  <span class="cmt">// 静态方法：计算两点近似距离（简化版）</span>
+  <span class="kw">static</span> <span class="fn">approxDistance</span>(<span class="var">lat1</span>, <span class="var">lon1</span>, <span class="var">lat2</span>, <span class="var">lon2</span>) {
+    <span class="kw">const</span> <span class="var">dLat</span> <span class="op">=</span> (<span class="var">lat2</span> <span class="op">-</span> <span class="var">lat1</span>) <span class="op">*</span> <span class="kw">this</span>.<span class="prp">KM_PER_DEGREE</span>;
+    <span class="kw">const</span> <span class="var">dLon</span> <span class="op">=</span> (<span class="var">lon2</span> <span class="op">-</span> <span class="var">lon1</span>) <span class="op">*</span> <span class="kw">this</span>.<span class="prp">KM_PER_DEGREE</span>
+                <span class="op">*</span> <span class="fn">Math</span>.<span class="fn">cos</span>(<span class="kw">this</span>.<span class="fn">toRadians</span>(<span class="var">lat1</span>));
+    <span class="kw">return</span> <span class="fn">Math</span>.<span class="fn">sqrt</span>(<span class="var">dLat</span> <span class="op">**</span> <span class="num">2</span> <span class="op">+</span> <span class="var">dLon</span> <span class="op">**</span> <span class="num">2</span>);
+  }
+
+  <span class="cmt">// 静态工厂方法</span>
+  <span class="kw">static</span> <span class="fn">fromString</span>(<span class="var">coordStr</span>) {
+    <span class="kw">const</span> [<span class="var">lat</span>, <span class="var">lon</span>] <span class="op">=</span> <span class="var">coordStr</span>.<span class="fn">split</span>(<span class="str">','</span>).<span class="fn">map</span>(<span class="fn">Number</span>);
+    <span class="kw">return</span> { <span class="var">lat</span>, <span class="var">lon</span> };
+  }
+}
+
+<span class="cmt">// 直接通过类名调用，无需 new</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="typ">GeoUtils</span>.<span class="var">EARTH_RADIUS</span>);              <span class="cmt">// 6371</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="typ">GeoUtils</span>.<span class="fn">toRadians</span>(<span class="num">180</span>));            <span class="cmt">// 3.1415...</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="typ">GeoUtils</span>.<span class="fn">approxDistance</span>(<span class="num">39.9</span>, <span class="num">116.4</span>, <span class="num">31.2</span>, <span class="num">121.5</span>));
+<span class="cmt">// 约 1069 km（北京到上海）</span>
+
+<span class="cmt">// ⚠️ 不能通过实例调用</span>
+<span class="kw">const</span> <span class="var">g</span> <span class="op">=</span> <span class="kw">new</span> <span class="typ">GeoUtils</span>();
+<span class="cmt">// g.toRadians(90); ← TypeError!</span>
+</code></pre>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 6: 私有字段                                           -->
+  <!-- ============================================================ -->
+  <div class="section" id="s6">
+    <div class="section-header">
+      <div class="section-num">6</div>
+      <h2>私有字段（#）</h2>
+      <span class="tag">PRIVATE</span>
+    </div>
+
+    <div class="card">
+      <h3>&#128274; 真正私有的属性</h3>
+      <p>ES2022 引入 <code>#</code> 前缀来定义私有字段。私有字段<strong>只能在类内部访问</strong>，外部完全不可见，也无法被继承。</p>
+<pre><code><span class="kw">class</span> <span class="typ">BankAccount</span> {
+  <span class="cmt">// 私有字段：外部无法访问</span>
+  <span class="var">#balance</span> <span class="op">=</span> <span class="num">0</span>;
+  <span class="var">#pin</span>;
+
+  <span class="fn">constructor</span>(<span class="var">initialBalance</span>, <span class="var">pin</span>) {
+    <span class="kw">this</span>.<span class="prp">#balance</span> <span class="op">=</span> <span class="var">initialBalance</span>;
+    <span class="kw">this</span>.<span class="prp">#pin</span> <span class="op">=</span> <span class="var">pin</span>;
+  }
+
+  <span class="cmt">// 公有方法：可以访问私有字段</span>
+  <span class="fn">deposit</span>(<span class="var">amount</span>) {
+    <span class="kw">if</span> (<span class="var">amount</span> <span class="op">></span> <span class="num">0</span>) <span class="kw">this</span>.<span class="prp">#balance</span> <span class="op">+=</span> <span class="var">amount</span>;
+    <span class="kw">return</span> <span class="kw">this</span>.<span class="prp">#balance</span>;
+  }
+
+  <span class="fn">withdraw</span>(<span class="var">amount</span>, <span class="var">pin</span>) {
+    <span class="kw">if</span> (<span class="var">pin</span> <span class="op">!==</span> <span class="kw">this</span>.<span class="prp">#pin</span>) <span class="kw">return</span> <span class="str">'密码错误'</span>;
+    <span class="kw">if</span> (<span class="var">amount</span> <span class="op"><=</span> <span class="kw">this</span>.<span class="prp">#balance</span>) {
+      <span class="kw">this</span>.<span class="prp">#balance</span> <span class="op">-=</span> <span class="var">amount</span>;
+      <span class="kw">return</span> <span class="str">`取款成功，余额：<span class="op">${</span><span class="kw">this</span>.<span class="prp">#balance</span><span class="op">}</span>`</span>;
+    }
+    <span class="kw">return</span> <span class="str">'余额不足'</span>;
+  }
+
+  <span class="cmt">// 私有方法（ES2022+）</span>
+  <span class="var">#validateAmount</span>(<span class="var">amount</span>) {
+    <span class="kw">return</span> <span class="var">amount</span> <span class="op">></span> <span class="num">0</span> <span class="op">&&</span> <span class="fn">Number</span>.<span class="fn">isFinite</span>(<span class="var">amount</span>);
+  }
+}
+
+<span class="kw">const</span> <span class="var">account</span> <span class="op">=</span> <span class="kw">new</span> <span class="typ">BankAccount</span>(<span class="num">1000</span>, <span class="str">'1234'</span>);
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">account</span>.<span class="fn">deposit</span>(<span class="num">500</span>)); <span class="cmt">// 1500</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">account</span>.<span class="var">balance</span>);      <span class="cmt">// undefined（私有字段不可见）</span>
+<span class="cmt">// account.#balance; ← SyntaxError!</span>
+<span class="cmt">// account.#pin;     ← SyntaxError!</span>
+</code></pre>
+    </div>
+
+    <div class="info">
+      <span class="icon">&#8505;&#65039;</span>
+      <div><strong>命名约定对比：</strong>在 <code>#</code> 出现之前，开发者用 <code>_balance</code>（下划线前缀）表示"约定私有"，但这只是约定，外部依然可以访问。<code>#</code> 是真正的语言级私有。</div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 7: getter / setter                                    -->
+  <!-- ============================================================ -->
+  <div class="section" id="s7">
+    <div class="section-header">
+      <div class="section-num">7</div>
+      <h2>getter / setter</h2>
+      <span class="tag">ACCESSORS</span>
+    </div>
+
+    <div class="card">
+      <h3>&#127919; 像访问属性一样调用方法</h3>
+      <p><code>get</code> 和 <code>set</code> 让你定义"计算属性"——访问时像普通属性，但背后执行的是方法。常用于数据验证和格式化。</p>
+<pre><code><span class="kw">class</span> <span class="typ">Temperature</span> {
+  <span class="var">#celsius</span> <span class="op">=</span> <span class="num">0</span>;
+
+  <span class="fn">constructor</span>(<span class="var">celsius</span>) {
+    <span class="kw">this</span>.<span class="prp">#celsius</span> <span class="op">=</span> <span class="var">celsius</span>;
+  }
+
+  <span class="cmt">// getter：读取时计算</span>
+  <span class="kw">get</span> <span class="fn">celsius</span>() {
+    <span class="kw">return</span> <span class="kw">this</span>.<span class="prp">#celsius</span>;
+  }
+
+  <span class="kw">get</span> <span class="fn">fahrenheit</span>() {
+    <span class="kw">return</span> <span class="kw">this</span>.<span class="prp">#celsius</span> <span class="op">*</span> <span class="num">9</span> <span class="op">/</span> <span class="num">5</span> <span class="op">+</span> <span class="num">32</span>;
+  }
+
+  <span class="kw">get</span> <span class="fn">kelvin</span>() {
+    <span class="kw">return</span> <span class="kw">this</span>.<span class="prp">#celsius</span> <span class="op">+</span> <span class="num">273.15</span>;
+  }
+
+  <span class="cmt">// setter：设置时验证</span>
+  <span class="kw">set</span> <span class="fn">celsius</span>(<span class="var">value</span>) {
+    <span class="kw">if</span> (<span class="var">value</span> <span class="op"><</span> <span class="op">-</span><span class="num">273.15</span>) {
+      <span class="kw">throw</span> <span class="kw">new</span> <span class="typ">Error</span>(<span class="str">'温度不能低于绝对零度！'</span>);
+    }
+    <span class="kw">this</span>.<span class="prp">#celsius</span> <span class="op">=</span> <span class="var">value</span>;
+  }
+
+  <span class="kw">set</span> <span class="fn">fahrenheit</span>(<span class="var">value</span>) {
+    <span class="kw">this</span>.<span class="prp">#celsius</span> <span class="op">=</span> (<span class="var">value</span> <span class="op">-</span> <span class="num">32</span>) <span class="op">*</span> <span class="num">5</span> <span class="op">/</span> <span class="num">9</span>;
+  }
+}
+
+<span class="kw">const</span> <span class="var">temp</span> <span class="op">=</span> <span class="kw">new</span> <span class="typ">Temperature</span>(<span class="num">25</span>);
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">temp</span>.<span class="var">celsius</span>);    <span class="cmt">// 25（不需要括号！）</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">temp</span>.<span class="var">fahrenheit</span>); <span class="cmt">// 77</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">temp</span>.<span class="var">kelvin</span>);     <span class="cmt">// 298.15</span>
+
+<span class="var">temp</span>.<span class="var">fahrenheit</span> <span class="op">=</span> <span class="num">32</span>;          <span class="cmt">// 使用 setter，等价于 0°C</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">temp</span>.<span class="var">celsius</span>);    <span class="cmt">// 0</span>
+
+<span class="cmt">// temp.celsius = -300; ← Error: 温度不能低于绝对零度！</span>
+</code></pre>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 8: 类的继承 extends                                   -->
+  <!-- ============================================================ -->
+  <div class="section" id="s8">
+    <div class="section-header">
+      <div class="section-num">8</div>
+      <h2>类的继承 extends</h2>
+      <span class="tag">INHERITANCE</span>
+    </div>
+
+    <div class="card">
+      <h3>&#127793; 子类继承父类的属性和方法</h3>
+      <p>用 <code>extends</code> 创建子类，用 <code>super</code> 调用父类的构造函数和方法。</p>
+<pre><code><span class="cmt">// 父类：基础地图实体</span>
+<span class="kw">class</span> <span class="typ">MapEntity</span> {
+  <span class="fn">constructor</span>(<span class="var">id</span>, <span class="var">name</span>) {
+    <span class="kw">this</span>.<span class="prp">id</span> <span class="op">=</span> <span class="var">id</span>;
+    <span class="kw">this</span>.<span class="prp">name</span> <span class="op">=</span> <span class="var">name</span>;
+    <span class="kw">this</span>.<span class="prp">visible</span> <span class="op">=</span> <span class="kw">true</span>;
+  }
+
+  <span class="fn">show</span>() { <span class="kw">this</span>.<span class="prp">visible</span> <span class="op">=</span> <span class="kw">true</span>; }
+  <span class="fn">hide</span>() { <span class="kw">this</span>.<span class="prp">visible</span> <span class="op">=</span> <span class="kw">false</span>; }
+
+  <span class="fn">getInfo</span>() {
+    <span class="kw">return</span> <span class="str">`[<span class="op">${</span><span class="kw">this</span>.<span class="prp">id</span><span class="op">}</span>] <span class="op">${</span><span class="kw">this</span>.<span class="prp">name</span><span class="op">}</span>`</span>;
+  }
+}
+
+<span class="cmt">// 子类1：标注点</span>
+<span class="kw">class</span> <span class="typ">Marker</span> <span class="kw">extends</span> <span class="typ">MapEntity</span> {
+  <span class="fn">constructor</span>(<span class="var">id</span>, <span class="var">name</span>, <span class="var">lat</span>, <span class="var">lon</span>) {
+    <span class="kw">super</span>(<span class="var">id</span>, <span class="var">name</span>);  <span class="cmt">// ← 必须先调用 super()</span>
+    <span class="kw">this</span>.<span class="prp">lat</span> <span class="op">=</span> <span class="var">lat</span>;
+    <span class="kw">this</span>.<span class="prp">lon</span> <span class="op">=</span> <span class="var">lon</span>;
+  }
+
+  <span class="fn">getInfo</span>() {
+    <span class="cmt">// 调用父类方法并扩展</span>
+    <span class="kw">return</span> <span class="kw">super</span>.<span class="fn">getInfo</span>() <span class="op">+</span> <span class="str">` 位置：(<span class="op">${</span><span class="kw">this</span>.<span class="prp">lat</span><span class="op">}</span>, <span class="op">${</span><span class="kw">this</span>.<span class="prp">lon</span><span class="op">}</span>)`</span>;
+  }
+}
+
+<span class="cmt">// 子类2：多边形区域</span>
+<span class="kw">class</span> <span class="typ">Polygon</span> <span class="kw">extends</span> <span class="typ">MapEntity</span> {
+  <span class="fn">constructor</span>(<span class="var">id</span>, <span class="var">name</span>, <span class="var">coordinates</span>) {
+    <span class="kw">super</span>(<span class="var">id</span>, <span class="var">name</span>);
+    <span class="kw">this</span>.<span class="prp">coordinates</span> <span class="op">=</span> <span class="var">coordinates</span>;
+    <span class="kw">this</span>.<span class="prp">area</span> <span class="op">=</span> <span class="kw">null</span>;
+  }
+
+  <span class="fn">calculateArea</span>() {
+    <span class="cmt">// 简化面积计算（实际 CesiumJS 中有更精确的方法）</span>
+    <span class="kw">this</span>.<span class="prp">area</span> <span class="op">=</span> <span class="kw">this</span>.<span class="prp">coordinates</span>.<span class="var">length</span> <span class="op">*</span> <span class="num">10</span>; <span class="cmt">// 示意</span>
+    <span class="kw">return</span> <span class="kw">this</span>.<span class="prp">area</span>;
+  }
+}
+
+<span class="cmt">// 使用</span>
+<span class="kw">const</span> <span class="var">marker</span> <span class="op">=</span> <span class="kw">new</span> <span class="typ">Marker</span>(<span class="str">'m001'</span>, <span class="str">'天安门'</span>, <span class="num">39.9</span>, <span class="num">116.4</span>);
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">marker</span>.<span class="fn">getInfo</span>());
+<span class="cmt">// "[m001] 天安门 位置：(39.9, 116.4)"</span>
+
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">marker</span> <span class="kw">instanceof</span> <span class="typ">Marker</span>);    <span class="cmt">// true</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">marker</span> <span class="kw">instanceof</span> <span class="typ">MapEntity</span>); <span class="cmt">// true（子类实例也是父类实例）</span>
+
+<span class="kw">const</span> <span class="var">polygon</span> <span class="op">=</span> <span class="kw">new</span> <span class="typ">Polygon</span>(<span class="str">'p001'</span>, <span class="str">'建筑区域'</span>, [[<span class="num">0</span>,<span class="num">0</span>],[<span class="num">1</span>,<span class="num">0</span>],[<span class="num">1</span>,<span class="num">1</span>]]);
+<span class="var">polygon</span>.<span class="fn">hide</span>();   <span class="cmt">// 继承自父类的方法</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">polygon</span>.<span class="var">visible</span>); <span class="cmt">// false</span>
+</code></pre>
+    </div>
+
+    <div class="warn">
+      <span class="icon">&#9888;&#65039;</span>
+      <div><strong>子类构造函数必须先调用 <code>super()</code>！</strong>在使用 <code>this</code> 之前必须调用 <code>super()</code>，否则会抛出 <code>ReferenceError</code>。这是 JS 引擎的硬性要求。</div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 9: ES6 模块 import/export                             -->
+  <!-- ============================================================ -->
+  <div class="section" id="s9">
+    <div class="section-header">
+      <div class="section-num">9</div>
+      <h2>ES6 模块：import / export</h2>
+      <span class="tag">MODULES</span>
+    </div>
+
+    <div class="card">
+      <h3>&#128230; 导出（export）</h3>
+      <p>模块是独立的文件，通过 <code>export</code> 暴露接口，<code>import</code> 引入依赖。一个文件就是一个模块。</p>
+<pre><code><span class="cmt">// ===== geometry.js（模块文件）=====</span>
+
+<span class="cmt">// 命名导出：可以导出多个</span>
+<span class="kw">export</span> <span class="kw">const</span> <span class="var">PI</span> <span class="op">=</span> <span class="fn">Math</span>.<span class="var">PI</span>;
+
+<span class="kw">export</span> <span class="kw">function</span> <span class="fn">degreesToRadians</span>(<span class="var">deg</span>) {
+  <span class="kw">return</span> <span class="var">deg</span> <span class="op">*</span> <span class="var">PI</span> <span class="op">/</span> <span class="num">180</span>;
+}
+
+<span class="kw">export</span> <span class="kw">function</span> <span class="fn">radiansToDegrees</span>(<span class="var">rad</span>) {
+  <span class="kw">return</span> <span class="var">rad</span> <span class="op">*</span> <span class="num">180</span> <span class="op">/</span> <span class="var">PI</span>;
+}
+
+<span class="cmt">// 默认导出：一个模块只能有一个 default</span>
+<span class="kw">export</span> <span class="kw">default</span> <span class="kw">class</span> <span class="typ">Vector3</span> {
+  <span class="fn">constructor</span>(<span class="var">x</span>, <span class="var">y</span>, <span class="var">z</span>) {
+    <span class="kw">this</span>.<span class="prp">x</span> <span class="op">=</span> <span class="var">x</span>; <span class="kw">this</span>.<span class="prp">y</span> <span class="op">=</span> <span class="var">y</span>; <span class="kw">this</span>.<span class="prp">z</span> <span class="op">=</span> <span class="var">z</span>;
+  }
+}
+
+<span class="cmt">// 也可以先定义再导出</span>
+<span class="kw">const</span> <span class="var">EARTH_RADIUS</span> <span class="op">=</span> <span class="num">6371</span>;
+<span class="kw">export</span> { <span class="var">EARTH_RADIUS</span> };
+</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>&#128229; 导入（import）</h3>
+<pre><code><span class="cmt">// ===== main.js（入口文件）=====</span>
+
+<span class="cmt">// 导入默认导出（可以任意命名）</span>
+<span class="kw">import</span> <span class="typ">Vector3</span> <span class="kw">from</span> <span class="str">'./geometry.js'</span>;
+
+<span class="cmt">// 导入命名导出（必须用原名，或用 as 重命名）</span>
+<span class="kw">import</span> { <span class="var">PI</span>, <span class="var">degreesToRadians</span> <span class="kw">as</span> <span class="var">toRad</span>, <span class="var">EARTH_RADIUS</span> } <span class="kw">from</span> <span class="str">'./geometry.js'</span>;
+
+<span class="cmt">// 同时导入默认和命名</span>
+<span class="cmt">// import Vector3, { PI, degreesToRadians } from './geometry.js';</span>
+
+<span class="cmt">// 导入所有命名导出为一个命名空间对象</span>
+<span class="cmt">// import * as Geo from './geometry.js';</span>
+<span class="cmt">// Geo.PI, Geo.degreesToRadians(90)...</span>
+
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">PI</span>);                    <span class="cmt">// 3.14159...</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">toRad</span>(<span class="num">180</span>));           <span class="cmt">// 3.14159...</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">EARTH_RADIUS</span>);         <span class="cmt">// 6371</span>
+
+<span class="kw">const</span> <span class="var">v</span> <span class="op">=</span> <span class="kw">new</span> <span class="typ">Vector3</span>(<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>);
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">v</span>.<span class="prp">x</span>, <span class="var">v</span>.<span class="prp">y</span>, <span class="var">v</span>.<span class="prp">z</span>);      <span class="cmt">// 1 2 3</span>
+</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>&#128196; 在 HTML 中使用模块</h3>
+      <p>在 <code>&lt;script&gt;</code> 标签中添加 <code>type="module"</code>：</p>
+<pre><code><span class="cmt">&lt;!-- index.html --&gt;</span>
+<span class="op">&lt;</span><span class="var">script</span> <span class="var">type</span><span class="op">=</span><span class="str">"module"</span><span class="op">&gt;</span>
+  <span class="kw">import</span> { <span class="var">initMap</span> } <span class="kw">from</span> <span class="str">'./map.js'</span>;
+  <span class="fn">initMap</span>();
+<span class="op">&lt;/</span><span class="var">script</span><span class="op">&gt;</span>
+</code></pre>
+
+      <table>
+        <tr><th>特性</th><th>普通 script</th><th>ES Module</th></tr>
+        <tr><td>作用域</td><td class="td-bad">全局</td><td class="td-good">模块级（隔离）</td></tr>
+        <tr><td>加载方式</td><td>同步（阻塞）</td><td class="td-good">默认 defer（异步）</td></tr>
+        <tr><td>严格模式</td><td>需手动声明</td><td class="td-good">自动严格模式</td></tr>
+        <tr><td>this 指向</td><td>window</td><td class="td-good">undefined</td></tr>
+        <tr><td>import/export</td><td class="td-bad">不支持</td><td class="td-good">支持</td></tr>
+      </table>
+    </div>
+
+    <div class="tip">
+      <span class="icon">&#128161;</span>
+      <div><strong>模块化是大型项目的必备技能。</strong>CesiumJS 源码由成百上千个 ES Module 组成。理解模块化是理解任何现代框架的基础。</div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 10: CesiumJS 关联场景                                 -->
+  <!-- ============================================================ -->
+  <div class="section" id="s10">
+    <div class="section-header">
+      <div class="section-num">10</div>
+      <h2>&#127758; CesiumJS 关联场景</h2>
+      <span class="tag">CESIUM</span>
+    </div>
+
+    <div class="card">
+      <h3>&#127760; 场景 1：用类封装 Cesium 实体管理</h3>
+      <p>在实际 CesiumJS 项目中，你会用类来管理地图上的实体（标记、线条、多边形等），每个类负责一种实体类型：</p>
+<pre><code><span class="kw">import</span> <span class="op">*</span> <span class="kw">as</span> <span class="typ">Cesium</span> <span class="kw">from</span> <span class="str">'cesium'</span>;
+
+<span class="kw">class</span> <span class="typ">FlightTracker</span> {
+  <span class="var">#viewer</span>;
+  <span class="var">#entity</span>;
+
+  <span class="fn">constructor</span>(<span class="var">viewer</span>, <span class="var">flightId</span>, <span class="var">lat</span>, <span class="var">lon</span>, <span class="var">altitude</span>) {
+    <span class="kw">this</span>.<span class="prp">#viewer</span> <span class="op">=</span> <span class="var">viewer</span>;
+    <span class="kw">this</span>.<span class="prp">#entity</span> <span class="op">=</span> <span class="var">viewer</span>.<span class="var">entities</span>.<span class="fn">add</span>({
+      <span class="var">id</span>: <span class="var">flightId</span>,
+      <span class="var">position</span>: <span class="typ">Cesium</span>.<span class="typ">Cartesian3</span>.<span class="fn">fromDegrees</span>(<span class="var">lon</span>, <span class="var">lat</span>, <span class="var">altitude</span>),
+      <span class="var">point</span>: { <span class="var">pixelSize</span>: <span class="num">10</span>, <span class="var">color</span>: <span class="typ">Cesium</span>.<span class="typ">Color</span>.<span class="var">RED</span> },
+      <span class="var">label</span>: { <span class="var">text</span>: <span class="var">flightId</span> }
+    });
+  }
+
+  <span class="fn">updatePosition</span>(<span class="var">lat</span>, <span class="var">lon</span>, <span class="var">altitude</span>) {
+    <span class="kw">this</span>.<span class="prp">#entity</span>.<span class="var">position</span> <span class="op">=</span>
+      <span class="typ">Cesium</span>.<span class="typ">Cartesian3</span>.<span class="fn">fromDegrees</span>(<span class="var">lon</span>, <span class="var">lat</span>, <span class="var">altitude</span>);
+  }
+
+  <span class="fn">remove</span>() {
+    <span class="kw">this</span>.<span class="prp">#viewer</span>.<span class="var">entities</span>.<span class="fn">remove</span>(<span class="kw">this</span>.<span class="prp">#entity</span>);
+  }
+}
+
+<span class="cmt">// 使用：创建多个航班追踪器</span>
+<span class="kw">const</span> <span class="var">flight1</span> <span class="op">=</span> <span class="kw">new</span> <span class="typ">FlightTracker</span>(<span class="var">viewer</span>, <span class="str">'CA1234'</span>, <span class="num">39.9</span>, <span class="num">116.4</span>, <span class="num">10000</span>);
+<span class="kw">const</span> <span class="var">flight2</span> <span class="op">=</span> <span class="kw">new</span> <span class="typ">FlightTracker</span>(<span class="var">viewer</span>, <span class="str">'MU5678'</span>, <span class="num">31.2</span>, <span class="num">121.5</span>, <span class="num">8000</span>);
+</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>&#127760; 场景 2：静态工具类 — 坐标转换</h3>
+      <p>CesiumJS 大量使用笛卡尔坐标和地理坐标的转换，这正是静态方法的完美用武之地：</p>
+<pre><code><span class="kw">class</span> <span class="typ">CoordConverter</span> {
+  <span class="kw">static</span> <span class="fn">toCartesian</span>(<span class="var">lon</span>, <span class="var">lat</span>, <span class="var">alt</span> <span class="op">=</span> <span class="num">0</span>) {
+    <span class="cmt">// 实际 CesiumJS 中使用 Cesium.Cartesian3.fromDegrees</span>
+    <span class="kw">return</span> <span class="typ">Cesium</span>.<span class="typ">Cartesian3</span>.<span class="fn">fromDegrees</span>(<span class="var">lon</span>, <span class="var">lat</span>, <span class="var">alt</span>);
+  }
+
+  <span class="kw">static</span> <span class="fn">toDegrees</span>(<span class="var">cartesian</span>) {
+    <span class="kw">const</span> <span class="var">cartographic</span> <span class="op">=</span> <span class="typ">Cesium</span>.<span class="typ">Cartographic</span>.<span class="fn">fromCartesian</span>(<span class="var">cartesian</span>);
+    <span class="kw">return</span> {
+      <span class="var">lat</span>: <span class="typ">Cesium</span>.<span class="fn">Math</span>.<span class="fn">toDegrees</span>(<span class="var">cartographic</span>.<span class="var">latitude</span>),
+      <span class="var">lon</span>: <span class="typ">Cesium</span>.<span class="fn">Math</span>.<span class="fn">toDegrees</span>(<span class="var">cartographic</span>.<span class="var">longitude</span>),
+      <span class="var">alt</span>: <span class="var">cartographic</span>.<span class="var">height</span>
+    };
+  }
+}
+</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>&#127760; 场景 3：继承 — 图层体系</h3>
+      <p>CesiumJS 中的图层概念天然适合用继承来组织：</p>
+<pre><code><span class="cmt">// 基础图层类</span>
+<span class="kw">class</span> <span class="typ">BaseLayer</span> {
+  <span class="fn">constructor</span>(<span class="var">name</span>, <span class="var">viewer</span>) {
+    <span class="kw">this</span>.<span class="prp">name</span> <span class="op">=</span> <span class="var">name</span>;
+    <span class="kw">this</span>.<span class="prp">viewer</span> <span class="op">=</span> <span class="var">viewer</span>;
+    <span class="kw">this</span>.<span class="prp">visible</span> <span class="op">=</span> <span class="kw">true</span>;
+  }
+  <span class="fn">toggle</span>() { <span class="kw">this</span>.<span class="prp">visible</span> <span class="op">=</span> <span class="op">!</span><span class="kw">this</span>.<span class="prp">visible</span>; }
+  <span class="fn">getInfo</span>() { <span class="kw">return</span> <span class="str">`<span class="op">${</span><span class="kw">this</span>.<span class="prp">name</span><span class="op">}</span>（<span class="op">${</span><span class="kw">this</span>.<span class="prp">visible</span> <span class="op">?</span> <span class="str">'可见'</span> <span class="op">:</span> <span class="str">'隐藏'</span><span class="op">}</span>）`</span>; }
+}
+
+<span class="cmt">// 影像图层</span>
+<span class="kw">class</span> <span class="typ">ImageryLayer</span> <span class="kw">extends</span> <span class="typ">BaseLayer</span> {
+  <span class="fn">constructor</span>(<span class="var">name</span>, <span class="var">viewer</span>, <span class="var">url</span>) {
+    <span class="kw">super</span>(<span class="var">name</span>, <span class="var">viewer</span>);
+    <span class="kw">this</span>.<span class="prp">url</span> <span class="op">=</span> <span class="var">url</span>;
+    <span class="kw">this</span>.<span class="prp">type</span> <span class="op">=</span> <span class="str">'影像'</span>;
+  }
+  <span class="fn">getInfo</span>() { <span class="kw">return</span> <span class="kw">super</span>.<span class="fn">getInfo</span>() <span class="op">+</span> <span class="str">` [影像源：<span class="op">${</span><span class="kw">this</span>.<span class="prp">url</span><span class="op">}</span>]`</span>; }
+}
+
+<span class="cmt">// 矢量图层</span>
+<span class="kw">class</span> <span class="typ">VectorLayer</span> <span class="kw">extends</span> <span class="typ">BaseLayer</span> {
+  <span class="fn">constructor</span>(<span class="var">name</span>, <span class="var">viewer</span>, <span class="var">geoJsonUrl</span>) {
+    <span class="kw">super</span>(<span class="var">name</span>, <span class="var">viewer</span>);
+    <span class="kw">this</span>.<span class="prp">geoJsonUrl</span> <span class="op">=</span> <span class="var">geoJsonUrl</span>;
+    <span class="kw">this</span>.<span class="prp">type</span> <span class="op">=</span> <span class="str">'矢量'</span>;
+  }
+}
+
+<span class="cmt">// 统一管理所有图层</span>
+<span class="kw">const</span> <span class="var">layers</span> <span class="op">=</span> [
+  <span class="kw">new</span> <span class="typ">ImageryLayer</span>(<span class="str">'卫星图'</span>, <span class="var">viewer</span>, <span class="str">'https://...'</span>),
+  <span class="kw">new</span> <span class="typ">VectorLayer</span>(<span class="str">'国界线'</span>, <span class="var">viewer</span>, <span class="str">'./borders.geojson'</span>),
+  <span class="kw">new</span> <span class="typ">VectorLayer</span>(<span class="str">'行政区划'</span>, <span class="var">viewer</span>, <span class="str">'./admin.geojson'</span>)
+];
+</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>&#127760; 场景 4：模块化拆分 CesiumJS 项目</h3>
+      <p>大型 CesiumJS 项目通常按功能拆分为多个模块：</p>
+<pre><code><span class="cmt">// 典型项目结构：</span>
+<span class="cmt">// src/</span>
+<span class="cmt">//   main.js          ← 入口，初始化 Viewer</span>
+<span class="cmt">//   layers/</span>
+<span class="cmt">//     BaseLayer.js   ← 基类</span>
+<span class="cmt">//     HeatmapLayer.js</span>
+<span class="cmt">//     TrackLayer.js</span>
+<span class="cmt">//   entities/</span>
+<span class="cmt">//     Marker.js      ← 标注类</span>
+<span class="cmt">//     FlightPath.js  ← 航线类</span>
+<span class="cmt">//   utils/</span>
+<span class="cmt">//     coordinates.js ← 坐标工具（静态方法）</span>
+<span class="cmt">//     analytics.js   ← 分析工具</span>
+
+<span class="cmt">// main.js 中统一导入</span>
+<span class="kw">import</span> { <span class="var">initViewer</span> } <span class="kw">from</span> <span class="str">'./core/viewer.js'</span>;
+<span class="kw">import</span> { <span class="typ">HeatmapLayer</span> } <span class="kw">from</span> <span class="str">'./layers/HeatmapLayer.js'</span>;
+<span class="kw">import</span> { <span class="typ">FlightPath</span> } <span class="kw">from</span> <span class="str">'./entities/FlightPath.js'</span>;
+<span class="kw">import</span> <span class="op">*</span> <span class="kw">as</span> <span class="var">Coord</span> <span class="kw">from</span> <span class="str">'./utils/coordinates.js'</span>;
+</code></pre>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 11: 练习题                                            -->
+  <!-- ============================================================ -->
+  <div class="section" id="s11">
+    <div class="section-header">
+      <div class="section-num">11</div>
+      <h2>练习题</h2>
+      <span class="tag">PRACTICE</span>
+    </div>
+
+    <div class="practice">
+      <h2>&#127919; 动手练习</h2>
+      <p>在下方控制台中输入代码并运行（Ctrl+Enter），验证你的答案：</p>
+
+      <div class="exercise">
+        <div class="q">题 1：创建基础类</div>
+        <p style="color:var(--text);font-size:14px;">创建一个 <code>GeoMarker</code> 类，构造函数接收 <code>name</code>、<code>lat</code>、<code>lon</code> 三个参数，并实现一个 <code>describe()</code> 方法返回描述字符串。</p>
+<pre><code><span class="cmt">// 目标：创建 GeoMarker 类并测试</span>
+<span class="kw">class</span> <span class="typ">GeoMarker</span> {
+  <span class="cmt">// 补全代码...</span>
+}
+
+<span class="kw">const</span> <span class="var">marker</span> <span class="op">=</span> <span class="kw">new</span> <span class="typ">GeoMarker</span>(<span class="str">'珠穆朗玛峰'</span>, <span class="num">27.9881</span>, <span class="num">86.9250</span>);
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">marker</span>.<span class="fn">describe</span>());
+<span class="cmt">// 期望："珠穆朗玛峰 位于 (27.9881, 86.925)"</span>
+</code></pre>
+      </div>
+
+      <div class="exercise">
+        <div class="q">题 2：继承与扩展</div>
+        <p style="color:var(--text);font-size:14px;">基于题 1 的 <code>GeoMarker</code>，创建一个 <code>ElevatedMarker</code> 子类，增加 <code>altitude</code>（海拔）属性，并重写 <code>describe()</code> 方法以包含海拔信息。</p>
+<pre><code><span class="cmt">// 补全代码</span>
+<span class="kw">class</span> <span class="typ">ElevatedMarker</span> <span class="kw">extends</span> <span class="typ">GeoMarker</span> {
+  <span class="cmt">// 补全代码...</span>
+}
+
+<span class="kw">const</span> <span class="var">peak</span> <span class="op">=</span> <span class="kw">new</span> <span class="typ">ElevatedMarker</span>(<span class="str">'珠峰'</span>, <span class="num">27.9881</span>, <span class="num">86.9250</span>, <span class="num">8848</span>);
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">peak</span>.<span class="fn">describe</span>());
+<span class="cmt">// 期望："珠峰 位于 (27.9881, 86.925)，海拔 8848m"</span>
+</code></pre>
+      </div>
+
+      <div class="exercise">
+        <div class="q">题 3：静态工具方法（与 CesiumJS 关联）</div>
+        <p style="color:var(--text);font-size:14px;">创建一个 <code>MapUtils</code> 类，包含静态方法 <code>distance(lat1, lon1, lat2, lon2)</code>，用 Haversine 公式计算两坐标间的大圆距离（单位：km）。</p>
+<pre><code><span class="cmt">// 补全代码（Haversine 公式提示见下方）</span>
+<span class="kw">class</span> <span class="typ">MapUtils</span> {
+  <span class="kw">static</span> <span class="var">R</span> <span class="op">=</span> <span class="num">6371</span>; <span class="cmt">// 地球半径 km</span>
+
+  <span class="kw">static</span> <span class="fn">distance</span>(<span class="var">lat1</span>, <span class="var">lon1</span>, <span class="var">lat2</span>, <span class="var">lon2</span>) {
+    <span class="cmt">// 补全代码...</span>
+    <span class="cmt">// 提示：</span>
+    <span class="cmt">// const dLat = (lat2 - lat1) * Math.PI / 180;</span>
+    <span class="cmt">// const dLon = (lon2 - lon1) * Math.PI / 180;</span>
+    <span class="cmt">// const a = Math.sin(dLat/2)**2 +</span>
+    <span class="cmt">//           Math.cos(lat1*PI/180) * Math.cos(lat2*PI/180) * Math.sin(dLon/2)**2;</span>
+    <span class="cmt">// return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));</span>
+  }
+}
+
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="typ">MapUtils</span>.<span class="fn">distance</span>(<span class="num">39.9</span>, <span class="num">116.4</span>, <span class="num">31.2</span>, <span class="num">121.5</span>));
+<span class="cmt">// 期望：约 1069 km（北京到上海）</span>
+</code></pre>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 12: 交互控制台                                        -->
+  <!-- ============================================================ -->
+  <div id="s12" style="margin-bottom:52px;">
+    <div class="section-header">
+      <div class="section-num">12</div>
+      <h2>在线练习控制台</h2>
+      <span class="tag">SANDBOX</span>
+    </div>
+
+    <p style="margin-bottom:16px;color:var(--muted);">在这里写 JavaScript，用 Ctrl+Enter 运行查看结果：</p>
+
+    <div class="console-area">
+      <div class="console-header">
+        <div class="console-dots">
+          <div class="dot dot-r"></div>
+          <div class="dot dot-y"></div>
+          <div class="dot dot-g"></div>
+        </div>
+        <span>JS SANDBOX</span>
+        <span style="font-size:11px;color:var(--muted);">Day 08</span>
+      </div>
+      <textarea id="sandbox-code" spellcheck="false">// 试试这些代码：
+// 1. 创建一个 GeoMarker 类
+class GeoMarker {
+  constructor(name, lat, lon) {
+    this.name = name;
+    this.lat = lat;
+    this.lon = lon;
+  }
+
+  describe() {
+    return `${this.name} 位于 (${this.lat}, ${this.lon})`;
+  }
+}
+
+// 2. 创建子类 ElevatedMarker
+class ElevatedMarker extends GeoMarker {
+  constructor(name, lat, lon, altitude) {
+    super(name, lat, lon);
+    this.altitude = altitude;
+  }
+
+  describe() {
+    return super.describe() + `，海拔 ${this.altitude}m`;
+  }
+}
+
+// 3. 测试
+const city = new GeoMarker('北京', 39.9, 116.4);
+const peak = new ElevatedMarker('珠峰', 27.9881, 86.9250, 8848);
+
+console.log(city.describe());
+console.log(peak.describe());
+console.log(peak instanceof GeoMarker);   // true
+console.log(peak instanceof ElevatedMarker); // true
+
+// 4. 静态方法工具类
+class MapUtils {
+  static R = 6371;
+  static toRad(deg) { return deg * Math.PI / 180; }
+
+  static distance(lat1, lon1, lat2, lon2) {
+    const dLat = this.toRad(lat2 - lat1);
+    const dLon = this.toRad(lon2 - lon1);
+    const a = Math.sin(dLat/2)**2 +
+              Math.cos(this.toRad(lat1)) * Math.cos(this.toRad(lat2)) *
+              Math.sin(dLon/2)**2;
+    return (2 * this.R * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))).toFixed(2);
+  }
+}
+
+console.log(`北京到上海：${MapUtils.distance(39.9, 116.4, 31.2, 121.5)} km`);
+</textarea>
+      <div class="console-actions">
+        <button class="btn btn-run" onclick="runCode()">&#9654; 运行</button>
+        <button class="btn btn-clear" onclick="clearOutput()">清空输出</button>
+        <button class="btn btn-clear" onclick="resetCode()">重置代码</button>
+      </div>
+      <div id="output-box">// 点击"运行"查看输出结果...</div>
+    </div>
+  </div>
+
+
+  <!-- 今日总结 -->
+  <div class="card" style="border-color:var(--accent);border-left-width:4px;">
+    <h3 style="color:var(--accent)">&#128203; 今日知识点总结</h3>
+    <ul style="margin-top:12px;">
+      <li>&#9989; <code>class</code> 是 ES6 引入的面向对象语法糖，底层仍是原型继承</li>
+      <li>&#9989; <code>constructor</code> 在 <code>new</code> 时自动调用，用于初始化实例属性</li>
+      <li>&#9989; <code>static</code> 定义的方法/属性属于类本身，不需要实例即可调用</li>
+      <li>&#9989; <code>#</code> 前缀定义真正私有的字段，外部完全无法访问</li>
+      <li>&#9989; <code>get</code>/<code>set</code> 让你像访问属性一样调用方法，支持验证和计算</li>
+      <li>&#9989; <code>extends</code> 实现继承，<code>super()</code> 必须在子类构造函数中先调用</li>
+      <li>&#9989; <code>export</code>/<code>import</code> 实现模块化，一个文件一个模块，作用域隔离</li>
+      <li>&#9989; HTML 中使用 <code>&lt;script type="module"&gt;</code> 启用 ES Module</li>
+      <li>&#9989; 模块化 + 类 = 大型项目的代码组织基石，是理解 CesiumJS 源码的必备技能</li>
+    </ul>
+  </div>
+
+</div><!-- /container -->
+
+<!-- ===== FOOTER ===== -->
+<div class="footer">
+  <p>&#128640; <strong>每日JS</strong> — JavaScript &rarr; CesiumJS 学习路径</p>
+  <p style="margin-top:6px;">Day 08 / 模块与类 &middot; 明天继续：<strong>原型与继承</strong></p>
+</div>
+
+
+<!-- ===== SCRIPT ===== -->
+<script>
+  const DEFAULT_CODE = document.getElementById('sandbox-code').value;
+
+  function runCode() {
+    const code = document.getElementById('sandbox-code').value;
+    const outputBox = document.getElementById('output-box');
+    const logs = [];
+
+    const origLog = console.log;
+    const origError = console.error;
+    const origWarn = console.warn;
+
+    console.log = (...args) => {
+      logs.push(args.map(a => {
+        if (typeof a === 'object' && a !== null) {
+          try { return JSON.stringify(a, null, 2); } catch { return String(a); }
+        }
+        return String(a);
+      }).join(' '));
+      origLog(...args);
+    };
+    console.error = (...args) => {
+      logs.push('\u274C ' + args.join(' '));
+      origError(...args);
+    };
+    console.warn = (...args) => {
+      logs.push('\u26A0\uFE0F ' + args.join(' '));
+      origWarn(...args);
+    };
+
+    try {
+      eval(code);
+      outputBox.innerHTML = logs.length
+        ? logs.map(l => '<span>' + escHtml(l) + '</span>').join('\n')
+        : '<span style="color:var(--muted)">// 代码运行成功（无输出）</span>';
+    } catch(e) {
+      outputBox.innerHTML = '<span class="err">\u274C ' + escHtml(e.message) + '</span>';
+    } finally {
+      console.log = origLog;
+      console.error = origError;
+      console.warn = origWarn;
+    }
+  }
+
+  function clearOutput() {
+    document.getElementById('output-box').innerHTML = '// 输出已清空...';
+  }
+
+  function resetCode() {
+    document.getElementById('sandbox-code').value = DEFAULT_CODE;
+    clearOutput();
+  }
+
+  function escHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  document.getElementById('sandbox-code').addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      e.preventDefault();
+      runCode();
+    }
+  });
+</script>
+</body>
+</html>
