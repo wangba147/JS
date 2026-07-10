@@ -1,0 +1,1485 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>JavaScript 每日学习 — Day 16：相机控制与视角管理</title>
+  <style>
+    /* ===== 全局 ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0f1117;
+      --surface:   #1a1d27;
+      --card:      #21253a;
+      --border:    #2e3350;
+      --accent:    #2dd4bf;
+      --accent2:   #f7c948;
+      --accent3:   #7ee787;
+      --accent4:   #818cf8;
+      --text:      #cdd3e0;
+      --muted:     #6e7a96;
+      --tag-bg:    #0d3321;
+      --code-bg:   #161b2e;
+    }
+
+    body {
+      font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.75;
+      font-size: 15px;
+    }
+
+    /* ===== 顶部 Banner ===== */
+    .hero {
+      background: linear-gradient(135deg, #0d3321 0%, #115542 50%, #0d3321 100%);
+      border-bottom: 1px solid #16533e;
+      padding: 52px 24px 40px;
+      text-align: center;
+    }
+    .hero .badge {
+      display: inline-block;
+      background: var(--accent);
+      color: #0f0e1a;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 4px 12px;
+      border-radius: 20px;
+      margin-bottom: 16px;
+    }
+    .hero h1 {
+      font-size: clamp(24px, 5vw, 42px);
+      font-weight: 800;
+      color: #fff;
+      line-height: 1.2;
+      margin-bottom: 12px;
+    }
+    .hero h1 span { color: var(--accent); }
+    .hero p {
+      color: var(--muted);
+      font-size: 15px;
+      max-width: 640px;
+      margin: 0 auto 24px;
+    }
+    .hero .meta {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      flex-wrap: wrap;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .hero .meta span { display: flex; align-items: center; gap: 5px; }
+
+    /* ===== 布局 ===== */
+    .container { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; }
+
+    /* ===== 目录卡片 ===== */
+    .toc {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--accent);
+      border-radius: 12px;
+      padding: 24px 28px;
+      margin-bottom: 40px;
+    }
+    .toc h2 { font-size: 14px; letter-spacing: 1px; text-transform: uppercase; color: var(--accent); margin-bottom: 14px; }
+    .toc ol { padding-left: 20px; }
+    .toc li { margin: 6px 0; }
+    .toc a { color: var(--text); text-decoration: none; }
+    .toc a:hover { color: var(--accent); }
+
+    /* ===== 章节标题 ===== */
+    .section { margin-bottom: 52px; }
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 24px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    .section-num {
+      width: 38px; height: 38px;
+      border-radius: 10px;
+      background: var(--accent);
+      color: #0f0e1a;
+      font-weight: 800;
+      font-size: 16px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .section-header h2 {
+      font-size: 22px;
+      font-weight: 700;
+      color: #fff;
+    }
+    .section-header .tag {
+      font-size: 11px;
+      background: var(--tag-bg);
+      color: var(--accent);
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    /* ===== 卡片 ===== */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+    .card h3 {
+      font-size: 16px;
+      color: var(--accent2);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card p { margin-bottom: 10px; color: var(--text); }
+    .card p:last-child { margin-bottom: 0; }
+
+    /* ===== 代码块 ===== */
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px 22px;
+      overflow-x: auto;
+      margin: 16px 0;
+      font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+      font-size: 13.5px;
+      line-height: 1.7;
+    }
+    code { font-family: inherit; }
+
+    /* 语法着色 */
+    .kw  { color: #c792ea; }
+    .str { color: #c3e88d; }
+    .num { color: #f78c6c; }
+    .cmt { color: #546e7a; font-style: italic; }
+    .fn  { color: #82aaff; }
+    .var { color: #eeffff; }
+    .op  { color: var(--accent); }
+    .typ { color: var(--accent2); }
+    .out { color: var(--accent3); }
+    .prp { color: #ffcb6b; }
+    .ces { color: #2dd4bf; font-weight: 600; }
+
+    /* ===== 提示框 ===== */
+    .tip, .warn, .info {
+      border-radius: 10px;
+      padding: 14px 18px;
+      margin: 16px 0;
+      font-size: 14px;
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+    .tip  { background: #0d3321; border-left: 4px solid var(--accent3); }
+    .warn { background: #3a2500; border-left: 4px solid var(--accent2); }
+    .info { background: #1e1b4b; border-left: 4px solid var(--accent4); }
+
+    /* ===== 对比表格 ===== */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 14px;
+    }
+    th {
+      background: var(--surface);
+      color: var(--accent);
+      padding: 12px 16px;
+      text-align: left;
+      border-bottom: 2px solid var(--border);
+      font-weight: 600;
+    }
+    td {
+      padding: 11px 16px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+      vertical-align: top;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(45, 212, 191, 0.04); }
+    .td-kw { color: #c792ea; font-family: 'Cascadia Code','Fira Code',monospace; font-weight: 600; }
+    .td-type { color: var(--accent2); }
+    .td-good { color: var(--accent3); }
+    .td-bad  { color: #ff7b72; }
+
+    /* ===== 两列网格 ===== */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 600px) { .grid-2 { grid-template-columns: 1fr; } }
+
+    /* ===== 大卡片 ===== */
+    .big-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 28px;
+      margin-bottom: 20px;
+    }
+    .big-card h3 { font-size: 17px; color: var(--accent); margin-bottom: 16px; }
+
+    /* ===== API 速查表 ===== */
+    .api-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+      gap: 12px;
+      margin: 16px 0;
+    }
+    .api-item {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      text-align: center;
+      transition: border-color 0.2s;
+    }
+    .api-item:hover { border-color: var(--accent); }
+    .api-item .icon { font-size: 28px; margin-bottom: 8px; display: block; }
+    .api-item strong { display: block; color: var(--accent); font-size: 14px; }
+    .api-item small { display: block; color: var(--muted); font-size: 12px; margin-top: 4px; }
+
+    /* ===== 练习区 ===== */
+    .practice {
+      background: linear-gradient(135deg, #1e1b3a, #1a1a2d);
+      border: 1px solid #3b3580;
+      border-radius: 12px;
+      padding: 28px;
+      margin-top: 48px;
+    }
+    .practice h2 {
+      font-size: 20px;
+      color: var(--accent3);
+      margin-bottom: 8px;
+    }
+    .practice p { color: var(--muted); margin-bottom: 20px; font-size: 14px; }
+    .exercise {
+      background: var(--code-bg);
+      border: 1px dashed #3b3580;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+    .exercise .q {
+      color: var(--accent2);
+      font-weight: 600;
+      margin-bottom: 12px;
+      font-size: 14px;
+    }
+    .exercise pre { margin: 0; }
+
+    /* ===== 交互控制台 ===== */
+    .console-area {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-top: 48px;
+    }
+    .console-header {
+      background: var(--surface);
+      padding: 12px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+    .console-header span { color: var(--accent); font-size: 13px; font-weight: 600; letter-spacing: 1px; }
+    .console-dots { display: flex; gap: 6px; }
+    .dot { width: 12px; height: 12px; border-radius: 50%; }
+    .dot-r { background: #ff5f57; }
+    .dot-y { background: #febc2e; }
+    .dot-g { background: #28c840; }
+    #sandbox-code {
+      width: 100%;
+      background: var(--code-bg);
+      color: var(--accent3);
+      border: none;
+      padding: 18px 20px;
+      font-family: 'Cascadia Code','Fira Code',monospace;
+      font-size: 13.5px;
+      line-height: 1.7;
+      resize: vertical;
+      min-height: 160px;
+      outline: none;
+    }
+    .console-actions {
+      padding: 12px 18px;
+      display: flex;
+      gap: 10px;
+      border-top: 1px solid var(--border);
+    }
+    .btn {
+      padding: 8px 20px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      transition: opacity .2s;
+    }
+    .btn:hover { opacity: .85; }
+    .btn-run { background: var(--accent); color: #0f0e1a; }
+    .btn-clear { background: var(--surface); color: var(--muted); border: 1px solid var(--border); }
+    #output-box {
+      padding: 16px 20px;
+      min-height: 60px;
+      font-family: 'Cascadia Code','Fira Code',monospace;
+      font-size: 13px;
+      color: var(--accent3);
+      border-top: 1px solid var(--border);
+      white-space: pre-wrap;
+    }
+    #output-box .err { color: #ff7b72; }
+
+    /* ===== 进度条 ===== */
+    .progress-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 22px 26px;
+      margin-bottom: 40px;
+    }
+    .progress-card h3 { font-size: 13px; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); margin-bottom: 16px; }
+    .progress-list { display: flex; flex-wrap: wrap; gap: 8px; }
+    .progress-item {
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+    }
+    .pi-done  { background: #0d3321; color: var(--accent3); border: 1px solid #1a4d2a; }
+    .pi-js    { background: #1e1b4b; color: var(--accent4); border: 1px solid #312e81; }
+    .pi-today { background: #0d3321; color: var(--accent); border: 1px solid var(--accent); }
+    .pi-next  { background: var(--card); color: var(--muted); border: 1px solid var(--border); }
+
+    /* ===== 流程图 ===== */
+    .flow-diagram {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 28px;
+      margin: 16px 0;
+      text-align: center;
+    }
+    .flow-row { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin: 6px 0; }
+    .flow-box {
+      padding: 10px 24px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      min-width: 180px;
+    }
+    .flow-arrow { color: var(--accent); font-size: 20px; }
+    .fb-material { background: #115542; border: 2px solid var(--accent); color: var(--accent); }
+    .fb-tiles    { background: #1e1b4b; border: 2px solid var(--accent4); color: var(--accent4); }
+    .fb-gpu      { background: #161b2e; border: 1px solid var(--border); color: var(--muted); }
+    .fb-app      { background: #3a2500; border: 2px solid var(--accent2); color: var(--accent2); }
+
+    /* ===== inline code ===== */
+    p code, li code, td code {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      padding: 1px 6px;
+      border-radius: 5px;
+      font-family: 'Cascadia Code','Fira Code',monospace;
+      font-size: 12.5px;
+      color: var(--accent);
+    }
+    ul { padding-left: 20px; }
+    li { margin: 5px 0; }
+
+    /* Cesium 关键字高亮 */
+    .ces-kw { color: #2dd4bf; }
+
+    /* ===== footer ===== */
+    .footer {
+      text-align: center;
+      padding: 40px 24px 60px;
+      color: var(--muted);
+      font-size: 13px;
+      border-top: 1px solid var(--border);
+    }
+  </style>
+</head>
+<body>
+
+<!-- ===== HERO ===== -->
+<div class="hero">
+  <div class="badge">CesiumJS 学习路径 · 三维地球篇</div>
+  <h1>Day 16 — <span>相机控制</span>与视角管理</h1>
+  <p>昨天你学会了让图形“好看”和加载海量 3D 数据。但<strong>让用户看到他想看的东西</strong>同样关键——这就是 Camera 的工作。今天学习 CesiumJS 的相机系统：视角、飞行、拾取、跟随、巡航。</p>
+  <div class="meta">
+    <span>&#128197; 第 16 天</span>
+    <span>&#9201; 预计 65 分钟</span>
+    <span>&#127758; CesiumJS 阶段 · 第 4 天</span>
+  </div>
+</div>
+
+<!-- ===== CONTAINER ===== -->
+<div class="container">
+
+  <!-- 学习进度 -->
+  <div class="progress-card">
+    <h3>&#128205; 学习路线图</h3>
+    <div class="progress-list">
+      <div class="progress-item pi-js">Day 01-12 · JS 基础完成 &#127881;</div>
+      <div class="progress-item pi-done">Day 13 · CesiumJS 入门</div>
+      <div class="progress-item pi-done">Day 14 · Entity 实体与几何体</div>
+      <div class="progress-item pi-done">Day 15 · 材质、贴图与 3D Tiles</div>
+      <div class="progress-item pi-today">Day 16 · 相机控制与视角管理 &#8592; 今天</div>
+      <div class="progress-item pi-next">Day 17 · 地形与影像图层</div>
+      <div class="progress-item pi-next">Day 18+ · 数据 sources 与交互</div>
+    </div>
+  </div>
+
+  <!-- 目录 -->
+  <div class="toc">
+    <h2>&#128218; 本课目录</h2>
+    <ol>
+      <li><a href="#s1">相机系统概览：Viewer-Scene-Camera</a></li>
+      <li><a href="#s2">Camera 核心属性与坐标系</a></li>
+      <li><a href="#s3">setView：瞬间定位</a></li>
+      <li><a href="#s4">flyTo：平滑飞行</a></li>
+      <li><a href="#s5">zoomTo / lookAt / lookAtTransform</a></li>
+      <li><a href="#s6">Heading / Pitch / Roll 视角参数</a></li>
+      <li><a href="#s7">屏幕交互拾取：pickEllipsoid 与 pickPosition</a></li>
+      <li><a href="#s8">ScreenSpaceCameraController：默认交互控制</a></li>
+      <li><a href="#s9">相机事件：moveStart / moveEnd / changed</a></li>
+      <li><a href="#s10">相机动画与巡航</a></li>
+      <li><a href="#s11">CesiumJS 关联场景</a></li>
+      <li><a href="#s12">练习题</a></li>
+      <li><a href="#s13">在线练习控制台</a></li>
+    </ol>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 1: 相机系统概览 -->
+  <!-- ============================================================ -->
+  <div class="section" id="s1">
+    <div class="section-header">
+      <div class="section-num">1</div>
+      <h2>相机系统概览：Viewer-Scene-Camera</h2>
+      <span class="tag">基础</span>
+    </div>
+
+    <div class="card">
+      <h3>&#128247; 为什么需要相机控制？</h3>
+      <p>在 CesiumJS 中，三维地球场景本身只是一个数据容器；真正决定用户看到什么的，是<strong>相机（Camera）</strong>。它就像一部虚拟摄像机，决定了：</p>
+      <ul>
+        <li>摄像机在哪里（位置 position）</li>
+        <li>朝哪个方向看（方向 direction）</li>
+        <li>视野朝上/朝下/侧倾多少（heading/pitch/roll）</li>
+        <li>观察目标是什么（target / trackedEntity）</li>
+      </ul>
+      <p>掌握相机控制，才能把“三维地球”变成“可交互的 GIS 应用”。</p>
+    </div>
+
+    <div class="card">
+      <h3>&#128736; 相机层级结构</h3>
+      <div class="flow-diagram">
+        <div class="flow-row">
+          <div class="flow-box fb-app">Cesium.Viewer<br><small>容器 + 默认 UI</small></div>
+        </div>
+        <div class="flow-arrow">&#8595;</div>
+        <div class="flow-row">
+          <div class="flow-box fb-material">Viewer.scene<br><small>场景对象</small></div>
+        </div>
+        <div class="flow-arrow">&#8595;</div>
+        <div class="flow-row">
+          <div class="flow-box fb-tiles">Scene.camera<br><small>相机对象</small></div>
+        </div>
+        <div class="flow-arrow">&#8595;</div>
+        <div class="flow-row">
+          <div class="flow-box fb-gpu">Camera.position / heading / pitch / roll<br><small>实际可控制属性</small></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>&#128269; 核心访问路径</h3>
+<pre><code><span class="cmt">// 最常用：从 viewer 访问相机</span>
+<span class="kw">const</span> <span class="var">camera</span> <span class="op">=</span> <span class="var">viewer</span>.<span class="var">camera</span>;
+<span class="kw">const</span> <span class="var">camera2</span> <span class="op">=</span> <span class="var">viewer</span>.<span class="var">scene</span>.<span class="var">camera</span>; <span class="cmt">// 等效</span>
+<span class="kw">const</span> <span class="var">camera3</span> <span class="op">=</span> <span class="typ">Cesium</span>.<span class="var">Camera</span>.<span class="var">DEFAULT_VIEW_RECTANGLE</span>; <span class="cmt">// 默认视图矩形</span>
+</code></pre>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 2: Camera 核心属性 -->
+  <!-- ============================================================ -->
+  <div class="section" id="s2">
+    <div class="section-header">
+      <div class="section-num">2</div>
+      <h2>Camera 核心属性与坐标系</h2>
+      <span class="tag">坐标</span>
+    </div>
+
+    <div class="card">
+      <h3>&#128736; 核心属性一览</h3>
+      <table>
+        <tr><th>属性</th><th>类型</th><th>含义</th></tr>
+        <tr><td class="td-kw">position</td><td class="td-type">Cartesian3</td><td>相机在 WGS84 坐标系中的位置（地球中心为原点，单位：米）</td></tr>
+        <tr><td class="td-kw">direction</td><td class="td-type">Cartesian3</td><td>相机朝向的 3D 方向向量（单位向量，读属性）</td></tr>
+        <tr><td class="td-kw">up</td><td class="td-type">Cartesian3</td><td>相机的"向上"方向（通常指向北）</td></tr>
+        <tr><td class="td-kw">right</td><td class="td-type">Cartesian3</td><td>相机的"向右"方向（读属性）</td></tr>
+        <tr><td class="td-kw">frustum</td><td class="td-type">PerspectiveFrustum</td><td>视锥体（fov、near、far）</td></tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3>&#127757; 坐标转换：世界坐标 &#8596; 经纬度</h3>
+<pre><code><span class="cmt">// 从经纬度 → Cartesian3（世界坐标）</span>
+<span class="kw">const</span> <span class="var">beijing</span> <span class="op">=</span> <span class="typ">Cesium</span>.<span class="typ">Cartesian3</span>.<span class="fn">fromDegrees</span>(<span class="num">116.3972</span>, <span class="num">39.9075</span>, <span class="num">1000</span>);
+<span class="cmt">// 参数: 经度, 纬度, 高度(米)</span>
+
+<span class="cmt">// 从 Cartesian3 → 经纬度（将世界坐标转回经纬度+高度）</span>
+<span class="kw">const</span> <span class="var">cartographic</span> <span class="op">=</span> <span class="typ">Cesium</span>.<span class="typ">Cartographic</span>.<span class="fn">fromCartesian</span>(<span class="var">beijing</span>);
+<span class="kw">const</span> <span class="var">lon</span> <span class="op">=</span> <span class="typ">Cesium</span>.<span class="typ">Math</span>.<span class="fn">toDegrees</span>(<span class="var">cartographic</span>.<span class="var">longitude</span>);
+<span class="kw">const</span> <span class="var">lat</span> <span class="op">=</span> <span class="typ">Cesium</span>.<span class="typ">Math</span>.<span class="fn">toDegrees</span>(<span class="var">cartographic</span>.<span class="var">latitude</span>);
+<span class="kw">const</span> <span class="var">h</span>   <span class="op">=</span> <span class="var">cartographic</span>.<span class="var">height</span>;
+
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="str">`北京位置: 经度 ${lon.toFixed(4)}, 纬度 ${lat.toFixed(4)}, 高度 ${h}m`</span>);
+</code></pre>
+    </div>
+
+    <div class="tip">
+      <span class="icon">&#128161;</span>
+      <div><strong>理解坐标转换是相机控制的核心：</strong>CesiumJS 用 Cartesian3（世界坐标系，以地球中心为原点）存储位置，而人类习惯用经纬度。每个相机操作几乎都涉及 <code>fromDegrees</code> 转换。</div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 3: setView -->
+  <!-- ============================================================ -->
+  <div class="section" id="s3">
+    <div class="section-header">
+      <div class="section-num">3</div>
+      <h2>setView：瞬间定位</h2>
+      <span class="tag">核心</span>
+    </div>
+
+    <div class="card">
+      <h3>&#127919; setView 把相机"瞬间"移动到指定位置</h3>
+      <p><code>setView</code> 是最直接的相机定位方式——没有任何动画过渡，立即跳转到目标视角。适合：初始化场景、重置视角、响应按钮点击。</p>
+<pre><code><span class="cmt">// 方式一：CameraFlyTo 对象（最常用）</span>
+<span class="var">viewer</span>.<span class="var">camera</span>.<span class="fn">setView</span>({
+  <span class="var">destination</span>: <span class="typ">Cesium</span>.<span class="typ">Cartesian3</span>.<span class="fn">fromDegrees</span>(<span class="num">116.3972</span>, <span class="num">39.9075</span>, <span class="num">50000</span>),
+  <span class="var">orientation</span>: {
+    <span class="var">heading</span>: <span class="typ">Cesium</span>.<span class="typ">Math</span>.<span class="fn">toRadians</span>(<span class="num">0</span>),    <span class="cmt">// 0° = 朝北</span>
+    <span class="var">pitch</span>:   <span class="typ">Cesium</span>.<span class="typ">Math</span>.<span class="fn">toRadians</span>(<span class="op">-</span><span class="num">45</span>),  <span class="cmt">// -45° = 俯视</span>
+    <span class="var">roll</span>:    <span class="typ">Cesium</span>.<span class="typ">Math</span>.<span class="fn">toRadians</span>(<span class="num">0</span>)      <span class="cmt">// 0° = 不倾斜</span>
+  }
+});
+</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>&#128221; setView 的多种参数形式</h3>
+<pre><code><span class="cmt">// 方式二：仅设目标 + 方位角（相机自动计算距离）</span>
+<span class="var">viewer</span>.<span class="var">camera</span>.<span class="fn">setView</span>({
+  <span class="var">destination</span>: <span class="typ">Cesium</span>.<span class="typ">Cartesian3</span>.<span class="fn">fromDegrees</span>(<span class="num">121.47</span>, <span class="num">31.23</span>, <span class="num">10000</span>)
+});
+
+<span class="cmt">// 方式三：Rectangle 目标（自动 fit）</span>
+<span class="var">viewer</span>.<span class="var">camera</span>.<span class="fn">setView</span>({
+  <span class="var">destination</span>: <span class="typ">Cesium</span>.<span class="typ">Rectangle</span>.<span class="fn">fromDegrees</span>(<span class="num">115.0</span>, <span class="num">39.0</span>, <span class="num">118.0</span>, <span class="num">41.0</span>)
+});
+
+<span class="cmt">// 方式四：直接给 position + direction + up（低级 API）</span>
+<span class="var">viewer</span>.<span class="var">camera</span>.<span class="fn">setView</span>({
+  <span class="var">position</span>: <span class="typ">Cesium</span>.<span class="typ">Cartesian3</span>.<span class="fn">fromDegrees</span>(<span class="num">110</span>, <span class="num">35</span>, <span class="num">200000</span>),
+  <span class="var">direction</span>: <span class="typ">Cesium</span>.<span class="typ">Cartesian3</span>.<span class="fn">negate</span>(<span class="typ">Cesium</span>.<span class="typ">Cartesian3</span>.<span class="fn">UNIT_Z</span>, <span class="kw">new</span> <span class="typ">Cesium</span>.<span class="typ">Cartesian3</span>()),
+  <span class="var">up</span>: <span class="typ">Cesium</span>.<span class="typ">Cartesian3</span>.<span class="var">UNIT_Y</span>
+});
+</code></pre>
+    </div>
+
+    <div class="warn">
+      <span class="icon">&#9888;</span>
+      <div><strong>setView vs flyTo：</strong>setView 是<strong>瞬间跳转</strong>，flyTo 是<strong>动画飞行</strong>。初始化场景用 setView；用户点击按钮跳转用 flyTo（更友好）。</div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 4: flyTo -->
+  <!-- ============================================================ -->
+  <div class="section" id="s4">
+    <div class="section-header">
+      <div class="section-num">4</div>
+      <h2>flyTo：平滑飞行</h2>
+      <span class="tag">核心</span>
+    </div>
+
+    <div class="card">
+      <h3>&#9992; flyTo 的三种目标类型</h3>
+      <p><code>flyTo</code> 是 CesiumJS 最具标志性的交互——相机带着过渡动画飞到目标。参数与 setView 基本一致，但多出了<strong>飞行时长控制</strong>。</p>
+<pre><code><span class="cmt">// 1. 飞到 Cartesian3 位置</span>
+<span class="var">viewer</span>.<span class="var">camera</span>.<span class="fn">flyTo</span>({
+  <span class="var">destination</span>: <span class="typ">Cesium</span>.<span class="typ">Cartesian3</span>.<span class="fn">fromDegrees</span>(<span class="num">116.40</span>, <span class="num">39.90</span>, <span class="num">5000</span>),
+  <span class="var">orientation</span>: {
+    <span class="var">heading</span>: <span class="typ">Cesium</span>.<span class="typ">Math</span>.<span class="fn">toRadians</span>(<span class="num">0</span>),
+    <span class="var">pitch</span>:   <span class="typ">Cesium</span>.<span class="typ">Math</span>.<span class="fn">toRadians</span>(<span class="op">-</span><span class="num">30</span>),
+    <span class="var">roll</span>:    <span class="typ">Cesium</span>.<span class="typ">Math</span>.<span class="fn">toRadians</span>(<span class="num">0</span>)
+  },
+  <span class="var">duration</span>: <span class="num">3</span>  <span class="cmt">// 飞行耗时 3 秒</span>
+});
+
+<span class="cmt">// 2. 飞到 Entity（自动计算最佳视角）</span>
+<span class="kw">const</span> <span class="var">entity</span> <span class="op">=</span> <span class="var">viewer</span>.<span class="var">entities</span>.<span class="fn">add</span>({
+  <span class="var">position</span>: <span class="typ">Cesium</span>.<span class="typ">Cartesian3</span>.<span class="fn">fromDegrees</span>(<span class="num">121.47</span>, <span class="num">31.23</span>),
+  <span class="var">point</span>: { <span class="var">pixelSize</span>: <span class="num">10</span>, <span class="var">color</span>: <span class="typ">Cesium</span>.<span class="typ">Color</span>.<span class="var">RED</span> }
+});
+<span class="var">viewer</span>.<span class="fn">flyTo</span>(<span class="var">entity</span>, { <span class="var">duration</span>: <span class="num">2</span> });
+
+<span class="cmt">// 3. 飞到 Rectangle 范围（自动 fit）</span>
+<span class="var">viewer</span>.<span class="var">camera</span>.<span class="fn">flyTo</span>({
+  <span class="var">destination</span>: <span class="typ">Cesium</span>.<span class="typ">Rectangle</span>.<span class="fn">fromDegrees</span>(<span class="num">113</span>, <span class="num">22</span>, <span class="num">114</span>, <span class="num">23</span>),
+  <span class="var">duration</span>: <span class="num">2</span>
+});
+</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>&#128336; flyTo 完整参数说明</h3>
+      <table>
+        <tr><th>参数</th><th>类型</th><th>默认值</th><th>含义</th></tr>
+        <tr><td class="td-kw">destination</td><td class="td-type">Cartesian3 | Rectangle</td><td>—</td><td>目标位置或范围</td></tr>
+        <tr><td class="td-kw">orientation</td><td class="td-type">Object</td><td>—</td><td>heading / pitch / roll</td></tr>
+        <tr><td class="td-kw">duration</td><td class="td-type">Number</td><td>3.0</td><td>飞行秒数</td></tr>
+        <tr><td class="td-kw">easingFunction</td><td class="td-type">EasingFunction</td><td>—</td><td>缓动函数（如 Cesium.EasingFunction.QUADRATIC_IN_OUT）</td></tr>
+        <tr><td class="td-kw">complete</td><td class="td-type">Callback</td><td>—</td><td>飞行完成后的回调</td></tr>
+        <tr><td class="td-kw">cancel</td><td class="td-type">Callback</td><td>—</td><td>飞行被取消后的回调</td></tr>
+        <tr><td class="td-kw">maximumHeight</td><td class="td-type">Number</td><td>—</td><td>飞行路径最高点（避免飞太低撞地）</td></tr>
+        <tr><td class="td-kw">offset</td><td class="td-type">HeadingPitchRange</td><td>—</td><td>相对于目标的偏移量</td></tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3>&#127939; 飞行完成回调：链式操作</h3>
+<pre><code><span class="cmt">// 飞到北京 → 等待 1 秒 → 飞到上海</span>
+<span class="var">viewer</span>.<span class="var">camera</span>.<span class="fn">flyTo</span>({
+  <span class="var">destination</span>: <span class="typ">Cesium</span>.<span class="typ">Cartesian3</span>.<span class="fn">fromDegrees</span>(<span class="num">116.40</span>, <span class="num">39.90</span>, <span class="num">50000</span>),
+  <span class="var">duration</span>: <span class="num">2</span>,
+  <span class="var">complete</span>: () <span class="op">=&gt;</span> {
+    <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">'已到达北京！准备飞往上海...'</span>);
+    <span class="fn">setTimeout</span>(() <span class="op">=&gt;</span> {
+      <span class="var">viewer</span>.<span class="var">camera</span>.<span class="fn">flyTo</span>({
+        <span class="var">destination</span>: <span class="typ">Cesium</span>.<span class="typ">Cartesian3</span>.<span class="fn">fromDegrees</span>(<span class="num">121.47</span>, <span class="num">31.23</span>, <span class="num">50000</span>),
+        <span class="var">duration</span>: <span class="num">2</span>
+      });
+    }, <span class="num">1000</span>);
+  }
+});
+</code></pre>
+    </div>
+
+    <div class="info">
+      <span class="icon">&#128161;</span>
+      <div><strong>flyTo 返回 Promise？</strong>flyTo 本身不返回 Promise，但 <code>complete</code> 回调能实现类似效果。如果你需要 await 风格的飞行，可以用 <code>Cesium.viewer.flyTo</code> 封装成一个返回 Promise 的工具函数。</div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 5: zoomTo / lookAt -->
+  <!-- ============================================================ -->
+  <div class="section" id="s5">
+    <div class="section-header">
+      <div class="section-num">5</div>
+      <h2>zoomTo / lookAt / lookAtTransform</h2>
+      <span class="tag">进阶</span>
+    </div>
+
+    <div class="card">
+      <h3>&#128270; zoomTo — 自动计算最佳视角并飞行</h3>
+      <p><code>zoomTo</code> 是 flyTo 的一个快捷方式：CesiumJS 自动计算包含目标的最佳视角范围，你不需要手动指定 destination。</p>
+<pre><code><span class="cmt">// 缩放到单个 Entity</span>
+<span class="var">viewer</span>.<span class="fn">zoomTo</span>(<span class="var">entity</span>);
+
+<span class="cmt">// 缩放到 EntityCollection</span>
+<span class="var">viewer</span>.<span class="fn">zoomTo</span>(<span class="var">viewer</span>.<span class="var">entities</span>);
+
+<span class="cmt">// 缩放到 Cesium3DTileset（加载完成后）</span>
+<span class="var">tileset</span>.<span class="var">readyPromise</span>.<span class="fn">then</span>(() <span class="op">=&gt;</span> {
+  <span class="var">viewer</span>.<span class="fn">zoomTo</span>(<span class="var">tileset</span>);
+});
+
+<span class="cmt">// zoomTo 也支持 offset（偏置）</span>
+<span class="var">viewer</span>.<span class="fn">zoomTo</span>(<span class="var">entity</span>, <span class="kw">new</span> <span class="typ">Cesium</span>.<span class="typ">HeadingPitchRange</span>(
+  <span class="typ">Cesium</span>.<span class="typ">Math</span>.<span class="fn">toRadians</span>(<span class="num">45</span>),  <span class="cmt">// heading offset</span>
+  <span class="typ">Cesium</span>.<span class="typ">Math</span>.<span class="fn">toRadians</span>(<span class="op">-</span><span class="num">30</span>), <span class="cmt">// pitch offset</span>
+  <span class="num">5000</span>                          <span class="cmt">// range (米)</span>
+));
+</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>&#128064; lookAt — 盯着某个位置看</h3>
+      <p><code>lookAt</code> 不改变相机位置，只改变朝向。适合：让相机"转头"看向另一个目标。</p>
+<pre><code><span class="cmt">// 让相机"转头"看向上海</span>
+<span class="kw">const</span> <span class="var">target</span> <span class="op">=</span> <span class="typ">Cesium</span>.<span class="typ">Cartesian3</span>.<span class="fn">fromDegrees</span>(<span class="num">121.47</span>, <span class="num">31.23</span>);
+<span class="var">viewer</span>.<span class="var">camera</span>.<span class="fn">lookAt</span>(<span class="var">target</span>, <span class="kw">new</span> <span class="typ">Cesium</span>.<span class="typ">HeadingPitchRange</span>(
+  <span class="typ">Cesium</span>.<span class="typ">Math</span>.<span class="fn">toRadians</span>(<span class="num">0</span>),
+  <span class="typ">Cesium</span>.<span class="typ">Math</span>.<span class="fn">toRadians</span>(<span class="op">-</span><span class="num">45</span>),
+  <span class="num">10000</span>
+));
+</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>&#128736; lookAtTransform — 相对变换注视</h3>
+      <p><code>lookAtTransform</code> 是高级 API，让相机注视一个 4×4 变换矩阵的目标。常用于：跟随卫星/飞机的本地坐标系。</p>
+<pre><code><span class="cmt">// 注视一个变换矩阵（例如跟随移动的飞机）</span>
+<span class="kw">const</span> <span class="var">transform</span> <span class="op">=</span> <span class="typ">Cesium</span>.<span class="typ">Transforms</span>.<span class="fn">eastNorthUpToFixedFrame</span>(
+  <span class="typ">Cesium</span>.<span class="typ">Cartesian3</span>.<span class="fn">fromDegrees</span>(<span class="num">121.47</span>, <span class="num">31.23</span>, <span class="num">5000</span>)
+);
+<span class="var">viewer</span>.<span class="var">camera</span>.<span class="fn">lookAtTransform</span>(<span class="var">transform</span>, <span class="kw">new</span> <span class="typ">Cesium</span>.<span class="typ">HeadingPitchRange</span>(
+  <span class="typ">Cesium</span>.<span class="typ">Math</span>.<span class="fn">toRadians</span>(<span class="num">0</span>),
+  <span class="typ">Cesium</span>.<span class="typ">Math</span>.<span class="fn">toRadians</span>(<span class="op">-</span><span class="num">30</span>),
+  <span class="num">5000</span>
+));
+</code></pre>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 6: Heading / Pitch / Roll -->
+  <!-- ============================================================ -->
+  <div class="section" id="s6">
+    <div class="section-header">
+      <div class="section-num">6</div>
+      <h2>Heading / Pitch / Roll 视角参数</h2>
+      <span class="tag">参数</span>
+    </div>
+
+    <div class="card">
+      <h3>&#128202; 三个旋转自由度</h3>
+      <table>
+        <tr><th>参数</th><th>旋转轴</th><th>范围</th><th>含义</th></tr>
+        <tr><td class="td-kw">heading</td><td class="td-type">绕 Z 轴（垂直）</td><td>0° ~ 360°</td><td>水平方位角：0° = 朝北, 90° = 朝东, 180° = 朝南</td></tr>
+        <tr><td class="td-kw">pitch</td><td class="td-type">绕 Y 轴（水平）</td><td>-90° ~ 90°</td><td>俯仰角：-90° = 正下, 0° = 水平, 90° = 正上</td></tr>
+        <tr><td class="td-kw">roll</td><td class="td-type">绕 X 轴（前后）</td><td>0° ~ 360°</td><td>侧倾角：0° = 水平, 非 0 = 倾斜</td></tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3>&#127760; 常见视角组合</h3>
+<pre><code><span class="cmt">// 俯视北京（标准俯视）</span>
+{ <span class="var">heading</span>: <span class="fn">toRadians</span>(<span class="num">0</span>),   <span class="var">pitch</span>: <span class="fn">toRadians</span>(<span class="op">-</span><span class="num">90</span>), <span class="var">roll</span>: <span class="fn">toRadians</span>(<span class="num">0</span>) }
+
+<span class="cmt">// 从东南方向看北京（最常见）</span>
+{ <span class="var">heading</span>: <span class="fn">toRadians</span>(<span class="num">225</span>), <span class="var">pitch</span>: <span class="fn">toRadians</span>(<span class="op">-</span><span class="num">45</span>),  <span class="var">roll</span>: <span class="fn">toRadians</span>(<span class="num">0</span>) }
+
+<span class="cmt">// 从正西方向斜着看（类似电影镜头）</span>
+{ <span class="var">heading</span>: <span class="fn">toRadians</span>(<span class="num">270</span>), <span class="var">pitch</span>: <span class="fn">toRadians</span>(<span class="op">-</span><span class="num">20</span>),  <span class="var">roll</span>: <span class="fn">toRadians</span>(<span class="num">0</span>) }
+
+<span class="cmt">// "荷兰角"——侧倾效果（少见）</span>
+{ <span class="var">heading</span>: <span class="fn">toRadians</span>(<span class="num">0</span>),   <span class="var">pitch</span>: <span class="fn">toRadians</span>(<span class="op">-</span><span class="num">45</span>),  <span class="var">roll</span>: <span class="fn">toRadians</span>(<span class="num">15</span>) }
+</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>&#127919; 动态设置 heading/pitch/roll</h3>
+<pre><code><span class="cmt">// 直接设置相机朝向（不移动位置）</span>
+<span class="var">viewer</span>.<span class="var">camera</span>.<span class="fn">setView</span>({
+  <span class="var">orientation</span>: {
+    <span class="var">heading</span>: <span class="typ">Cesium</span>.<span class="typ">Math</span>.<span class="fn">toRadians</span>(<span class="num">180</span>),
+    <span class="var">pitch</span>:   <span class="typ">Cesium</span>.<span class="typ">Math</span>.<span class="fn">toRadians</span>(<span class="op">-</span><span class="num">60</span>),
+    <span class="var">roll</span>:    <span class="typ">Cesium</span>.<span class="typ">Math</span>.<span class="fn">toRadians</span>(<span class="num">0</span>)
+  }
+});
+
+<span class="cmt">// 绕 Z 轴旋转（改变 heading）</span>
+<span class="var">viewer</span>.<span class="var">camera</span>.<span class="fn">lookAt</span>(<span class="var">target</span>, <span class="kw">new</span> <span class="typ">Cesium</span>.<span class="typ">HeadingPitchRange</span>(
+  <span class="typ">Cesium</span>.<span class="typ">Math</span>.<span class="fn">toRadians</span>(<span class="num">90</span>),  <span class="cmt">// heading = 朝东</span>
+  <span class="typ">Cesium</span>.<span class="typ">Math</span>.<span class="fn">toRadians</span>(<span class="op">-</span><span class="num">30</span>),
+  <span class="num">5000</span>
+));
+</code></pre>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 7: 屏幕交互拾取 -->
+  <!-- ============================================================ -->
+  <div class="section" id="s7">
+    <div class="section-header">
+      <div class="section-num">7</div>
+      <h2>屏幕交互拾取：pickEllipsoid 与 pickPosition</h2>
+      <span class="tag">交互</span>
+    </div>
+
+    <div class="card">
+      <h3>&#128070; 从屏幕像素反算世界坐标</h3>
+      <p>CesiumJS 提供了两个关键函数，把用户点击的<strong>屏幕坐标 (x, y)</strong> 转换为<strong>三维世界坐标</strong>：</p>
+      <table>
+        <tr><th>方法</th><th>返回</th><th>适用场景</th></tr>
+        <tr><td class="td-kw">camera.pickEllipsoid</td><td class="td-type">Cartesian3</td><td>拾取地球表面上的点</td></tr>
+        <tr><td class="td-kw">scene.pickPosition</td><td class="td-type">Cartesian3</td><td>拾取任意对象上的点（含地形、3D Tiles）</td></tr>
+        <tr><td class="td-kw">scene.pick</td><td class="td-type">Object</td><td>拾取图元对象（Entity/Tileset）</td></tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3>&#128070; pickEllipsoid：点击地球获取经纬度</h3>
+<pre><code><span class="kw">const</span> <span class="var">handler</span> <span class="op">=</span> <span class="kw">new</span> <span class="typ">Cesium</span>.<span class="typ">ScreenSpaceEventHandler</span>(<span class="var">viewer</span>.<span class="var">canvas</span>);
+
+<span class="var">handler</span>.<span class="fn">setInputAction</span>((<span class="var">movement</span>) <span class="op">=&gt;</span> {
+  <span class="kw">const</span> <span class="var">cartesian</span> <span class="op">=</span> <span class="var">viewer</span>.<span class="var">camera</span>.<span class="fn">pickEllipsoid</span>(
+    <span class="var">movement</span>.<span class="var">position</span>,
+    <span class="var">viewer</span>.<span class="var">scene</span>.<span class="var">globe</span>.<span class="var">ellipsoid</span>
+  );
+
+  <span class="kw">if</span> (<span class="var">cartesian</span>) {
+    <span class="kw">const</span> <span class="var">cartographic</span> <span class="op">=</span> <span class="typ">Cesium</span>.<span class="typ">Cartographic</span>.<span class="fn">fromCartesian</span>(<span class="var">cartesian</span>);
+    <span class="kw">const</span> <span class="var">lon</span> <span class="op">=</span> <span class="typ">Cesium</span>.<span class="typ">Math</span>.<span class="fn">toDegrees</span>(<span class="var">cartographic</span>.<span class="var">longitude</span>);
+    <span class="kw">const</span> <span class="var">lat</span> <span class="op">=</span> <span class="typ">Cesium</span>.<span class="typ">Math</span>.<span class="fn">toDegrees</span>(<span class="var">cartographic</span>.<span class="var">latitude</span>);
+    <span class="kw">const</span> <span class="var">h</span>   <span class="op">=</span> <span class="var">cartographic</span>.<span class="var">height</span>;
+
+    <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">`点击位置: 经度 ${lon.toFixed(4)}° 纬度 ${lat.toFixed(4)}° 高度 ${h.toFixed(1)}m`</span>);
+
+    <span class="cmt">// 在点击位置放一个标记</span>
+    <span class="var">viewer</span>.<span class="var">entities</span>.<span class="fn">add</span>({
+      <span class="var">position</span>: <span class="var">cartesian</span>,
+      <span class="var">point</span>: { <span class="var">pixelSize</span>: <span class="num">8</span>, <span class="var">color</span>: <span class="typ">Cesium</span>.<span class="typ">Color</span>.<span class="var">YELLOW</span> }
+    });
+  }
+}, <span class="typ">Cesium</span>.<span class="typ">ScreenSpaceEventType</span>.<span class="var">LEFT_CLICK</span>);
+</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>&#128269; pickPosition vs pickEllipsoid</h3>
+<pre><code><span class="cmt">// pickPosition 能拾取到地形和 3D Tiles 上的点</span>
+<span class="var">handler</span>.<span class="fn">setInputAction</span>((<span class="var">movement</span>) <span class="op">=&gt;</span> {
+  <span class="kw">const</span> <span class="var">pickedPosition</span> <span class="op">=</span> <span class="var">viewer</span>.<span class="var">scene</span>.<span class="fn">pickPosition</span>(<span class="var">movement</span>.<span class="var">endPosition</span>);
+  <span class="kw">if</span> (<span class="typ">Cesium</span>.<span class="var">defined</span>(<span class="var">pickedPosition</span>)) {
+    <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">'pickPosition 成功:'</span>, <span class="var">pickedPosition</span>);
+  } <span class="kw">else</span> {
+    <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">'没有命中任何物体（可能点到了天空）'</span>);
+  }
+}, <span class="typ">Cesium</span>.<span class="typ">ScreenSpaceEventType</span>.<span class="var">LEFT_CLICK</span>);
+
+<span class="cmt">// scene.pick 返回图元信息（知道用户点到了哪个 Entity）</span>
+<span class="var">handler</span>.<span class="fn">setInputAction</span>((<span class="var">movement</span>) <span class="op">=&gt;</span> {
+  <span class="kw">const</span> <span class="var">picked</span> <span class="op">=</span> <span class="var">viewer</span>.<span class="var">scene</span>.<span class="fn">pick</span>(<span class="var">movement</span>.<span class="var">position</span>);
+  <span class="kw">if</span> (<span class="typ">Cesium</span>.<span class="var">defined</span>(<span class="var">picked</span>) <span class="op">&amp;&amp;</span> <span class="var">picked</span>.<span class="var">id</span> <span class="kw">instanceof</span> <span class="typ">Cesium</span>.<span class="typ">Entity</span>) {
+    <span class="kw">const</span> <span class="var">entity</span> <span class="op">=</span> <span class="var">picked</span>.<span class="var">id</span>;
+    <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">'点中了:'</span>, <span class="var">entity</span>.<span class="var">name</span>);  <span class="cmt">// Entity 对象</span>
+    <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">'图元类型:'</span>, <span class="var">picked</span>.<span class="var">primitive</span>);
+  }
+}, <span class="typ">Cesium</span>.<span class="typ">ScreenSpaceEventType</span>.<span class="var">LEFT_CLICK</span>);
+</code></pre>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 8: ScreenSpaceCameraController -->
+  <!-- ============================================================ -->
+  <div class="section" id="s8">
+    <div class="section-header">
+      <div class="section-num">8</div>
+      <h2>ScreenSpaceCameraController：默认交互控制</h2>
+      <span class="tag">交互</span>
+    </div>
+
+    <div class="card">
+      <h3>&#128736; 控制默认鼠标/触控行为</h3>
+      <p>CesiumJS 自带完整的鼠标交互（拖拽旋转、滚轮缩放、右键平移）。通过 <code>ScreenSpaceCameraController</code> 可以精细控制这些行为。</p>
+<pre><code><span class="kw">const</span> <span class="var">controller</span> <span class="op">=</span> <span class="var">viewer</span>.<span class="var">scene</span>.<span class="var">screenSpaceCameraController</span>;
+
+<span class="cmt">// 开启/关闭缩放</span>
+<span class="var">controller</span>.<span class="var">enableZoom</span> <span class="op">=</span> <span class="kw">true</span>;
+
+<span class="cmt">// 开启/关闭旋转</span>
+<span class="var">controller</span>.<span class="var">enableRotate</span> <span class="op">=</span> <span class="kw">true</span>;
+
+<span class="cmt">// 开启/关闭平移</span>
+<span class="var">controller</span>.<span class="var">enableTranslate</span> <span class="op">=</span> <span class="kw">true</span>;
+
+<span class="cmt">// 开启/关闭倾斜（鼠标右键上下拖拽）</span>
+<span class="var">controller</span>.<span class="var">enableTilt</span> <span class="op">=</span> <span class="kw">true</span>;
+
+<span class="cmt">// 开启/关闭 look（鼠标右键左右拖拽）</span>
+<span class="var">controller</span>.<span class="var">enableLook</span> <span class="op">=</span> <span class="kw">true</span>;
+
+<span class="cmt">// 碰撞检测：缩放时避免穿透地面</span>
+<span class="var">controller</span>.<span class="var">enableCollisionDetection</span> <span class="op">=</span> <span class="kw">true</span>;
+
+<span class="cmt">// 最小/最大缩放距离（米）</span>
+<span class="var">controller</span>.<span class="var">minimumZoomDistance</span> <span class="op">=</span> <span class="num">100</span>;
+<span class="var">controller</span>.<span class="var">maximumZoomDistance</span> <span class="op">=</span> <span class="num">20000000</span>;
+</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>&#128064; 自定义鼠标交互方式</h3>
+<pre><code><span class="cmt">// 修改默认的缩放事件（例如：改用右键缩放）</span>
+<span class="var">controller</span>.<span class="var">zoomEventTypes</span> <span class="op">=</span> [
+  <span class="typ">Cesium</span>.<span class="typ">CameraEventType</span>.<span class="var">RIGHT_DRAG</span>,
+  <span class="typ">Cesium</span>.<span class="typ">CameraEventType</span>.<span class="var">WHEEL</span>,
+  <span class="typ">Cesium</span>.<span class="typ">CameraEventType</span>.<span class="var">PINCH</span>
+];
+
+<span class="cmt">// 修改旋转事件（改为中键拖拽）</span>
+<span class="var">controller</span>.<span class="var">rotateEventTypes</span> <span class="op">=</span> [
+  <span class="typ">Cesium</span>.<span class="typ">CameraEventType</span>.<span class="var">LEFT_DRAG</span>,
+  <span class="typ">Cesium</span>.<span class="typ">CameraEventType</span>.<span class="var">PINCH</span>
+];
+
+<span class="cmt">// 限制相机倾斜角度</span>
+<span class="var">controller</span>.<span class="var">minimumPitch</span> <span class="op">=</span> <span class="typ">Cesium</span>.<span class="typ">Math</span>.<span class="fn">toRadians</span>(<span class="op">-</span><span class="num">80</span>); <span class="cmt">// 不让用户看到背面</span>
+<span class="var">controller</span>.<span class="var">maximumPitch</span> <span class="op">=</span> <span class="typ">Cesium</span>.<span class="typ">Math</span>.<span class="fn">toRadians</span>(<span class="op">-</span><span class="num">10</span>); <span class="cmt">// 不让用户太贴近地面</span>
+</code></pre>
+    </div>
+
+    <div class="warn">
+      <span class="icon">&#9888;</span>
+      <div><strong>禁用所有默认交互：</strong>如果要做自定义交互（如点击测量、绘制多边形），可能需要临时禁用默认相机控制。<code>controller.enableZoom = false; controller.enableRotate = false; controller.enableTranslate = false;</code></div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 9: 相机事件 -->
+  <!-- ============================================================ -->
+  <div class="section" id="s9">
+    <div class="section-header">
+      <div class="section-num">9</div>
+      <h2>相机事件：moveStart / moveEnd / changed</h2>
+      <span class="tag">事件</span>
+    </div>
+
+    <div class="card">
+      <h3>&#128336; 三种相机事件</h3>
+      <table>
+        <tr><th>事件</th><th>触发时机</th><th>典型用途</th></tr>
+        <tr><td class="td-kw">moveStart</td><td class="td-type">相机开始移动</td><td>显示加载动画、暂停数据更新</td></tr>
+        <tr><td class="td-kw">moveEnd</td><td class="td-type">相机移动完成</td><td>重新计算视野内数据、LOD 更新</td></tr>
+        <tr><td class="td-kw">changed</td><td class="td-type">相机属性每次变化</td><td>实时更新 UI 面板（heading/pitch/高度）</td></tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3>&#128295; moveStart / moveEnd 实战</h3>
+<pre><code><span class="cmt">// 相机开始移动时显示提示</span>
+<span class="var">viewer</span>.<span class="var">camera</span>.<span class="var">moveStart</span>.<span class="fn">addEventListener</span>(() <span class="op">=&gt;</span> {
+  <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">'相机开始移动...'</span>);
+  <span class="cmt">// 显示 loading 指示器</span>
+});
+
+<span class="cmt">// 相机移动完成时执行操作</span>
+<span class="var">viewer</span>.<span class="var">camera</span>.<span class="var">moveEnd</span>.<span class="fn">addEventListener</span>(() <span class="op">=&gt;</span> {
+  <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">'相机移动完成'</span>);
+  <span class="kw">const</span> <span class="var">pos</span> <span class="op">=</span> <span class="var">viewer</span>.<span class="var">camera</span>.<span class="var">positionCartographic</span>;
+  <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">`当前位置: 经度 ${Cesium.Math.toDegrees(pos.longitude).toFixed(2)}° 纬度 ${Cesium.Math.toDegrees(pos.latitude).toFixed(2)}°`</span>);
+});
+</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>&#128300; changed 事件：实时跟踪相机状态</h3>
+<pre><code><span class="cmt">// 实时更新相机状态面板</span>
+<span class="var">viewer</span>.<span class="var">camera</span>.<span class="var">changed</span>.<span class="fn">addEventListener</span>((<span class="var">percentage</span>) <span class="op">=&gt;</span> {
+  <span class="cmt">// percentage: 0.0 ~ 1.0，表示当前移动进度（仅 flyTo 时有意义）</span>
+  <span class="kw">const</span> <span class="var">c</span> <span class="op">=</span> <span class="var">viewer</span>.<span class="var">camera</span>;
+  <span class="kw">const</span> <span class="var">pos</span> <span class="op">=</span> <span class="var">c</span>.<span class="var">positionCartographic</span>;
+  <span class="var">document</span>.<span class="fn">getElementById</span>(<span class="str">'cam-info'</span>).<span class="var">textContent</span> <span class="op">=</span>
+    <span class="str">`Lon: ${Cesium.Math.toDegrees(pos.longitude).toFixed(2)}° | `</span> <span class="op">+</span>
+    <span class="str">`Lat: ${Cesium.Math.toDegrees(pos.latitude).toFixed(2)}° | `</span> <span class="op">+</span>
+    <span class="str">`H: ${pos.height.toFixed(0)}m | `</span> <span class="op">+</span>
+    <span class="str">`Pitch: ${Cesium.Math.toDegrees(c.pitch).toFixed(1)}°`</span>;
+});
+</code></pre>
+    </div>
+
+    <div class="tip">
+      <span class="icon">&#128161;</span>
+      <div><strong>changed 事件性能提示：</strong>changed 在每帧渲染时都触发，频率很高（60fps）。在回调里避免 DOM 操作，尽量用 requestAnimationFrame 或防抖。</div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 10: 相机动画与巡航 -->
+  <!-- ============================================================ -->
+  <div class="section" id="s10">
+    <div class="section-header">
+      <div class="section-num">10</div>
+      <h2>相机动画与巡航</h2>
+      <span class="tag">高级</span>
+    </div>
+
+    <div class="card">
+      <h3>&#9992; 多段飞行巡航（城市巡礼）</h3>
+      <p>结合 <code>complete</code> 回调和 <code>clock.onTick</code>，可以实现自动巡航效果。</p>
+<pre><code><span class="cmt">// 定义巡礼路线</span>
+<span class="kw">const</span> <span class="var">cities</span> <span class="op">=</span> [
+  { <span class="var">name</span>: <span class="str">'北京'</span>, <span class="var">lon</span>: <span class="num">116.40</span>, <span class="var">lat</span>: <span class="num">39.90</span>, <span class="var">h</span>: <span class="num">50000</span> },
+  { <span class="var">name</span>: <span class="str">'上海'</span>, <span class="var">lon</span>: <span class="num">121.47</span>, <span class="var">lat</span>: <span class="num">31.23</span>, <span class="var">h</span>: <span class="num">50000</span> },
+  { <span class="var">name</span>: <span class="str">'广州'</span>, <span class="var">lon</span>: <span class="num">113.26</span>, <span class="var">lat</span>: <span class="num">23.13</span>, <span class="var">h</span>: <span class="num">50000</span> },
+  { <span class="var">name</span>: <span class="str">'成都'</span>, <span class="var">lon</span>: <span class="num">104.07</span>, <span class="var">lat</span>: <span class="num">30.57</span>, <span class="var">h</span>: <span class="num">50000</span> }
+];
+
+<span class="kw">let</span> <span class="var">currentCityIndex</span> <span class="op">=</span> <span class="num">0</span>;
+
+<span class="kw">function</span> <span class="fn">flyToNextCity</span>() {
+  <span class="kw">if</span> (<span class="var">currentCityIndex</span> <span class="op">&gt;=</span> <span class="var">cities</span>.<span class="var">length</span>) {
+    <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">'巡礼结束！'</span>);
+    <span class="kw">return</span>;
+  }
+  <span class="kw">const</span> <span class="var">city</span> <span class="op">=</span> <span class="var">cities</span>[<span class="var">currentCityIndex</span>];
+  <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">`飞往 ${city.name}...`</span>);
+
+  <span class="var">viewer</span>.<span class="var">camera</span>.<span class="fn">flyTo</span>({
+    <span class="var">destination</span>: <span class="typ">Cesium</span>.<span class="typ">Cartesian3</span>.<span class="fn">fromDegrees</span>(<span class="var">city</span>.<span class="var">lon</span>, <span class="var">city</span>.<span class="var">lat</span>, <span class="var">city</span>.<span class="var">h</span>),
+    <span class="var">orientation</span>: {
+      <span class="var">heading</span>: <span class="typ">Cesium</span>.<span class="typ">Math</span>.<span class="fn">toRadians</span>(<span class="num">0</span>),
+      <span class="var">pitch</span>:   <span class="typ">Cesium</span>.<span class="typ">Math</span>.<span class="fn">toRadians</span>(<span class="op">-</span><span class="num">60</span>),
+      <span class="var">roll</span>:    <span class="typ">Cesium</span>.<span class="typ">Math</span>.<span class="fn">toRadians</span>(<span class="num">0</span>)
+    },
+    <span class="var">duration</span>: <span class="num">3</span>,
+    <span class="var">complete</span>: () <span class="op">=&gt;</span> {
+      <span class="var">currentCityIndex</span><span class="op">++</span>;
+      <span class="fn">setTimeout</span>(<span class="var">flyToNextCity</span>, <span class="num">2000</span>); <span class="cmt">// 停留 2 秒</span>
+    }
+  });
+}
+
+<span class="fn">flyToNextCity</span>(); <span class="cmt">// 开始巡礼</span>
+</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>&#128260; 用 clock.onTick 实现平滑旋转</h3>
+<pre><code><span class="cmt">// 让相机绕目标点匀速旋转</span>
+<span class="kw">const</span> <span class="var">center</span> <span class="op">=</span> <span class="typ">Cesium</span>.<span class="typ">Cartesian3</span>.<span class="fn">fromDegrees</span>(<span class="num">116.40</span>, <span class="num">39.90</span>, <span class="num">0</span>);
+<span class="kw">const</span> <span class="var">rotationSpeed</span> <span class="op">=</span> <span class="num">0.001</span>; <span class="cmt">// 弧度/秒</span>
+
+<span class="var">viewer</span>.<span class="var">clock</span>.<span class="var">onTick</span>.<span class="fn">addEventListener</span>((<span class="var">clock</span>) <span class="op">=&gt;</span> {
+  <span class="kw">const</span> <span class="var">currentHeading</span> <span class="op">=</span> <span class="var">viewer</span>.<span class="var">camera</span>.<span class="var">heading</span>;
+  <span class="kw">const</span> <span class="var">newHeading</span> <span class="op">=</span> <span class="var">currentHeading</span> <span class="op">+</span> <span class="var">rotationSpeed</span>;
+
+  <span class="var">viewer</span>.<span class="var">camera</span>.<span class="fn">lookAt</span>(<span class="var">center</span>, <span class="kw">new</span> <span class="typ">Cesium</span>.<span class="typ">HeadingPitchRange</span>(
+    <span class="var">newHeading</span>,
+    <span class="typ">Cesium</span>.<span class="typ">Math</span>.<span class="fn">toRadians</span>(<span class="op">-</span><span class="num">45</span>),
+    <span class="num">50000</span>
+  ));
+});
+</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>&#127939; 封装一个 FlyToPromise</h3>
+<pre><code><span class="cmt">// 将 flyTo 封装成返回 Promise 的函数（支持 await）</span>
+<span class="kw">function</span> <span class="fn">flyToPromise</span>(<span class="var">viewer</span>, <span class="var">options</span>) {
+  <span class="kw">return</span> <span class="kw">new</span> <span class="typ">Promise</span>((<span class="var">resolve</span>, <span class="var">reject</span>) <span class="op">=&gt;</span> {
+    <span class="kw">try</span> {
+      <span class="var">viewer</span>.<span class="var">camera</span>.<span class="fn">flyTo</span>({
+        <span class="op">...</span><span class="var">options</span>,
+        <span class="var">complete</span>: <span class="var">resolve</span>,
+        <span class="var">cancel</span>: <span class="var">reject</span>
+      });
+    } <span class="kw">catch</span> (<span class="var">e</span>) {
+      <span class="fn">reject</span>(<span class="var">e</span>);
+    }
+  });
+}
+
+<span class="cmt">// 使用 async/await 风格的连续飞行</span>
+<span class="kw">async</span> <span class="kw">function</span> <span class="fn">tourChina</span>(<span class="var">viewer</span>) {
+  <span class="kw">await</span> <span class="fn">flyToPromise</span>(<span class="var">viewer</span>, {
+    <span class="var">destination</span>: <span class="typ">Cesium</span>.<span class="typ">Cartesian3</span>.<span class="fn">fromDegrees</span>(<span class="num">116.40</span>, <span class="num">39.90</span>, <span class="num">50000</span>),
+    <span class="var">duration</span>: <span class="num">2</span>
+  });
+  <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">'已到达北京！'</span>);
+
+  <span class="kw">await</span> <span class="fn">flyToPromise</span>(<span class="var">viewer</span>, {
+    <span class="var">destination</span>: <span class="typ">Cesium</span>.<span class="typ">Cartesian3</span>.<span class="fn">fromDegrees</span>(<span class="num">121.47</span>, <span class="num">31.23</span>, <span class="num">50000</span>),
+    <span class="var">duration</span>: <span class="num">2</span>
+  });
+  <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">'已到达上海！巡礼完成。'</span>);
+}
+</code></pre>
+    </div>
+
+    <div class="info">
+      <span class="icon">&#128161;</span>
+      <div><strong>Promise 封装 = JS 基础知识直接回报：</strong>这正是 Day 11（异步编程）中学习的 Promise 和 async/await 的实战应用。把回调式的 flyTo 包装成 await 风格，代码可读性大幅提升。</div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 11: CesiumJS 关联场景 -->
+  <!-- ============================================================ -->
+  <div class="section" id="s11">
+    <div class="section-header">
+      <div class="section-num">11</div>
+      <h2>CesiumJS 关联场景：相机控制的真实应用</h2>
+      <span class="tag">实战</span>
+    </div>
+
+    <div class="card">
+      <h3>&#127759; 真实场景映射</h3>
+      <table>
+        <tr><th>应用场景</th><th>技术组合</th></tr>
+        <tr><td class="td-kw">城市巡礼/介绍</td><td>flyTo 连续飞行 + complete 回调链 + async/await</td></tr>
+        <tr><td class="td-kw">点位详情弹窗</td><td>scene.pick 拾取 Entity + 弹出 InfoBox + flyTo 放大</td></tr>
+        <tr><td class="td-kw">区域缩放</td><td>zoomTo Rectangle/Tileset + 加载完成回调</td></tr>
+        <tr><td class="td-kw">相机状态面板</td><td>camera.changed 事件 + 实时更新 DOM 面板</td></tr>
+        <tr><td class="td-kw">点击添加标注</td><td>ScreenSpaceEventHandler + pickEllipsoid + entity.add</td></tr>
+        <tr><td class="td-kw">禁用手势交互</td><td>ScreenSpaceCameraController 全属性配置</td></tr>
+        <tr><td class="td-kw">自定义测量工具</td><td>禁用默认相机控制 + 自定义鼠标事件 + pickEllipsoid</td></tr>
+        <tr><td class="td-kw">自动巡航监控</td><td>clock.onTick + lookAt 旋转 + flyTo 巡游</td></tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3>&#128736; 综合示例：点击查看详情 + 自动飞到目标</h3>
+<pre><code><span class="cmt">// 1. 创建几个城市标注</span>
+<span class="kw">const</span> <span class="var">cities</span> <span class="op">=</span> [
+  <span class="var">viewer</span>.<span class="var">entities</span>.<span class="fn">add</span>({ <span class="var">name</span>: <span class="str">'北京'</span>, <span class="var">position</span>: <span class="typ">Cesium</span>.<span class="typ">Cartesian3</span>.<span class="fn">fromDegrees</span>(<span class="num">116.40</span>, <span class="num">39.90</span>), <span class="var">point</span>: { <span class="var">pixelSize</span>: <span class="num">10</span>, <span class="var">color</span>: <span class="typ">Cesium</span>.<span class="typ">Color</span>.<span class="var">RED</span> }, <span class="var">label</span>: { <span class="var">text</span>: <span class="str">'北京'</span>, <span class="var">font</span>: <span class="str">'14px sans-serif'</span> } }),
+  <span class="var">viewer</span>.<span class="var">entities</span>.<span class="fn">add</span>({ <span class="var">name</span>: <span class="str">'上海'</span>, <span class="var">position</span>: <span class="typ">Cesium</span>.<span class="typ">Cartesian3</span>.<span class="fn">fromDegrees</span>(<span class="num">121.47</span>, <span class="num">31.23</span>), <span class="var">point</span>: { <span class="var">pixelSize</span>: <span class="num">10</span>, <span class="var">color</span>: <span class="typ">Cesium</span>.<span class="typ">Color</span>.<span class="var">BLUE</span> }, <span class="var">label</span>: { <span class="var">text</span>: <span class="str">'上海'</span>, <span class="var">font</span>: <span class="str">'14px sans-serif'</span> } }),
+];
+
+<span class="cmt">// 2. 点击拾取 + 自动飞行</span>
+<span class="kw">const</span> <span class="var">handler</span> <span class="op">=</span> <span class="kw">new</span> <span class="typ">Cesium</span>.<span class="typ">ScreenSpaceEventHandler</span>(<span class="var">viewer</span>.<span class="var">canvas</span>);
+<span class="var">handler</span>.<span class="fn">setInputAction</span>((<span class="var">click</span>) <span class="op">=&gt;</span> {
+  <span class="kw">const</span> <span class="var">picked</span> <span class="op">=</span> <span class="var">viewer</span>.<span class="var">scene</span>.<span class="fn">pick</span>(<span class="var">click</span>.<span class="var">position</span>);
+  <span class="kw">if</span> (<span class="typ">Cesium</span>.<span class="var">defined</span>(<span class="var">picked</span>) <span class="op">&amp;&amp;</span> <span class="var">picked</span>.<span class="var">id</span> <span class="kw">instanceof</span> <span class="typ">Cesium</span>.<span class="typ">Entity</span>) {
+    <span class="kw">const</span> <span class="var">entity</span> <span class="op">=</span> <span class="var">picked</span>.<span class="var">id</span>;
+    <span class="fn">alert</span>(<span class="str">`点击了：${entity.name}`</span>);
+    <span class="var">viewer</span>.<span class="fn">flyTo</span>(<span class="var">entity</span>, { <span class="var">duration</span>: <span class="num">1.5</span> });
+  }
+}, <span class="typ">Cesium</span>.<span class="typ">ScreenSpaceEventType</span>.<span class="var">LEFT_CLICK</span>);
+</code></pre>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 12: 练习题 -->
+  <!-- ============================================================ -->
+  <div class="section" id="s12">
+    <div class="section-header">
+      <div class="section-num">12</div>
+      <h2>练习题</h2>
+      <span class="tag">练习</span>
+    </div>
+
+    <div class="practice">
+      <h2>&#9997; 今日练习（3 道）</h2>
+      <p>这些题目侧重相机控制与视角管理的综合运用。</p>
+
+      <div class="exercise">
+        <div class="q">&#9312; 实现"飞到北京，3 秒后自动飞回当前位置"</div>
+        <p style="color:var(--muted); margin-bottom:12px;">记录当前相机位置（viewer.camera.position），然后 flyTo 北京（116.40, 39.90, 50000）。在 complete 回调中用 setTimeout 3 秒后飞回原位置。提示：需要用 clone 保存 position 的副本。</p>
+<pre><code><span class="cmt">// TODO: 保存当前相机位置，飞到北京，3秒后返回</span>
+<span class="kw">const</span> <span class="var">savedPosition</span> <span class="op">=</span> <span class="typ">Cesium</span>.<span class="typ">Cartesian3</span>.<span class="fn">clone</span>(<span class="var">viewer</span>.<span class="var">camera</span>.<span class="var">position</span>);
+<span class="cmt">// ... flyTo Beijing, then setTimeout to flyTo savedPosition</span>
+</code></pre>
+      </div>
+
+      <div class="exercise">
+        <div class="q">&#9313; 编写一个"自定义测量工具"的拾取逻辑</div>
+        <p style="color:var(--muted); margin-bottom:12px;">在页面上放两个按钮"开始测量"和"结束测量"。点击"开始测量"后：禁用默认相机控制（enableZoom/enableRotate/enableTranslate = false），每次点击地球时用 pickEllipsoid 获取经纬度并放一个点，同时用 Cesium.Cartesian3.distance 计算与前一个点的距离。点击"结束测量"后恢复相机控制并输出总距离。</p>
+<pre><code><span class="cmt">// TODO: 实现自定义测量工具</span>
+<span class="kw">let</span> <span class="var">isMeasuring</span> <span class="op">=</span> <span class="kw">false</span>;
+<span class="kw">let</span> <span class="var">lastPoint</span> <span class="op">=</span> <span class="kw">null</span>;
+<span class="kw">let</span> <span class="var">totalDistance</span> <span class="op">=</span> <span class="num">0</span>;
+
+<span class="kw">function</span> <span class="fn">startMeasure</span>() {
+  <span class="var">isMeasuring</span> <span class="op">=</span> <span class="kw">true</span>;
+  <span class="cmt">// 禁用相机控制</span>
+  <span class="cmt">// 绑定点击事件</span>
+}
+<span class="kw">function</span> <span class="fn">stopMeasure</span>() {
+  <span class="var">isMeasuring</span> <span class="op">=</span> <span class="kw">false</span>;
+  <span class="cmt">// 恢复相机控制 + 输出总距离</span>
+}
+</code></pre>
+      </div>
+
+      <div class="exercise">
+        <div class="q">&#9314; 封装一个 CameraManager 类</div>
+        <p style="color:var(--muted); margin-bottom:12px;">创建一个 CameraManager 类，构造函数接收 viewer。包含方法：flyToCity(lon, lat, alt, duration)、lookAtCenter(lon, lat)、startAutoRotate(speed)、stopAutoRotate()、getCurrentView()（返回 {lon, lat, alt, heading, pitch}）。用 class 语法实现。</p>
+<pre><code><span class="cmt">// TODO: 实现 CameraManager 类</span>
+<span class="kw">class</span> <span class="typ">CameraManager</span> {
+  <span class="fn">constructor</span>(<span class="var">viewer</span>) {
+    <span class="kw">this</span>.<span class="var">viewer</span> <span class="op">=</span> <span class="var">viewer</span>;
+    <span class="kw">this</span>.<span class="var">_rotateHandler</span> <span class="op">=</span> <span class="kw">null</span>;
+  }
+
+  <span class="fn">flyToCity</span>(<span class="var">lon</span>, <span class="var">lat</span>, <span class="var">alt</span>, <span class="var">duration</span> <span class="op">=</span> <span class="num">2</span>) {
+    <span class="cmt">// ...</span>
+  }
+
+  <span class="fn">getCurrentView</span>() {
+    <span class="cmt">// ... 返回 {lon, lat, alt, heading, pitch}</span>
+  }
+
+  <span class="fn">startAutoRotate</span>(<span class="var">speed</span> <span class="op">=</span> <span class="num">0.001</span>) {
+    <span class="cmt">// 用 clock.onTick 绕当前中心旋转</span>
+  }
+
+  <span class="fn">stopAutoRotate</span>() {
+    <span class="cmt">// 移除旋转监听</span>
+  }
+}
+</code></pre>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 13: 交互沙盒 -->
+  <!-- ============================================================ -->
+  <div class="section" id="s13">
+    <div class="section-header">
+      <div class="section-num">13</div>
+      <h2>在线练习控制台</h2>
+      <span class="tag">动手</span>
+    </div>
+
+    <div class="console-area">
+      <div class="console-header">
+        <div class="console-dots">
+          <div class="dot dot-r"></div>
+          <div class="dot dot-y"></div>
+          <div class="dot dot-g"></div>
+        </div>
+        <span>&#128187; JavaScript 交互沙盒 (Ctrl+Enter 运行)</span>
+      </div>
+      <textarea id="sandbox-code" spellcheck="false">// ===== 相机控制模拟沙盒 =====
+// 用纯 JS 模拟 Cesium 相机操作，验证角度/坐标转换逻辑
+
+// ===== 1. 坐标工具：经纬度 ↔ Cartesian3 模拟 =====
+const EARTH_RADIUS = 6371000; // 地球半径（米）
+
+function degreesToCartesian(lon, lat, height = 0) {
+  const lonRad = (lon * Math.PI) / 180;
+  const latRad = (lat * Math.PI) / 180;
+  const r = EARTH_RADIUS + height;
+  const x = r * Math.cos(latRad) * Math.cos(lonRad);
+  const y = r * Math.cos(latRad) * Math.sin(lonRad);
+  const z = r * Math.sin(latRad);
+  return { x, y, z };
+}
+
+function cartesianToDegrees(x, y, z) {
+  const lon = Math.atan2(y, x) * 180 / Math.PI;
+  const lat = Math.asin(z / EARTH_RADIUS) * 180 / Math.PI;
+  return { lon, lat };
+}
+
+const beijing = degreesToCartesian(116.40, 39.90, 0);
+const shanghai = degreesToCartesian(121.47, 31.23, 0);
+
+console.log('北京 (x,y,z):', beijing);
+console.log('上海 (x,y,z):', shanghai);
+
+// ===== 2. 计算两点间的距离（大圆距离公式） =====
+function haversineDistance(lon1, lat1, lon2, lat2) {
+  const R = EARTH_RADIUS;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2)**2;
+  return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+const dist = haversineDistance(116.40, 39.90, 121.47, 31.23);
+console.log('北京到上海距离:', (dist/1000).toFixed(1), 'km');
+
+// ===== 3. 视角参数模拟（heading/pitch/roll） =====
+function toRadians(deg) { return deg * Math.PI / 180; }
+function toDegrees(rad) { return rad * 180 / Math.PI; }
+
+// 模拟相机状态
+class CameraState {
+  constructor(lon, lat, alt, heading, pitch, roll) {
+    this.lon = lon;
+    this.lat = lat;
+    this.alt = alt;
+    this.heading = heading; // 度
+    this.pitch = pitch;     // 度
+    this.roll = roll;       // 度
+  }
+
+  getViewDescription() {
+    const dirMap = { 0: '北', 90: '东', 180: '南', 270: '西' };
+    const dir = dirMap[Math.round(this.heading / 90) * 90] || `${this.heading}°`;
+    const pitchDesc = this.pitch < 0 ? `俯视 ${Math.abs(this.pitch)}°` : `仰视 ${this.pitch}°`;
+    return `相机位置: (${this.lon}°, ${this.lat}°), 高度: ${this.alt}m\n` +
+           `朝向: ${dir}, ${pitchDesc}, 侧倾: ${this.roll}°`;
+  }
+}
+
+const cam = new CameraState(116.40, 39.90, 50000, 0, -45, 0);
+console.log(cam.getViewDescription());
+
+// ===== 4. 模拟飞行路径 =====
+function simulateFlyPath(startLon, startLat, endLon, endLat, alt, steps) {
+  const path = [];
+  for (let i = 0; i <= steps; i++) {
+    const t = i / steps;
+    const eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; // easeInOutQuad
+    path.push({
+      lon: startLon + (endLon - startLon) * eased,
+      lat: startLat + (endLat - startLat) * eased,
+      alt: alt
+    });
+  }
+  return path;
+}
+
+const path = simulateFlyPath(116.40, 39.90, 121.47, 31.23, 50000, 5);
+console.log('飞行路径（5步）:');
+path.forEach((p, i) => {
+  console.log(`  第 ${i} 步: (${p.lon.toFixed(2)}°, ${p.lat.toFixed(2)}°)`);
+});
+
+// ===== 自己动手 =====
+// 练 1：修改 simulateFlyPath 使用线性插值（不缓动），对比输出
+// 练 2：给 CameraState 添加 rotate(degrees) 方法，每步增加 heading 并输出新视角描述
+// 练 3：写一个函数，根据 cities 数组生成完整飞行路线</textarea>
+      <div class="console-actions">
+        <button class="btn btn-run" onclick="runCode()">&#9654; 运行</button>
+        <button class="btn btn-clear" onclick="clearOutput()">清空输出</button>
+        <button class="btn btn-clear" onclick="resetCode()">重置代码</button>
+      </div>
+      <div id="output-box">// 点击"运行"查看输出结果...</div>
+    </div>
+  </div>
+
+
+  <!-- 今日总结 -->
+  <div class="card" style="border-color:var(--accent);border-left-width:4px;">
+    <h3 style="color:var(--accent)">&#128203; 今日知识点总结</h3>
+    <ul style="margin-top:12px;">
+      <li>&#127919; <strong>setView</strong> 瞬间定位，适合初始化场景和重置视角</li>
+      <li>&#9992; <strong>flyTo</strong> 平滑飞行，支持 duration、complete 回调、easingFunction</li>
+      <li>&#128270; <strong>zoomTo</strong> 自动计算最佳视角并飞行，支持 Entity/Tileset/Rectangle</li>
+      <li>&#128064; <strong>lookAt</strong> 不移动位置只改变朝向；<strong>lookAtTransform</strong> 注视变换矩阵</li>
+      <li>&#128202; <strong>heading/pitch/roll</strong> 控制三维视角，heading=方位角、pitch=俯仰、roll=侧倾</li>
+      <li>&#128070; <strong>pickEllipsoid</strong> 点击地球获取经纬度；<strong>pickPosition</strong> 支持地形和 3D Tiles；<strong>scene.pick</strong> 拾取 Entity</li>
+      <li>&#128736; <strong>ScreenSpaceCameraController</strong> 控制默认交互行为（缩放/旋转/平移/碰撞检测）</li>
+      <li>&#128336; <strong>moveStart/moveEnd/changed</strong> 相机事件，用于加载状态、UI 面板、实时跟踪</li>
+      <li>&#9992; <strong>clock.onTick + lookAt</strong> 实现自动旋转；<strong>complete 回调链</strong> 实现多段巡航</li>
+      <li>&#128640; <strong>flyToPromise 封装</strong> 用 Promise 包装 flyTo，支持 async/await 风格</li>
+    </ul>
+  </div>
+
+  <!-- 明天预告 -->
+  <div class="card" style="border-color:var(--accent); border-left-width:4px; background:linear-gradient(135deg,#0d3321,#1a1d27);">
+    <h3 style="color:var(--accent)">&#127758; 明天继续：地形与影像图层</h3>
+    <p style="margin-top:8px;">今天掌握了相机的全部控制。明天我们深入地球的"皮肤"——ImageryLayer（影像图层）和 Terrain（地形），学会切换底图（卫星/街道/自定义）、添加 WMS 图层、控制高程精度、水效果等。</p>
+  </div>
+
+</div><!-- /container -->
+
+<!-- ===== FOOTER ===== -->
+<div class="footer">
+  <p>&#127758; <strong>每日JS</strong> — JavaScript &rarr; CesiumJS 学习路径</p>
+  <p style="margin-top:6px;">Day 16 / 相机控制与视角管理 &middot; 明天继续：<strong>地形与影像图层</strong></p>
+</div>
+
+
+<!-- ===== SCRIPT ===== -->
+<script>
+  const DEFAULT_CODE = document.getElementById('sandbox-code').value;
+
+  function runCode() {
+    const code = document.getElementById('sandbox-code').value;
+    const outputBox = document.getElementById('output-box');
+    const logs = [];
+
+    const origLog = console.log;
+    const origError = console.error;
+    const origWarn = console.warn;
+
+    console.log = (...args) => {
+      logs.push(args.map(a => {
+        if (typeof a === 'object' && a !== null) {
+          try { return JSON.stringify(a, null, 2); } catch { return String(a); }
+        }
+        return String(a);
+      }).join(' '));
+      origLog(...args);
+    };
+    console.error = (...args) => {
+      logs.push('\u274C ' + args.join(' '));
+      origError(...args);
+    };
+    console.warn = (...args) => {
+      logs.push('\u26A0\uFE0F ' + args.join(' '));
+      origWarn(...args);
+    };
+
+    try {
+      eval(code);
+      setTimeout(() => {
+        outputBox.innerHTML = logs.length
+          ? logs.map(l => '<span>' + escHtml(l) + '</span>').join('\n')
+          : '<span style="color:var(--muted)">// \u4EE3\u7801\u6267\u884C\u5B8C\u6BD5\uFF0C\u65E0\u8F93\u51FA</span>';
+
+        console.log = origLog;
+        console.error = origError;
+        console.warn = origWarn;
+      }, 150);
+    } catch(e) {
+      outputBox.innerHTML = '<span class="err">\u274C ' + escHtml(e.message) + '</span>';
+      console.log = origLog;
+      console.error = origError;
+      console.warn = origWarn;
+    }
+
+    setTimeout(() => {
+      if (logs.length > 0) {
+        outputBox.innerHTML = logs.map(l => '<span>' + escHtml(l) + '</span>').join('\n');
+      }
+    }, 3000);
+  }
+
+  function clearOutput() {
+    document.getElementById('output-box').innerHTML = '// \u8F93\u51FA\u5DF2\u6E05\u7A7A...';
+  }
+
+  function resetCode() {
+    document.getElementById('sandbox-code').value = DEFAULT_CODE;
+    clearOutput();
+  }
+
+  function escHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  document.getElementById('sandbox-code').addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      e.preventDefault();
+      runCode();
+    }
+  });
+</script>
+</body>
+</html>

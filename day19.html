@@ -1,0 +1,1575 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>JavaScript 每日学习 — Day 19：空间量算、坐标转换与几何计算</title>
+  <style>
+    /* ===== 全局 ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0f1117;
+      --surface:   #1a1d27;
+      --card:      #21253a;
+      --border:    #2e3350;
+      --accent:    #2dd4bf;
+      --accent2:   #f7c948;
+      --accent3:   #7ee787;
+      --accent4:   #818cf8;
+      --text:      #cdd3e0;
+      --muted:     #6e7a96;
+      --tag-bg:    #0d3321;
+      --code-bg:   #161b2e;
+    }
+
+    body {
+      font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.75;
+      font-size: 15px;
+    }
+
+    /* ===== 顶部 Banner ===== */
+    .hero {
+      background: linear-gradient(135deg, #1e1b3a 0%, #2d2252 50%, #1e1b3a 100%);
+      border-bottom: 1px solid #3b3580;
+      padding: 52px 24px 40px;
+      text-align: center;
+    }
+    .hero .badge {
+      display: inline-block;
+      background: var(--accent4);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 4px 12px;
+      border-radius: 20px;
+      margin-bottom: 16px;
+    }
+    .hero h1 {
+      font-size: clamp(24px, 5vw, 42px);
+      font-weight: 800;
+      color: #fff;
+      line-height: 1.2;
+      margin-bottom: 12px;
+    }
+    .hero h1 span { color: var(--accent4); }
+    .hero p {
+      color: var(--muted);
+      font-size: 15px;
+      max-width: 680px;
+      margin: 0 auto 24px;
+    }
+    .hero .meta {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      flex-wrap: wrap;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .hero .meta span { display: flex; align-items: center; gap: 5px; }
+
+    /* ===== 布局 ===== */
+    .container { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; }
+
+    /* ===== 目录卡片 ===== */
+    .toc {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--accent4);
+      border-radius: 12px;
+      padding: 24px 28px;
+      margin-bottom: 40px;
+    }
+    .toc h2 { font-size: 14px; letter-spacing: 1px; text-transform: uppercase; color: var(--accent4); margin-bottom: 14px; }
+    .toc ol { padding-left: 20px; }
+    .toc li { margin: 6px 0; }
+    .toc a { color: var(--text); text-decoration: none; }
+    .toc a:hover { color: var(--accent4); }
+
+    /* ===== 章节标题 ===== */
+    .section { margin-bottom: 52px; }
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 24px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    .section-num {
+      width: 38px; height: 38px;
+      border-radius: 10px;
+      background: var(--accent4);
+      color: #fff;
+      font-weight: 800;
+      font-size: 16px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .section-header h2 {
+      font-size: 22px;
+      font-weight: 700;
+      color: #fff;
+    }
+    .section-header .tag {
+      font-size: 11px;
+      background: #1e1b4b;
+      color: var(--accent4);
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    /* ===== 卡片 ===== */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+    .card h3 {
+      font-size: 16px;
+      color: var(--accent2);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card p { margin-bottom: 10px; color: var(--text); }
+    .card p:last-child { margin-bottom: 0; }
+
+    /* ===== 代码块 ===== */
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px 22px;
+      overflow-x: auto;
+      margin: 16px 0;
+      font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+      font-size: 13.5px;
+      line-height: 1.7;
+    }
+    code { font-family: inherit; }
+
+    /* 语法着色 */
+    .kw  { color: #c792ea; }
+    .str { color: #c3e88d; }
+    .num { color: #f78c6c; }
+    .cmt { color: #546e7a; font-style: italic; }
+    .fn  { color: #82aaff; }
+    .var { color: #eeffff; }
+    .op  { color: var(--accent4); }
+    .typ { color: var(--accent2); }
+    .out { color: var(--accent3); }
+    .prp { color: #ffcb6b; }
+    .ces { color: #818cf8; font-weight: 600; }
+
+    /* ===== 提示框 ===== */
+    .tip, .warn, .info {
+      border-radius: 10px;
+      padding: 14px 18px;
+      margin: 16px 0;
+      font-size: 14px;
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+    .tip  { background: #0d3321; border-left: 4px solid var(--accent3); }
+    .warn { background: #3a2500; border-left: 4px solid var(--accent2); }
+    .info { background: #1e1b4b; border-left: 4px solid var(--accent4); }
+
+    /* ===== 对比表格 ===== */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 14px;
+    }
+    th {
+      background: var(--surface);
+      color: var(--accent4);
+      padding: 12px 16px;
+      text-align: left;
+      border-bottom: 2px solid var(--border);
+      font-weight: 600;
+    }
+    td {
+      padding: 11px 16px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+      vertical-align: top;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(129, 140, 248, 0.04); }
+    .td-kw { color: #c792ea; font-family: 'Cascadia Code','Fira Code',monospace; font-weight: 600; }
+    .td-type { color: var(--accent2); }
+    .td-good { color: var(--accent3); }
+    .td-bad  { color: #ff7b72; }
+
+    /* ===== 两列网格 ===== */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 600px) { .grid-2 { grid-template-columns: 1fr; } }
+
+    /* ===== 大卡片 ===== */
+    .big-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 28px;
+      margin-bottom: 20px;
+    }
+    .big-card h3 { font-size: 17px; color: var(--accent4); margin-bottom: 16px; }
+
+    /* ===== 坐标体系示意图 ===== */
+    .coord-diagram {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 28px;
+      margin: 16px 0;
+      text-align: center;
+    }
+    .coord-row { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin: 8px 0; }
+    .coord-box {
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      min-width: 140px;
+    }
+    .coord-arrow { color: var(--accent4); font-size: 20px; display: flex; align-items: center; }
+    .cb-deg { background: #3a2500; border: 2px solid var(--accent2); color: var(--accent2); }
+    .cb-rad { background: #1e1b4b; border: 2px solid var(--accent4); color: var(--accent4); }
+    .cb-car { background: #115542; border: 2px solid var(--accent); color: var(--accent); }
+
+    /* ===== inline code ===== */
+    p code, li code, td code {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      padding: 1px 6px;
+      border-radius: 5px;
+      font-family: 'Cascadia Code','Fira Code',monospace;
+      font-size: 12.5px;
+      color: var(--accent4);
+    }
+    ul { padding-left: 20px; }
+    li { margin: 5px 0; }
+
+    /* ===== 练习区 ===== */
+    .practice {
+      background: linear-gradient(135deg, #1e1b3a, #1a1a2d);
+      border: 1px solid #3b3580;
+      border-radius: 12px;
+      padding: 28px;
+      margin-top: 48px;
+    }
+    .practice h2 {
+      font-size: 20px;
+      color: var(--accent3);
+      margin-bottom: 8px;
+    }
+    .practice p { color: var(--muted); margin-bottom: 20px; font-size: 14px; }
+    .exercise {
+      background: var(--code-bg);
+      border: 1px dashed #3b3580;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+    .exercise .q {
+      color: var(--accent2);
+      font-weight: 600;
+      margin-bottom: 12px;
+      font-size: 14px;
+    }
+    .exercise pre { margin: 0; }
+
+    /* ===== 交互控制台 ===== */
+    .console-area {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-top: 48px;
+    }
+    .console-header {
+      background: var(--surface);
+      padding: 12px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+    .console-header span { color: var(--accent4); font-size: 13px; font-weight: 600; letter-spacing: 1px; }
+    .console-dots { display: flex; gap: 6px; }
+    .dot { width: 12px; height: 12px; border-radius: 50%; }
+    .dot-r { background: #ff5f57; }
+    .dot-y { background: #febc2e; }
+    .dot-g { background: #28c840; }
+    #sandbox-code {
+      width: 100%;
+      background: var(--code-bg);
+      color: var(--accent3);
+      border: none;
+      padding: 18px 20px;
+      font-family: 'Cascadia Code','Fira Code',monospace;
+      font-size: 13.5px;
+      line-height: 1.7;
+      resize: vertical;
+      min-height: 180px;
+      outline: none;
+    }
+    .console-actions {
+      padding: 12px 18px;
+      display: flex;
+      gap: 10px;
+      border-top: 1px solid var(--border);
+    }
+    .btn {
+      padding: 8px 20px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      transition: opacity .2s;
+    }
+    .btn:hover { opacity: .85; }
+    .btn-run { background: var(--accent4); color: #fff; }
+    .btn-clear { background: var(--surface); color: var(--muted); border: 1px solid var(--border); }
+    #output-box {
+      padding: 16px 20px;
+      min-height: 60px;
+      font-family: 'Cascadia Code','Fira Code',monospace;
+      font-size: 13px;
+      color: var(--accent3);
+      border-top: 1px solid var(--border);
+      white-space: pre-wrap;
+    }
+    #output-box .err { color: #ff7b72; }
+
+    /* ===== 进度条 ===== */
+    .progress-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 22px 26px;
+      margin-bottom: 40px;
+    }
+    .progress-card h3 { font-size: 13px; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); margin-bottom: 16px; }
+    .progress-list { display: flex; flex-wrap: wrap; gap: 8px; }
+    .progress-item {
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+    }
+    .pi-done  { background: #0d3321; color: var(--accent3); border: 1px solid #1a4d2a; }
+    .pi-js    { background: #1e1b4b; color: var(--accent4); border: 1px solid #312e81; }
+    .pi-today { background: #1e1b4b; color: var(--accent4); border: 1px solid var(--accent4); }
+    .pi-next  { background: var(--card); color: var(--muted); border: 1px solid var(--border); }
+
+    /* ===== 步骤卡片 ===== */
+    .step-list { counter-reset: step; }
+    .step-item {
+      position: relative;
+      padding-left: 42px;
+      margin-bottom: 18px;
+      min-height: 32px;
+    }
+    .step-item::before {
+      counter-increment: step;
+      content: counter(step);
+      position: absolute;
+      left: 0; top: 0;
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      background: var(--accent4);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .step-item strong { color: #fff; }
+
+    /* ===== footer ===== */
+    .footer {
+      text-align: center;
+      padding: 40px 24px 60px;
+      color: var(--muted);
+      font-size: 13px;
+      border-top: 1px solid var(--border);
+    }
+  </style>
+</head>
+<body>
+
+<!-- ===== HERO ===== -->
+<div class="hero">
+  <div class="badge">CesiumJS 学习路径 · GIS 分析基础</div>
+  <h1>Day 19 — <span>空间量算、坐标转换与几何计算</span></h1>
+  <p>地球不是平的，屏幕上的像素也不是真实坐标。本章带你打通 <strong>经纬度 → 弧度 → 三维笛卡尔坐标</strong> 的转换链路，学会在 CesiumJS 中测量距离、面积、高度与方位角——这是从"看得见"到"算得准"的关键一步。</p>
+  <div class="meta">
+    <span>&#128197; 第 19 天</span>
+    <span>&#9201; 预计 75 分钟</span>
+    <span>&#127758; CesiumJS 阶段 · 第 7 天</span>
+  </div>
+</div>
+
+<!-- ===== CONTAINER ===== -->
+<div class="container">
+
+  <!-- 学习进度 -->
+  <div class="progress-card">
+    <h3>&#128205; 学习路线图</h3>
+    <div class="progress-list">
+      <div class="progress-item pi-js">Day 01-12 · JS 基础完成 &#127881;</div>
+      <div class="progress-item pi-done">Day 13 · CesiumJS 入门</div>
+      <div class="progress-item pi-done">Day 14 · Entity 实体与几何体</div>
+      <div class="progress-item pi-done">Day 15 · 材质、贴图与 3D Tiles</div>
+      <div class="progress-item pi-done">Day 16 · 相机控制与视角管理</div>
+      <div class="progress-item pi-done">Day 17 · 地形与影像图层</div>
+      <div class="progress-item pi-done">Day 18 · 数据源与交互</div>
+      <div class="progress-item pi-today">Day 19 · 空间量算与坐标转换 &#8592; 今天</div>
+      <div class="progress-item pi-next">Day 20+ · 更多高级主题</div>
+    </div>
+  </div>
+
+  <!-- 目录 -->
+  <div class="toc">
+    <h2>&#128218; 本课目录</h2>
+    <ol>
+      <li><a href="#s1">为什么需要空间量算</a></li>
+      <li><a href="#s2">CesiumJS 坐标系统全景</a></li>
+      <li><a href="#s3">坐标转换：Degrees ↔ Cartographic ↔ Cartesian3</a></li>
+      <li><a href="#s4">CesiumJS 核心数学工具</a></li>
+      <li><a href="#s5">距离量算：三种场景</a></li>
+      <li><a href="#s6">面积量算与多边形处理</a></li>
+      <li><a href="#s7">高度与高程采样</a></li>
+      <li><a href="#s8">方位角与目标点计算</a></li>
+      <li><a href="#s9">包围盒与可见性判断</a></li>
+      <li><a href="#s10">构建交互式测量工具</a></li>
+      <li><a href="#s11">CesiumJS 关联场景</a></li>
+      <li><a href="#s12">练习题</a></li>
+      <li><a href="#s13">在线练习控制台</a></li>
+    </ol>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 1: 为什么需要空间量算 -->
+  <!-- ============================================================ -->
+  <div class="section" id="s1">
+    <div class="section-header">
+      <div class="section-num">1</div>
+      <h2>为什么需要空间量算</h2>
+      <span class="tag">动机</span>
+    </div>
+
+    <div class="card">
+      <h3>&#129300; 从"展示数据"到"分析数据"</h3>
+      <p>前几节课，你已经能在地球上加载城市点、绘制多边形、叠加影像、响应点击事件。但真实 GIS 应用常常会问：</p>
+      <ul>
+        <li>这两点之间的<strong>地面距离</strong>是多少公里？</li>
+        <li>这个地块的<strong>面积</strong>有多少平方米？</li>
+        <li>飞机当前位置到跑道的<strong>方位角</strong>是多少？</li>
+        <li>用户画的多边形是否<strong>包含</strong>某个目标点？</li>
+        <li>建筑物顶部到地面的<strong>高度</strong>如何计算？</li>
+      </ul>
+      <p>这些问题的共同点是：都需要在<strong>椭球三维空间</strong>中进行精确计算，而不是在平面屏幕上简单量像素。</p>
+    </div>
+
+    <div class="card">
+      <h3>&#9889; 常见误区</h3>
+      <table>
+        <tr><th>误区</th><th>问题</th><th>正确做法</th></tr>
+        <tr>
+          <td>用平面距离公式算经纬度</td>
+          <td class="td-bad">经度 1° 在不同纬度代表的距离不同</td>
+          <td class="td-good">使用椭球面距离（Haversine / Geodesic）</td>
+        </tr>
+        <tr>
+          <td>忽略高度分量</td>
+          <td class="td-bad">飞机与山峰的直线距离会出错</td>
+          <td class="td-good">使用三维笛卡尔距离（Cartesian3.distance）</td>
+        </tr>
+        <tr>
+          <td>角度单位混用</td>
+          <td class="td-bad">Math.sin(45) 不是 sin(45°)</td>
+          <td class="td-good">统一用弧度，或用 Cesium.Math.toRadians 转换</td>
+        </tr>
+        <tr>
+          <td>认为地球是正球</td>
+          <td class="td-bad">长距离测量误差可达 0.5%</td>
+          <td class="td-good">使用 WGS84 椭球模型</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 2: CesiumJS 坐标系统全景 -->
+  <!-- ============================================================ -->
+  <div class="section" id="s2">
+    <div class="section-header">
+      <div class="section-num">2</div>
+      <h2>CesiumJS 坐标系统全景</h2>
+      <span class="tag">基础</span>
+    </div>
+
+    <div class="card">
+      <h3>&#127758; 三种核心坐标表示</h3>
+      <div class="coord-diagram">
+        <div class="coord-row">
+          <div class="coord-box cb-deg">经纬度度数<br><small>lon, lat, height</small></div>
+          <div class="coord-arrow">→</div>
+          <div class="coord-box cb-rad">弧度 Cartographic<br><small>longitude, latitude, height</small></div>
+          <div class="coord-arrow">→</div>
+          <div class="coord-box cb-car">笛卡尔 Cartesian3<br><small>x, y, z（米）</small></div>
+        </div>
+        <p style="margin-top:14px;color:var(--muted);font-size:13px;">所有空间计算的第一步：先把数据统一到合适的坐标系。</p>
+      </div>
+
+      <table>
+        <tr><th>类型</th><th>类</th><th>单位</th><th>适用场景</th></tr>
+        <tr>
+          <td class="td-type">经纬度</td>
+          <td class="td-kw">Number 数组 / 对象</td>
+          <td>度（°）</td>
+          <td>用户输入、GeoJSON、配置文件</td>
+        </tr>
+        <tr>
+          <td class="td-type">地理坐标（弧度）</td>
+          <td class="td-kw">Cesium.Cartographic</td>
+          <td>弧度（rad）</td>
+          <td>椭球面计算、高程采样</td>
+        </tr>
+        <tr>
+          <td class="td-type">三维世界坐标</td>
+          <td class="td-kw">Cesium.Cartesian3</td>
+          <td>米（m）</td>
+          <td>渲染、距离、碰撞检测</td>
+        </tr>
+        <tr>
+          <td class="td-type">屏幕坐标</td>
+          <td class="td-kw">Cesium.Cartesian2</td>
+          <td>像素（px）</td>
+          <td>鼠标位置、屏幕拾取</td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3>&#128161; 坐标系关系图</h3>
+      <pre><span class="cmt">// 1. 用户最熟悉的：经纬度（度）</span>
+<span class="kw">const</span> <span class="var">beijingDeg</span> = { <span class="prp">lon</span>: <span class="num">116.4074</span>, <span class="prp">lat</span>: <span class="num">39.9042</span>, <span class="prp">height</span>: <span class="num">50</span> };
+
+<span class="cmt">// 2. 椭球面计算用：Cartographic（弧度）</span>
+<span class="kw">const</span> <span class="var">beijingRad</span> = <span class="typ">Cesium.Cartographic</span>.<span class="fn">fromDegrees</span>(
+  <span class="num">116.4074</span>, <span class="num">39.9042</span>, <span class="num">50</span>
+);
+<span class="cmt">// beijingRad.longitude ≈ 2.0316 rad, latitude ≈ 0.6965 rad</span>
+
+<span class="cmt">// 3. 三维渲染用：Cartesian3（米，地心坐标系）</span>
+<span class="kw">const</span> <span class="var">beijingCar</span> = <span class="typ">Cesium.Cartesian3</span>.<span class="fn">fromDegrees</span>(
+  <span class="num">116.4074</span>, <span class="num">39.9042</span>, <span class="num">50</span>
+);
+<span class="cmt">// x, y, z 以地球质心为原点，Z 轴指向北极</span></pre>
+      <div class="info">
+        <span>&#8505;&#65039;</span>
+        <div><strong>地心惯性系 vs 地固系</strong>：Cesium 默认使用地固坐标系（ECEF），即随地球一起转动。做卫星轨道模拟时才需要切换到惯性系（ICRF）。</div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 3: 坐标转换 -->
+  <!-- ============================================================ -->
+  <div class="section" id="s3">
+    <div class="section-header">
+      <div class="section-num">3</div>
+      <h2>坐标转换：Degrees ↔ Cartographic ↔ Cartesian3</h2>
+      <span class="tag">核心</span>
+    </div>
+
+    <div class="card">
+      <h3>&#128259; 转换关系总览</h3>
+      <div class="coord-diagram">
+        <div class="coord-row">
+          <div class="coord-box cb-deg">Degrees<br>[lon, lat, h]</div>
+          <div class="coord-arrow">↔</div>
+          <div class="coord-box cb-rad">Cartographic<br>[rad, rad, m]</div>
+          <div class="coord-arrow">↔</div>
+          <div class="coord-box cb-car">Cartesian3<br>[x, y, z] m</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>&#128221; 常用转换代码</h3>
+      <pre><span class="cmt">// ===== 度数 → Cartesian3（最常用）=====</span>
+<span class="kw">const</span> <span class="var">position</span> = <span class="typ">Cesium.Cartesian3</span>.<span class="fn">fromDegrees</span>(
+  <span class="num">116.4074</span>, <span class="num">39.9042</span>, <span class="num">100</span>
+);
+
+<span class="cmt">// ===== 度数数组 → Cartesian3 数组 =====</span>
+<span class="kw">const</span> <span class="var">positions</span> = <span class="typ">Cesium.Cartesian3</span>.<span class="fn">fromDegreesArrayHeights</span>([
+  <span class="num">116.40</span>, <span class="num">39.90</span>, <span class="num">0</span>,
+  <span class="num">116.41</span>, <span class="num">39.91</span>, <span class="num">0</span>,
+  <span class="num">116.42</span>, <span class="num">39.90</span>, <span class="num">0</span>
+]);
+
+<span class="cmt">// ===== Cartesian3 → Cartographic =====</span>
+<span class="kw">const</span> <span class="var">carto</span> = <span class="typ">Cesium.Cartographic</span>.<span class="fn">fromCartesian</span>(<span class="var">position</span>);
+<span class="var">console</span>.<span class="fn">log</span>(
+  <span class="typ">Cesium.Math</span>.<span class="fn">toDegrees</span>(<span class="var">carto</span>.<span class="prp">longitude</span>),
+  <span class="typ">Cesium.Math</span>.<span class="fn">toDegrees</span>(<span class="var">carto</span>.<span class="prp">latitude</span>),
+  <span class="var">carto</span>.<span class="prp">height</span>
+);
+
+<span class="cmt">// ===== Cartographic → Cartesian3 =====</span>
+<span class="kw">const</span> <span class="var">carAgain</span> = <span class="typ">Cesium.Ellipsoid</span>.<span class="typ">WGS84</span>.<span class="fn">cartographicToCartesian</span>(<span class="var">carto</span>);
+
+<span class="cmt">// ===== 批量转换 =====</span>
+<span class="kw">const</span> <span class="var">carts</span> = <span class="typ">Cesium.Ellipsoid</span>.<span class="typ">WGS84</span>.<span class="fn">cartographicArrayToCartesianArray</span>([<span class="var">carto1</span>, <span class="var">carto2</span>]);</pre>
+      <div class="tip">
+        <span>&#128161;</span>
+        <div><strong>性能提示</strong>：批量转换（带 Array 后缀的方法）比循环单次转换快得多，因为内部可以复用临时对象，减少 GC 压力。</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>&#127919; 屏幕坐标 ↔ 世界坐标</h3>
+      <p>点击地球时拿到的是屏幕像素，需要转成三维世界坐标才能做量算：</p>
+      <pre><span class="cmt">// 鼠标点击事件中获得屏幕坐标（Cartesian2）</span>
+<span class="var">handler</span>.<span class="fn">setInputAction</span>(<span class="kw">function</span> <span class="fn">onClick</span>(<span class="var">movement</span>) {
+  <span class="kw">const</span> <span class="var">cartesian</span> = <span class="var">viewer</span>.<span class="var">scene</span>.<span class="fn">pickPosition</span>(<span class="var">movement</span>.<span class="prp">position</span>);
+  <span class="kw">if</span> (<span class="typ">Cesium.defined</span>(<span class="var">cartesian</span>)) {
+    <span class="kw">const</span> <span class="var">carto</span> = <span class="typ">Cesium.Cartographic</span>.<span class="fn">fromCartesian</span>(<span class="var">cartesian</span>);
+    <span class="var">console</span>.<span class="fn">log</span>(
+      <span class="str">'经度:'</span>, <span class="typ">Cesium.Math</span>.<span class="fn">toDegrees</span>(<span class="var">carto</span>.<span class="prp">longitude</span>).<span class="fn">toFixed</span>(<span class="num">4</span>),
+      <span class="str">'纬度:'</span>, <span class="typ">Cesium.Math</span>.<span class="fn">toDegrees</span>(<span class="var">carto</span>.<span class="prp">latitude</span>).<span class="fn">toFixed</span>(<span class="num">4</span>),
+      <span class="str">'高度:'</span>, <span class="var">carto</span>.<span class="prp">height</span>.<span class="fn">toFixed</span>(<span class="num">1</span>)
+    );
+  }
+}, <span class="typ">Cesium.ScreenSpaceEventType</span>.<span class="typ">LEFT_CLICK</span>);</pre>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 4: CesiumJS 核心数学工具 -->
+  <!-- ============================================================ -->
+  <div class="section" id="s4">
+    <div class="section-header">
+      <div class="section-num">4</div>
+      <h2>CesiumJS 核心数学工具</h2>
+      <span class="tag">工具</span>
+    </div>
+
+    <div class="card">
+      <h3>&#128295; 常用 API 速查</h3>
+      <table>
+        <tr><th>API</th><th>作用</th><th>示例</th></tr>
+        <tr>
+          <td class="td-kw">Cesium.Math.toRadians</td>
+          <td>度 → 弧度</td>
+          <td><code>Cesium.Math.toRadians(90)</code></td>
+        </tr>
+        <tr>
+          <td class="td-kw">Cesium.Math.toDegrees</td>
+          <td>弧度 → 度</td>
+          <td><code>Cesium.Math.toDegrees(Math.PI)</code></td>
+        </tr>
+        <tr>
+          <td class="td-kw">Cesium.Math.clamp</td>
+          <td>限制数值范围</td>
+          <td><code>clamp(value, 0, 1)</code></td>
+        </tr>
+        <tr>
+          <td class="td-kw">Cesium.Math.equalsEpsilon</td>
+          <td>浮点数近似相等</td>
+          <td><code>equalsEpsilon(a, b, 1e-6)</code></td>
+        </tr>
+        <tr>
+          <td class="td-kw">Cesium.Cartesian3.add/subtract</td>
+          <td>向量加减</td>
+          <td><code>Cartesian3.add(a, b, result)</code></td>
+        </tr>
+        <tr>
+          <td class="td-kw">Cesium.Cartesian3.distance</td>
+          <td>三维直线距离</td>
+          <td><code>distance(a, b)</code></td>
+        </tr>
+        <tr>
+          <td class="td-kw">Cesium.Cartesian3.magnitude</td>
+          <td>向量模长</td>
+          <td><code>magnitude(vec)</code></td>
+        </tr>
+        <tr>
+          <td class="td-kw">Cesium.Cartesian3.normalize</td>
+          <td>单位向量</td>
+          <td><code>normalize(vec, result)</code></td>
+        </tr>
+        <tr>
+          <td class="td-kw">Cesium.Cartesian3.dot/cross</td>
+          <td>点积 / 叉积</td>
+          <td><code>dot(a, b)</code></td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3>&#129518; 向量运算示例</h3>
+      <pre><span class="kw">const</span> <span class="var">a</span> = <span class="kw">new</span> <span class="typ">Cesium.Cartesian3</span>(<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>);
+<span class="kw">const</span> <span class="var">b</span> = <span class="kw">new</span> <span class="typ">Cesium.Cartesian3</span>(<span class="num">4</span>, <span class="num">5</span>, <span class="num">6</span>);
+<span class="kw">const</span> <span class="var">result</span> = <span class="kw">new</span> <span class="typ">Cesium.Cartesian3</span>();
+
+<span class="cmt">// 加法：result = a + b（避免创建新对象，高性能）</span>
+<span class="typ">Cesium.Cartesian3</span>.<span class="fn">add</span>(<span class="var">a</span>, <span class="var">b</span>, <span class="var">result</span>);
+
+<span class="cmt">// 距离</span>
+<span class="kw">const</span> <span class="var">dist</span> = <span class="typ">Cesium.Cartesian3</span>.<span class="fn">distance</span>(<span class="var">a</span>, <span class="var">b</span>);
+
+<span class="cmt">// 中点</span>
+<span class="typ">Cesium.Cartesian3</span>.<span class="fn">add</span>(<span class="var">a</span>, <span class="var">b</span>, <span class="var">result</span>);
+<span class="typ">Cesium.Cartesian3</span>.<span class="fn">multiplyByScalar</span>(<span class="var">result</span>, <span class="num">0.5</span>, <span class="var">result</span>);
+
+<span class="cmt">// 判断两个浮点数是否近似相等（三维坐标比较必用）</span>
+<span class="kw">const</span> <span class="var">same</span> = <span class="typ">Cesium.Cartesian3</span>.<span class="fn">equalsEpsilon</span>(<span class="var">a</span>, <span class="var">b</span>, <span class="num">1e-6</span>);</pre>
+      <div class="warn">
+        <span>&#9888;&#65039;</span>
+        <div><strong>注意 result 参数</strong>：Cesium 大量 API 采用"结果对象"模式，传入 <code>result</code> 可避免每次创建新对象。在渲染循环或大量计算时，这能显著减少 GC 卡顿。</div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 5: 距离量算 -->
+  <!-- ============================================================ -->
+  <div class="section" id="s5">
+    <div class="section-header">
+      <div class="section-num">5</div>
+      <h2>距离量算：三种场景</h2>
+      <span class="tag">量算</span>
+    </div>
+
+    <div class="card">
+      <h3>&#128205; 场景 A：椭球面距离（最常用）</h3>
+      <p>地面点之间沿地球表面的最短路径。Cesium 提供 <code class="ces">EllipsoidGeodesic</code>，精度最高：</p>
+      <pre><span class="kw">const</span> <span class="var">start</span> = <span class="typ">Cesium.Cartographic</span>.<span class="fn">fromDegrees</span>(<span class="num">116.4074</span>, <span class="num">39.9042</span>);
+<span class="kw">const</span> <span class="var">end</span>   = <span class="typ">Cesium.Cartographic</span>.<span class="fn">fromDegrees</span>(<span class="num">121.4737</span>, <span class="num">31.2304</span>);
+
+<span class="kw">const</span> <span class="var">geodesic</span> = <span class="kw">new</span> <span class="typ">Cesium.EllipsoidGeodesic</span>(<span class="var">start</span>, <span class="var">end</span>);
+<span class="kw">const</span> <span class="var">surfaceDistance</span> = <span class="var">geodesic</span>.<span class="prp">surfaceDistance</span>;
+<span class="var">console</span>.<span class="fn">log</span>(<span class="str">'北京-上海地面距离:'</span>, (<span class="var">surfaceDistance</span> / <span class="num">1000</span>).<span class="fn">toFixed</span>(<span class="num">2</span>), <span class="str">'km'</span>);
+<span class="cmt">// ≈ 1067 km</span></pre>
+      <p>如果你想在地球表面画一条<strong>测地线</strong>（大圆航线），可以用 <code class="ces">geodesic.interpolateUsingFraction</code>：</p>
+      <pre><span class="kw">const</span> <span class="var">linePositions</span> = [];
+<span class="kw">for</span> (<span class="kw">let</span> <span class="var">i</span> = <span class="num">0</span>; <span class="var">i</span> <= <span class="num">100</span>; <span class="var">i</span>++) {
+  <span class="kw">const</span> <span class="var">c</span> = <span class="var">geodesic</span>.<span class="fn">interpolateUsingFraction</span>(<span class="var">i</span> / <span class="num">100</span>);
+  <span class="var">linePositions</span>.<span class="fn">push</span>(<span class="typ">Cesium.Cartesian3</span>.<span class="fn">fromRadians</span>(<span class="var">c</span>.<span class="prp">longitude</span>, <span class="var">c</span>.<span class="prp">latitude</span>));
+}
+<span class="var">viewer</span>.<span class="var">entities</span>.<span class="fn">add</span>({
+  <span class="prp">polyline</span>: {
+    <span class="prp">positions</span>: <span class="var">linePositions</span>,
+    <span class="prp">width</span>: <span class="num">2</span>,
+    <span class="prp">material</span>: <span class="typ">Cesium.Color</span>.<span class="typ">CYAN</span>
+  }
+});</pre>
+    </div>
+
+    <div class="card">
+      <h3>&#9992;&#65039; 场景 B：三维空间直线距离</h3>
+      <p>飞机、卫星、高楼等需要考虑高度时，用三维欧氏距离：</p>
+      <pre><span class="kw">const</span> <span class="var">p1</span> = <span class="typ">Cesium.Cartesian3</span>.<span class="fn">fromDegrees</span>(<span class="num">116.40</span>, <span class="num">39.90</span>, <span class="num">10000</span>);
+<span class="kw">const</span> <span class="var">p2</span> = <span class="typ">Cesium.Cartesian3</span>.<span class="fn">fromDegrees</span>(<span class="num">121.47</span>, <span class="num">31.23</span>, <span class="num">10000</span>);
+
+<span class="kw">const</span> <span class="var">straightDistance</span> = <span class="typ">Cesium.Cartesian3</span>.<span class="fn">distance</span>(<span class="var">p1</span>, <span class="var">p2</span>);
+<span class="var">console</span>.<span class="fn">log</span>(<span class="str">'三维直线距离:'</span>, (<span class="var">straightDistance</span> / <span class="num">1000</span>).<span class="fn">toFixed</span>(<span class="num">2</span>), <span class="str">'km'</span>);</pre>
+    </div>
+
+    <div class="card">
+      <h3>&#128208; 场景 C：快速估算（Haversine）</h3>
+      <p>不需要引入 Cesium 时的纯 JS 实现，适合服务端或轻量场景：</p>
+      <pre><span class="kw">function</span> <span class="fn">haversine</span>(<span class="var">lon1</span>, <span class="var">lat1</span>, <span class="var">lon2</span>, <span class="var">lat2</span>) {
+  <span class="kw">const</span> <span class="var">R</span> = <span class="num">6371000</span>; <span class="cmt">// 地球平均半径（米）</span>
+  <span class="kw">const</span> <span class="var">toRad</span> = <span class="var">x</span> => <span class="var">x</span> * <span class="typ">Math</span>.<span class="typ">PI</span> / <span class="num">180</span>;
+  <span class="kw">const</span> <span class="var">dLat</span> = <span class="var">toRad</span>(<span class="var">lat2</span> - <span class="var">lat1</span>);
+  <span class="kw">const</span> <span class="var">dLon</span> = <span class="var">toRad</span>(<span class="var">lon2</span> - <span class="var">lon1</span>);
+  <span class="kw">const</span> <span class="var">a</span> = <span class="typ">Math</span>.<span class="fn">sin</span>(<span class="var">dLat</span> / <span class="num">2</span>) ** <span class="num">2</span> +
+          <span class="typ">Math</span>.<span class="fn">cos</span>(<span class="var">toRad</span>(<span class="var">lat1</span>)) * <span class="typ">Math</span>.<span class="fn">cos</span>(<span class="var">toRad</span>(<span class="var">lat2</span>)) *
+          <span class="typ">Math</span>.<span class="fn">sin</span>(<span class="var">dLon</span> / <span class="num">2</span>) ** <span class="num">2</span>;
+  <span class="kw">const</span> <span class="var">c</span> = <span class="num">2</span> * <span class="typ">Math</span>.<span class="fn">atan2</span>(<span class="typ">Math</span>.<span class="fn">sqrt</span>(<span class="var">a</span>), <span class="typ">Math</span>.<span class="fn">sqrt</span>(<span class="num">1</span> - <span class="var">a</span>));
+  <span class="kw">return</span> <span class="var">R</span> * <span class="var">c</span>;
+}
+
+<span class="var">console</span>.<span class="fn">log</span>(<span class="fn">haversine</span>(<span class="num">116.4074</span>, <span class="num">39.9042</span>, <span class="num">121.4737</span>, <span class="num">31.2304</span>) / <span class="num">1000</span>);
+<span class="cmt">// ≈ 1067 km（与 EllipsoidGeodesic 接近，但长距离误差稍大）</span></pre>
+      <div class="tip">
+        <span>&#128161;</span>
+        <div><strong>选型建议</strong>：视觉展示或几百公里内用 Haversine 足够；公里级精密测量、导航、航线规划用 <code class="ces">EllipsoidGeodesic</code>。</div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 6: 面积量算 -->
+  <!-- ============================================================ -->
+  <div class="section" id="s6">
+    <div class="section-header">
+      <div class="section-num">6</div>
+      <h2>面积量算与多边形处理</h2>
+      <span class="tag">量算</span>
+    </div>
+
+    <div class="card">
+      <h3>&#128207; 使用 PolygonGeometry 与 PolygonHierarchy</h3>
+      <p>Cesium 没有直接返回"面积"的 API，但提供了 <code class="ces">PolygonGeometry</code>，你可以自己基于顶点计算。思路：把多边形投影到局部切平面，再用二维鞋带公式。</p>
+      <pre><span class="cmt">// 1. 定义多边形顶点（Cartesian3）</span>
+<span class="kw">const</span> <span class="var">positions</span> = <span class="typ">Cesium.Cartesian3</span>.<span class="fn">fromDegreesArray</span>([
+  <span class="num">116.39</span>, <span class="num">39.92</span>,
+  <span class="num">116.41</span>, <span class="num">39.92</span>,
+  <span class="num">116.41</span>, <span class="num">39.90</span>,
+  <span class="num">116.39</span>, <span class="num">39.90</span>
+]);
+
+<span class="cmt">// 2. 创建 PolygonGeometry 提取三角网</span>
+<span class="kw">const</span> <span class="var">geometry</span> = <span class="typ">Cesium.PolygonGeometry</span>.<span class="fn">createGeometry</span>(
+  <span class="kw">new</span> <span class="typ">Cesium.PolygonGeometry</span>({
+    <span class="prp">polygonHierarchy</span>: <span class="kw">new</span> <span class="typ">Cesium.PolygonHierarchy</span>(<span class="var">positions</span>)
+  })
+);
+
+<span class="cmt">// 3. 累加每个三角形的面积（局部平面投影后计算）</span>
+<span class="kw">let</span> <span class="var">area</span> = <span class="num">0</span>;
+<span class="kw">const</span> <span class="var">indices</span> = <span class="var">geometry</span>.<span class="prp">indices</span>;
+<span class="kw">const</span> <span class="var">va</span> = <span class="var">geometry</span>.<span class="prp">attributes</span>.<span class="prp">position</span>.<span class="prp">values</span>;
+<span class="kw">for</span> (<span class="kw">let</span> <span class="var">i</span> = <span class="num">0</span>; <span class="var">i</span> < <span class="var">indices</span>.<span class="prp">length</span>; <span class="var">i</span> += <span class="num">3</span>) {
+  <span class="kw">const</span> <span class="var">idx</span> = [<span class="var">indices</span>[<span class="var">i</span>], <span class="var">indices</span>[<span class="var">i</span> + <span class="num">1</span>], <span class="var">indices</span>[<span class="var">i</span> + <span class="num">2</span>]];
+  <span class="kw">const</span> <span class="var">tri</span> = <span class="var">idx</span>.<span class="fn">map</span>(<span class="var">j</span> => <span class="kw">new</span> <span class="typ">Cesium.Cartesian3</span>(<span class="var">va</span>[<span class="var">j</span> * <span class="num">3</span>], <span class="var">va</span>[<span class="var">j</span> * <span class="num">3</span> + <span class="num">1</span>], <span class="var">va</span>[<span class="var">j</span> * <span class="num">3</span> + <span class="num">2</span>]));
+  <span class="var">area</span> += <span class="fn">triangleArea</span>(<span class="var">tri</span>[<span class="num">0</span>], <span class="var">tri</span>[<span class="num">1</span>], <span class="var">tri</span>[<span class="num">2</span>]);
+}</pre>
+    </div>
+
+    <div class="card">
+      <h3>&#128208; 投影到局部平面计算面积</h3>
+      <p>更简洁的做法：取多边形中心为原点，建立局部东北天（ENU）坐标系，再用二维多边形面积公式：</p>
+      <pre><span class="kw">function</span> <span class="fn">polygonAreaOnEllipsoid</span>(<span class="var">cartesians</span>) {
+  <span class="cmt">// 1. 计算多边形中心（近似质心）</span>
+  <span class="kw">const</span> <span class="var">center</span> = <span class="typ">Cesium.Cartesian3</span>.<span class="fn">ZERO</span>;
+  <span class="typ">Cesium.Cartesian3</span>.<span class="fn">add</span>(...); <span class="cmt">// 累加后求平均</span>
+  <span class="typ">Cesium.Cartesian3</span>.<span class="fn">multiplyByScalar</span>(<span class="var">center</span>, <span class="num">1</span> / <span class="var">cartesians</span>.<span class="prp">length</span>, <span class="var">center</span>);
+
+  <span class="cmt">// 2. 局部 ENU 基向量</span>
+  <span class="kw">const</span> <span class="var">centerCarto</span> = <span class="typ">Cesium.Cartographic</span>.<span class="fn">fromCartesian</span>(<span class="var">center</span>);
+  <span class="kw">const</span> <span class="var">north</span> = <span class="typ">Cesium.Cartesian3</span>.<span class="fn">fromRadians</span>(<span class="var">centerCarto</span>.<span class="prp">longitude</span>, <span class="var">centerCarto</span>.<span class="prp">latitude</span> + <span class="num">0.0001</span>);
+  <span class="kw">const</span> <span class="var">east</span>  = <span class="typ">Cesium.Cartesian3</span>.<span class="fn">fromRadians</span>(<span class="var">centerCarto</span>.<span class="prp">longitude</span> + <span class="num">0.0001</span>, <span class="var">centerCarto</span>.<span class="prp">latitude</span>);
+
+  <span class="kw">const</span> <span class="var">up</span>    = <span class="typ">Cesium.Cartesian3</span>.<span class="fn">normalize</span>(<span class="var">center</span>, <span class="kw">new</span> <span class="typ">Cesium.Cartesian3</span>());
+  <span class="kw">const</span> <span class="var">e</span>     = <span class="typ">Cesium.Cartesian3</span>.<span class="fn">normalize</span>(<span class="typ">Cesium.Cartesian3</span>.<span class="fn">subtract</span>(<span class="var">east</span>, <span class="var">center</span>, <span class="kw">new</span> <span class="typ">Cesium.Cartesian3</span>()), <span class="kw">new</span> <span class="typ">Cesium.Cartesian3</span>());
+  <span class="kw">const</span> <span class="var">n</span>     = <span class="typ">Cesium.Cartesian3</span>.<span class="fn">normalize</span>(<span class="typ">Cesium.Cartesian3</span>.<span class="fn">subtract</span>(<span class="var">north</span>, <span class="var">center</span>, <span class="kw">new</span> <span class="typ">Cesium.Cartesian3</span>()), <span class="kw">new</span> <span class="typ">Cesium.Cartesian3</span>());
+
+  <span class="cmt">// 3. 投影到 ENU 平面并算鞋带公式面积</span>
+  <span class="kw">let</span> <span class="var">sum</span> = <span class="num">0</span>;
+  <span class="kw">for</span> (<span class="kw">let</span> <span class="var">i</span> = <span class="num">0</span>; <span class="var">i</span> < <span class="var">cartesians</span>.<span class="prp">length</span>; <span class="var">i</span>++) {
+    <span class="kw">const</span> <span class="var">v</span> = <span class="typ">Cesium.Cartesian3</span>.<span class="fn">subtract</span>(<span class="var">cartesians</span>[<span class="var">i</span>], <span class="var">center</span>, <span class="kw">new</span> <span class="typ">Cesium.Cartesian3</span>());
+    <span class="kw">const</span> <span class="var">vx</span> = <span class="typ">Cesium.Cartesian3</span>.<span class="fn">dot</span>(<span class="var">v</span>, <span class="var">e</span>);
+    <span class="kw">const</span> <span class="var">vy</span> = <span class="typ">Cesium.Cartesian3</span>.<span class="fn">dot</span>(<span class="var">v</span>, <span class="var">n</span>);
+    <span class="kw">const</span> <span class="var">next</span> = <span class="var">cartesians</span>[(<span class="var">i</span> + <span class="num">1</span>) % <span class="var">cartesians</span>.<span class="prp">length</span>];
+    <span class="kw">const</span> <span class="var">vn</span> = <span class="typ">Cesium.Cartesian3</span>.<span class="fn">subtract</span>(<span class="var">next</span>, <span class="var">center</span>, <span class="kw">new</span> <span class="typ">Cesium.Cartesian3</span>());
+    <span class="kw">const</span> <span class="var">vnx</span> = <span class="typ">Cesium.Cartesian3</span>.<span class="fn">dot</span>(<span class="var">vn</span>, <span class="var">e</span>);
+    <span class="kw">const</span> <span class="var">vny</span> = <span class="typ">Cesium.Cartesian3</span>.<span class="fn">dot</span>(<span class="var">vn</span>, <span class="var">n</span>);
+    <span class="var">sum</span> += <span class="var">vx</span> * <span class="var">vny</span> - <span class="var">vnx</span> * <span class="var">vy</span>;
+  }
+  <span class="kw">return</span> <span class="typ">Math</span>.<span class="fn">abs</span>(<span class="var">sum</span>) / <span class="num">2</span>;
+}</pre>
+      <div class="info">
+        <span>&#8505;&#65039;</span>
+        <div><strong>小范围适用</strong>：局部平面投影法在几千米范围内误差很小；跨城市或跨省的大范围多边形，应使用球面多边形面积公式。</div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 7: 高度与高程采样 -->
+  <!-- ============================================================ -->
+  <div class="section" id="s7">
+    <div class="section-header">
+      <div class="section-num">7</div>
+      <h2>高度与高程采样</h2>
+      <span class="tag">量算</span>
+    </div>
+
+    <div class="card">
+      <h3>&#128200; 三种"高度"概念</h3>
+      <table>
+        <tr><th>概念</th><th>含义</th><th>获取方式</th></tr>
+        <tr>
+          <td class="td-type">椭球高度（ellipsoidal）</td>
+          <td>相对于 WGS84 椭球面的高度</td>
+          <td><code>Cartographic.height</code></td>
+        </tr>
+        <tr>
+          <td class="td-type">地形高度（terrain height）</td>
+          <td>相对于真实地面的高度</td>
+          <td><code>Cesium.sampleTerrain</code></td>
+        </tr>
+        <tr>
+          <td class="td-type">海拔高度（orthometric）</td>
+          <td>相对于大地水准面的高度（常说"海拔"）</td>
+          <td>需结合大地水准面模型转换</td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3>&#128205; sampleTerrain 与 clampToGround</h3>
+      <pre><span class="cmt">// 查询多个坐标点的地形高度</span>
+<span class="kw">const</span> <span class="var">positions</span> = [
+  <span class="typ">Cesium.Cartographic</span>.<span class="fn">fromDegrees</span>(<span class="num">116.40</span>, <span class="num">39.90</span>),
+  <span class="typ">Cesium.Cartographic</span>.<span class="fn">fromDegrees</span>(<span class="num">116.41</span>, <span class="num">39.91</span>)
+];
+
+<span class="kw">const</span> <span class="var">updated</span> = <span class="kw">await</span> <span class="typ">Cesium.sampleTerrainMostDetailed</span>(
+  <span class="var">viewer</span>.<span class="var">terrainProvider</span>,
+  <span class="var">positions</span>
+);
+
+<span class="var">updated</span>.<span class="fn">forEach</span>(<span class="var">c</span> => {
+  <span class="var">console</span>.<span class="fn">log</span>(
+    <span class="str">'lon:'</span>, <span class="typ">Cesium.Math</span>.<span class="fn">toDegrees</span>(<span class="var">c</span>.<span class="prp">longitude</span>).<span class="fn">toFixed</span>(<span class="num">4</span>),
+    <span class="str">'height:'</span>, <span class="var">c</span>.<span class="prp">height</span>.<span class="fn">toFixed</span>(<span class="num">1</span>)
+  );
+});
+
+<span class="cmt">// 让 Entity 贴地</span>
+<span class="var">viewer</span>.<span class="var">entities</span>.<span class="fn">add</span>({
+  <span class="prp">position</span>: <span class="typ">Cesium.Cartesian3</span>.<span class="fn">fromDegrees</span>(<span class="num">116.40</span>, <span class="num">39.90</span>),
+  <span class="prp">point</span>: { <span class="prp">pixelSize</span>: <span class="num">10</span>, <span class="prp">color</span>: <span class="typ">Cesium.Color</span>.<span class="typ">RED</span> },
+  <span class="prp">heightReference</span>: <span class="typ">Cesium.HeightReference</span>.<span class="typ">CLAMP_TO_GROUND</span>
+});</pre>
+      <div class="tip">
+        <span>&#128161;</span>
+        <div><strong>高度分析</strong>：建筑高度 = 建筑顶部椭球高度 - 地面地形高度。先用 <code>sampleTerrain</code> 取地面高程，再减去 Entity 的底部高度即可得净高。</div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 8: 方位角与目标点 -->
+  <!-- ============================================================ -->
+  <div class="section" id="s8">
+    <div class="section-header">
+      <div class="section-num">8</div>
+      <h2>方位角与目标点计算</h2>
+      <span class="tag">导航</span>
+    </div>
+
+    <div class="card">
+      <h3>&#129517; 计算两点方位角</h3>
+      <p>方位角（Bearing / Azimuth）是从正北方向顺时针旋转到目标方向的角度：</p>
+      <pre><span class="kw">function</span> <span class="fn">bearing</span>(<span class="var">lon1</span>, <span class="var">lat1</span>, <span class="var">lon2</span>, <span class="var">lat2</span>) {
+  <span class="kw">const</span> <span class="var">toRad</span> = <span class="var">x</span> => <span class="var">x</span> * <span class="typ">Math</span>.<span class="typ">PI</span> / <span class="num">180</span>;
+  <span class="kw">const</span> <span class="var">dLon</span> = <span class="var">toRad</span>(<span class="var">lon2</span> - <span class="var">lon1</span>);
+  <span class="kw">const</span> <span class="var">y</span> = <span class="typ">Math</span>.<span class="fn">sin</span>(<span class="var">dLon</span>) * <span class="typ">Math</span>.<span class="fn">cos</span>(<span class="var">toRad</span>(<span class="var">lat2</span>));
+  <span class="kw">const</span> <span class="var">x</span> = <span class="typ">Math</span>.<span class="fn">cos</span>(<span class="var">toRad</span>(<span class="var">lat1</span>)) * <span class="typ">Math</span>.<span class="fn">sin</span>(<span class="var">toRad</span>(<span class="var">lat2</span>)) -
+          <span class="typ">Math</span>.<span class="fn">sin</span>(<span class="var">toRad</span>(<span class="var">lat1</span>)) * <span class="typ">Math</span>.<span class="fn">cos</span>(<span class="var">toRad</span>(<span class="var">lat2</span>)) * <span class="typ">Math</span>.<span class="fn">cos</span>(<span class="var">dLon</span>);
+  <span class="kw">let</span> <span class="var">brng</span> = <span class="typ">Math</span>.<span class="fn">atan2</span>(<span class="var">y</span>, <span class="var">x</span>) * <span class="num">180</span> / <span class="typ">Math</span>.<span class="typ">PI</span>;
+  <span class="kw">return</span> (<span class="var">brng</span> + <span class="num">360</span>) % <span class="num">360</span>;
+}
+
+<span class="var">console</span>.<span class="fn">log</span>(<span class="fn">bearing</span>(<span class="num">116.4074</span>, <span class="num">39.9042</span>, <span class="num">121.4737</span>, <span class="num">31.2304</span>));
+<span class="cmt">// ≈ 157°（北京看上海，东南方向）</span></pre>
+    </div>
+
+    <div class="card">
+      <h3>&#127775; 已知起点、方位角、距离，求目标点</h3>
+      <pre><span class="kw">function</span> <span class="fn">destinationPoint</span>(<span class="var">lon</span>, <span class="var">lat</span>, <span class="var">distance</span>, <span class="var">bearingDeg</span>) {
+  <span class="kw">const</span> <span class="var">R</span> = <span class="num">6371000</span>;
+  <span class="kw">const</span> <span class="var">toRad</span> = <span class="var">x</span> => <span class="var">x</span> * <span class="typ">Math</span>.<span class="typ">PI</span> / <span class="num">180</span>;
+  <span class="kw">const</span> <span class="var">toDeg</span> = <span class="var">x</span> => <span class="var">x</span> * <span class="num">180</span> / <span class="typ">Math</span>.<span class="typ">PI</span>;
+  <span class="kw">const</span> <span class="var">lat1</span> = <span class="var">toRad</span>(<span class="var">lat</span>);
+  <span class="kw">const</span> <span class="var">lon1</span> = <span class="var">toRad</span>(<span class="var">lon</span>);
+  <span class="kw">const</span> <span class="var">brng</span> = <span class="var">toRad</span>(<span class="var">bearingDeg</span>);
+
+  <span class="kw">const</span> <span class="var">lat2</span> = <span class="typ">Math</span>.<span class="fn">asin</span>(
+    <span class="typ">Math</span>.<span class="fn">sin</span>(<span class="var">lat1</span>) * <span class="typ">Math</span>.<span class="fn">cos</span>(<span class="var">distance</span> / <span class="var">R</span>) +
+    <span class="typ">Math</span>.<span class="fn">cos</span>(<span class="var">lat1</span>) * <span class="typ">Math</span>.<span class="fn">sin</span>(<span class="var">distance</span> / <span class="var">R</span>) * <span class="typ">Math</span>.<span class="fn">cos</span>(<span class="var">brng</span>)
+  );
+  <span class="kw">const</span> <span class="var">lon2</span> = <span class="var">lon1</span> + <span class="typ">Math</span>.<span class="fn">atan2</span>(
+    <span class="typ">Math</span>.<span class="fn">sin</span>(<span class="var">brng</span>) * <span class="typ">Math</span>.<span class="fn">sin</span>(<span class="var">distance</span> / <span class="var">R</span>) * <span class="typ">Math</span>.<span class="fn">cos</span>(<span class="var">lat1</span>),
+    <span class="typ">Math</span>.<span class="fn">cos</span>(<span class="var">distance</span> / <span class="var">R</span>) - <span class="typ">Math</span>.<span class="fn">sin</span>(<span class="var">lat1</span>) * <span class="typ">Math</span>.<span class="fn">sin</span>(<span class="var">lat2</span>)
+  );
+  <span class="kw">return</span> { <span class="prp">lon</span>: <span class="var">toDeg</span>(<span class="var">lon2</span>), <span class="prp">lat</span>: <span class="var">toDeg</span>(<span class="var">lat2</span>) };
+}
+
+<span class="cmt">// 从北京出发，向东南 157° 走 100 km</span>
+<span class="var">console</span>.<span class="fn">log</span>(<span class="fn">destinationPoint</span>(<span class="num">116.4074</span>, <span class="num">39.9042</span>, <span class="num">100000</span>, <span class="num">157</span>));</pre>
+      <div class="tip">
+        <span>&#128161;</span>
+        <div><strong>Cesium 原生方式</strong>：<code class="ces">EllipsoidGeodesic</code> 的 <code>interpolateUsingSurfaceDistance</code> 方法可以做同样的事，且精度更高，无需自己实现球面三角。</div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 9: 包围盒与可见性 -->
+  <!-- ============================================================ -->
+  <div class="section" id="s9">
+    <div class="section-header">
+      <div class="section-num">9</div>
+      <h2>包围盒与可见性判断</h2>
+      <span class="tag">优化</span>
+    </div>
+
+    <div class="card">
+      <h3>&#128207; AxisAlignedBoundingBox / BoundingSphere</h3>
+      <p>判断一个 Entity 是否在相机视野内，或两个物体是否可能相交，先用包围盒/包围球做<strong>粗判</strong>：</p>
+      <pre><span class="cmt">// 计算一组点的包围盒</span>
+<span class="kw">const</span> <span class="var">positions</span> = <span class="typ">Cesium.Cartesian3</span>.<span class="fn">fromDegreesArrayHeights</span>([...]);
+<span class="kw">const</span> <span class="var">aabb</span> = <span class="typ">Cesium.AxisAlignedBoundingBox</span>.<span class="fn">fromPoints</span>(<span class="var">positions</span>);
+<span class="var">console</span>.<span class="fn">log</span>(<span class="str">'中心:'</span>, <span class="var">aabb</span>.<span class="prp">center</span>);
+<span class="var">console</span>.<span class="fn">log</span>(<span class="str">'最小角:'</span>, <span class="var">aabb</span>.<span class="prp">minimum</span>);
+<span class="var">console</span>.<span class="fn">log</span>(<span class="str">'最大角:'</span>, <span class="var">aabb</span>.<span class="prp">maximum</span>);
+
+<span class="cmt">// 判断相机是否能看到该包围球</span>
+<span class="kw">const</span> <span class="var">sphere</span> = <span class="typ">Cesium.BoundingSphere</span>.<span class="fn">fromPoints</span>(<span class="var">positions</span>);
+<span class="kw">const</span> <span class="var">cullingVolume</span> = <span class="var">viewer</span>.<span class="var">camera</span>.<span class="prp">frustum</span>.<span class="fn">computeCullingVolume</span>(
+  <span class="var">viewer</span>.<span class="var">camera</span>.<span class="prp">position</span>,
+  <span class="var">viewer</span>.<span class="var">camera</span>.<span class="prp">direction</span>,
+  <span class="var">viewer</span>.<span class="var">camera</span>.<span class="prp">up</span>
+);
+<span class="kw">const</span> <span class="var">visible</span> = <span class="var">cullingVolume</span>.<span class="fn">computeVisibility</span>(<span class="var">sphere</span>) !== <span class="typ">Cesium.Intersect</span>.<span class="typ">OUTSIDE</span>;</pre>
+    </div>
+
+    <div class="card">
+      <h3>&#128269; 点是否在多边形内</h3>
+      <p>地理围栏、电子围栏常用。先把点与多边形投影到局部平面，再用射线法：</p>
+      <pre><span class="kw">function</span> <span class="fn">pointInPolygon</span>(<span class="var">point</span>, <span class="var">polygon</span>) {
+  <span class="cmt">// polygon: Cartesian3[]，闭合多边形</span>
+  <span class="cmt">// 先投影到 ENU 平面得到二维坐标（省略投影代码，参考第 6 节）</span>
+  <span class="kw">const</span> { <span class="var">x</span>, <span class="var">y</span> } = <span class="fn">projectToLocal</span>(<span class="var">point</span>);
+  <span class="kw">const</span> <span class="var">pts</span> = <span class="var">polygon</span>.<span class="fn">map</span>(<span class="var">p</span> => <span class="fn">projectToLocal</span>(<span class="var">p</span>));
+
+  <span class="kw">let</span> <span class="var">inside</span> = <span class="kw">false</span>;
+  <span class="kw">for</span> (<span class="kw">let</span> <span class="var">i</span> = <span class="num">0</span>, <span class="var">j</span> = <span class="var">pts</span>.<span class="prp">length</span> - <span class="num">1</span>; <span class="var">i</span> < <span class="var">pts</span>.<span class="prp">length</span>; <span class="var">j</span> = <span class="var">i</span>++) {
+    <span class="kw">const</span> <span class="var">xi</span> = <span class="var">pts</span>[<span class="var">i</span>].<span class="var">x</span>, <span class="var">yi</span> = <span class="var">pts</span>[<span class="var">i</span>].<span class="var">y</span>;
+    <span class="kw">const</span> <span class="var">xj</span> = <span class="var">pts</span>[<span class="var">j</span>].<span class="var">x</span>, <span class="var">yj</span> = <span class="var">pts</span>[<span class="var">j</span>].<span class="var">y</span>;
+    <span class="kw">const</span> <span class="var">intersect</span> = ((<span class="var">yi</span> > <span class="var">y</span>) !== (<span class="var">yj</span> > <span class="var">y</span>)) &&
+      (<span class="var">x</span> < (<span class="var">xj</span> - <span class="var">xi</span>) * (<span class="var">y</span> - <span class="var">yi</span>) / (<span class="var">yj</span> - <span class="var">yi</span>) + <span class="var">xi</span>);
+    <span class="kw">if</span> (<span class="var">intersect</span>) <span class="var">inside</span> = !<span class="var">inside</span>;
+  }
+  <span class="kw">return</span> <span class="var">inside</span>;
+}</pre>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 10: 构建交互式测量工具 -->
+  <!-- ============================================================ -->
+  <div class="section" id="s10">
+    <div class="section-header">
+      <div class="section-num">10</div>
+      <h2>构建交互式测量工具</h2>
+      <span class="tag">实战</span>
+    </div>
+
+    <div class="big-card">
+      <h3>&#128208; 测量工具设计思路</h3>
+      <div class="step-list">
+        <div class="step-item">
+          <strong>监听点击</strong>：用 <code>ScreenSpaceEventHandler</code> 获取鼠标点击的 Cartesian3。
+        </div>
+        <div class="step-item">
+          <strong>存储节点</strong>：每点击一次，把坐标加入当前测量路径数组。
+        </div>
+        <div class="step-item">
+          <strong>动态连线</strong>：用 <code>CallbackProperty</code> 实时更新 polyline positions。
+        </div>
+        <div class="step-item">
+          <strong>计算并显示</strong>：每增加一个节点，累加各段 EllipsoidGeodesic 距离，用 Label 显示在场景里。
+        </div>
+        <div class="step-item">
+          <strong>结束测量</strong>：双击或按 ESC 清空临时状态，保留结果 Entity。
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>&#128221; 完整测量类实现</h3>
+      <pre><span class="kw">class</span> <span class="typ">MeasureTool</span> {
+  <span class="fn">constructor</span>(<span class="var">viewer</span>) {
+    <span class="kw">this</span>.<span class="var">viewer</span> = <span class="var">viewer</span>;
+    <span class="kw">this</span>.<span class="var">active</span> = <span class="kw">false</span>;
+    <span class="kw">this</span>.<span class="var">points</span> = [];
+    <span class="kw">this</span>.<span class="var">entities</span> = [];
+    <span class="kw">this</span>.<span class="var">handler</span> = <span class="kw">new</span> <span class="typ">Cesium.ScreenSpaceEventHandler</span>(<span class="var">viewer</span>.<span class="var">scene</span>.<span class="prp">canvas</span>);
+  }
+
+  <span class="fn">start</span>() {
+    <span class="kw">this</span>.<span class="var">active</span> = <span class="kw">true</span>;
+    <span class="kw">this</span>.<span class="var">points</span> = [];
+    <span class="kw">this</span>.<span class="var">handler</span>.<span class="fn">setInputAction</span>(<span class="var">e</span> => <span class="kw">this</span>.<span class="fn">onClick</span>(<span class="var">e</span>), <span class="typ">Cesium.ScreenSpaceEventType</span>.<span class="typ">LEFT_CLICK</span>);
+    <span class="kw">this</span>.<span class="var">handler</span>.<span class="fn">setInputAction</span>(<span class="var">e</span> => <span class="kw">this</span>.<span class="fn">onMove</span>(<span class="var">e</span>), <span class="typ">Cesium.ScreenSpaceEventType</span>.<span class="typ">MOUSE_MOVE</span>);
+  }
+
+  <span class="fn">onClick</span>(<span class="var">movement</span>) {
+    <span class="kw">const</span> <span class="var">cartesian</span> = <span class="kw">this</span>.<span class="var">viewer</span>.<span class="var">scene</span>.<span class="fn">pickPosition</span>(<span class="var">movement</span>.<span class="prp">position</span>);
+    <span class="kw">if</span> (!<span class="var">cartesian</span>) <span class="kw">return</span>;
+
+    <span class="kw">this</span>.<span class="var">points</span>.<span class="fn">push</span>(<span class="var">cartesian</span>);
+
+    <span class="cmt">// 放置节点</span>
+    <span class="kw">this</span>.<span class="var">entities</span>.<span class="fn">push</span>(<span class="kw">this</span>.<span class="var">viewer</span>.<span class="var">entities</span>.<span class="fn">add</span>({
+      <span class="prp">position</span>: <span class="var">cartesian</span>,
+      <span class="prp">point</span>: { <span class="prp">pixelSize</span>: <span class="num">8</span>, <span class="prp">color</span>: <span class="typ">Cesium.Color</span>.<span class="typ">YELLOW</span> }
+    }));
+
+    <span class="cmt">// 更新总距离标签</span>
+    <span class="kw">this</span>.<span class="fn">updateLabel</span>();
+  }
+
+  <span class="fn">updateLabel</span>() {
+    <span class="kw">let</span> <span class="var">total</span> = <span class="num">0</span>;
+    <span class="kw">for</span> (<span class="kw">let</span> <span class="var">i</span> = <span class="num">1</span>; <span class="var">i</span> < <span class="kw">this</span>.<span class="var">points</span>.<span class="prp">length</span>; <span class="var">i</span>++) {
+      <span class="kw">const</span> <span class="var">g</span> = <span class="kw">new</span> <span class="typ">Cesium.EllipsoidGeodesic</span>(
+        <span class="typ">Cesium.Cartographic</span>.<span class="fn">fromCartesian</span>(<span class="kw">this</span>.<span class="var">points</span>[<span class="var">i</span> - <span class="num">1</span>]),
+        <span class="typ">Cesium.Cartographic</span>.<span class="fn">fromCartesian</span>(<span class="kw">this</span>.<span class="var">points</span>[<span class="var">i</span>])
+      );
+      <span class="var">total</span> += <span class="var">g</span>.<span class="prp">surfaceDistance</span>;
+    }
+
+    <span class="kw">const</span> <span class="var">last</span> = <span class="kw">this</span>.<span class="var">points</span>[<span class="kw">this</span>.<span class="var">points</span>.<span class="prp">length</span> - <span class="num">1</span>];
+    <span class="kw">const</span> <span class="var">text</span> = <span class="var">total</span> > <span class="num">1000</span>
+      ? <span class="str">`总距离: ${(total/1000).toFixed(2)} km`</span>
+      : <span class="str">`总距离: ${total.toFixed(1)} m`</span>;
+
+    <span class="kw">if</span> (<span class="kw">this</span>.<span class="var">labelEntity</span>) {
+      <span class="kw">this</span>.<span class="var">labelEntity</span>.<span class="prp">position</span> = <span class="var">last</span>;
+      <span class="kw">this</span>.<span class="var">labelEntity</span>.<span class="prp">label</span>.<span class="prp">text</span> = <span class="var">text</span>;
+    } <span class="kw">else</span> {
+      <span class="kw">this</span>.<span class="var">labelEntity</span> = <span class="kw">this</span>.<span class="var">viewer</span>.<span class="var">entities</span>.<span class="fn">add</span>({
+        <span class="prp">position</span>: <span class="var">last</span>,
+        <span class="prp">label</span>: {
+          <span class="prp">text</span>: <span class="var">text</span>,
+          <span class="prp">font</span>: <span class="str">'14px sans-serif'</span>,
+          <span class="prp">fillColor</span>: <span class="typ">Cesium.Color</span>.<span class="typ">WHITE</span>,
+          <span class="prp">pixelOffset</span>: <span class="kw">new</span> <span class="typ">Cesium.Cartesian2</span>(<span class="num">0</span>, -<span class="num">20</span>)
+        }
+      });
+    }
+  }
+
+  <span class="fn">onMove</span>(<span class="var">movement</span>) {
+    <span class="kw">if</span> (<span class="kw">this</span>.<span class="var">points</span>.<span class="prp">length</span> === <span class="num">0</span>) <span class="kw">return</span>;
+    <span class="kw">const</span> <span class="var">cartesian</span> = <span class="kw">this</span>.<span class="var">viewer</span>.<span class="var">scene</span>.<span class="fn">pickPosition</span>(<span class="var">movement</span>.<span class="prp">endPosition</span>);
+    <span class="kw">if</span> (!<span class="var">cartesian</span>) <span class="kw">return</span>;
+
+    <span class="cmt">// 鼠标跟随的临时线</span>
+    <span class="kw">const</span> <span class="var">dynamicPositions</span> = <span class="kw">new</span> <span class="typ">Cesium.CallbackProperty</span>(() => {
+      <span class="kw">return</span> [<span class="kw">this</span>.<span class="var">points</span>[<span class="kw">this</span>.<span class="var">points</span>.<span class="prp">length</span> - <span class="num">1</span>], <span class="var">cartesian</span>];
+    }, <span class="kw">false</span>);
+
+    <span class="kw">if</span> (!<span class="kw">this</span>.<span class="var">mouseLine</span>) {
+      <span class="kw">this</span>.<span class="var">mouseLine</span> = <span class="kw">this</span>.<span class="var">viewer</span>.<span class="var">entities</span>.<span class="fn">add</span>({ <span class="prp">polyline</span>: { <span class="prp">positions</span>: <span class="var">dynamicPositions</span>, <span class="prp">width</span>: <span class="num">2</span> } });
+    }
+  }
+
+  <span class="fn">clear</span>() {
+    <span class="kw">this</span>.<span class="var">entities</span>.<span class="fn">forEach</span>(<span class="var">e</span> => <span class="kw">this</span>.<span class="var">viewer</span>.<span class="var">entities</span>.<span class="fn">remove</span>(<span class="var">e</span>));
+    <span class="kw">this</span>.<span class="var">viewer</span>.<span class="var">entities</span>.<span class="fn">remove</span>(<span class="kw">this</span>.<span class="var">labelEntity</span>);
+    <span class="kw">this</span>.<span class="var">viewer</span>.<span class="var">entities</span>.<span class="fn">remove</span>(<span class="kw">this</span>.<span class="var">mouseLine</span>);
+    <span class="kw">this</span>.<span class="var">points</span> = [];
+    <span class="kw">this</span>.<span class="var">entities</span> = [];
+    <span class="kw">this</span>.<span class="var">labelEntity</span> = <span class="kw">null</span>;
+    <span class="kw">this</span>.<span class="var">mouseLine</span> = <span class="kw">null</span>;
+  }
+}
+
+<span class="cmt">// 使用</span>
+<span class="kw">const</span> <span class="var">tool</span> = <span class="kw">new</span> <span class="typ">MeasureTool</span>(<span class="var">viewer</span>);
+<span class="var">tool</span>.<span class="fn">start</span>();</pre>
+      <div class="tip">
+        <span>&#128161;</span>
+        <div><strong>扩展建议</strong>：把测量结果导出为 GeoJSON LineString，即可保存、分享、后续分析。</div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 11: CesiumJS 关联场景 -->
+  <!-- ============================================================ -->
+  <div class="section" id="s11">
+    <div class="section-header">
+      <div class="section-num">11</div>
+      <h2>CesiumJS 关联场景</h2>
+      <span class="tag">应用</span>
+    </div>
+
+    <div class="grid-2">
+      <div class="card" style="margin-bottom:0;">
+        <h3>&#128664; 航线距离计算</h3>
+        <p>用 <code class="ces">EllipsoidGeodesic</code> 计算机场间的大圆距离，展示真实飞行路径，而非直线。</p>
+      </div>
+      <div class="card" style="margin-bottom:0;">
+        <h3>&#127969; 地块面积量测</h3>
+        <p>用户绘制宗地多边形后，投影到局部 ENU 平面，用鞋带公式计算面积，用于土地管理。</p>
+      </div>
+      <div class="card" style="margin-bottom:0;">
+        <h3>&#128205; 车辆电子围栏</h3>
+        <p>结合 <code>pointInPolygon</code> 判断车辆是否越界，触发告警并高亮显示。</p>
+      </div>
+      <div class="card" style="margin-bottom:0;">
+        <h3>&#128664; 雷达覆盖扇形</h3>
+        <p>已知雷达位置、方位角、作用距离，用 <code>destinationPoint</code> 生成扇形边界点并绘制。</p>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 12: 练习题 -->
+  <!-- ============================================================ -->
+  <div class="section" id="s12">
+    <div class="practice">
+      <h2>&#128221; 练习题</h2>
+      <p>用今天学到的坐标转换与量算知识完成以下练习。答案可以在底部控制台验证。</p>
+
+      <div class="exercise">
+        <div class="q">练习 1：北京 → 东京</div>
+        <p>北京坐标 (116.4074, 39.9042)，东京坐标 (139.6917, 35.6895)。请用 Haversine 公式计算两地之间的近似地面距离（公里）。</p>
+        <pre><span class="cmt">// 提示：复用本节 haversine 函数，R = 6371000</span></pre>
+      </div>
+
+      <div class="exercise">
+        <div class="q">练习 2：中点计算</div>
+        <p>给定两个 Cartesian3 点，计算它们的三维中点坐标。请在控制台输出中点的 x, y, z。</p>
+        <pre><span class="cmt">// 提示：先 add，再 multiplyByScalar(0.5)</span></pre>
+      </div>
+
+      <div class="exercise">
+        <div class="q">练习 3：方位角应用</div>
+        <p>从北京 (116.4074, 39.9042) 出发，方位角 90°（正东），沿地面走 200 km，求目标点经纬度。使用 destinationPoint 公式。</p>
+        <pre><span class="cmt">// 提示： bearing = 90, distance = 200000</span></pre>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 13: 在线练习控制台 -->
+  <!-- ============================================================ -->
+  <div class="section" id="s13">
+    <div class="console-area">
+      <div class="console-header">
+        <span>&#9881;&#65039; 在线 JavaScript 沙盒</span>
+        <div class="console-dots"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div>
+      </div>
+      <textarea id="sandbox-code" spellcheck="false">// ===== 本沙盒预置了 Cesium 坐标/量算常用类的简化版 =====
+// 可用对象：Cesium.Cartesian3, Cesium.Cartographic, Cesium.Math,
+//          Cesium.Ellipsoid, Cesium.EllipsoidGeodesic
+// 以及辅助函数：haversine(lon1,lat1,lon2,lat2), bearing(...), destinationPoint(...)
+
+// 示例：北京-上海的 Haversine 距离
+const d = haversine(116.4074, 39.9042, 121.4737, 31.2304);
+console.log('北京-上海 Haversine:', (d/1000).toFixed(2), 'km');
+
+// 示例：用 Cesium API 计算中点
+const p1 = Cesium.Cartesian3.fromDegrees(116.40, 39.90, 0);
+const p2 = Cesium.Cartesian3.fromDegrees(121.47, 31.23, 0);
+const mid = Cesium.Cartesian3.add(p1, p2, new Cesium.Cartesian3());
+Cesium.Cartesian3.multiplyByScalar(mid, 0.5, mid);
+console.log('中点:', mid.x.toFixed(0), mid.y.toFixed(0), mid.z.toFixed(0));
+
+// 请在此继续练习...
+</textarea>
+      <div class="console-actions">
+        <button class="btn btn-run" id="run-btn">运行 (Ctrl + Enter)</button>
+        <button class="btn btn-clear" id="clear-btn">清空输出</button>
+      </div>
+      <div id="output-box">// 点击"运行"或按 Ctrl+Enter 查看输出</div>
+    </div>
+  </div>
+
+
+  <!-- ===== 明天继续 ===== -->
+  <div style="text-align:center;margin-top:60px;color:var(--muted);font-size:14px;">
+    <p>明天继续：<strong style="color:var(--accent4);">Day 20 — CesiumJS 高级效果与性能优化</strong> &#127774;</p>
+  </div>
+
+</div>
+
+<!-- ===== FOOTER ===== -->
+<div class="footer">
+  <p>&#127774; <strong>每日JS</strong> — Day 19 / 空间量算、坐标转换与几何计算</p>
+  <p style="margin-top:6px;">JavaScript 基础已完成，正在深入 CesiumJS 地理可视化 &#127758;</p>
+</div>
+
+<script>
+  // ============================================================
+  // 沙盒：模拟 Cesium 坐标与量算 API
+  // ============================================================
+  (function() {
+    const DEG2RAD = Math.PI / 180;
+    const RAD2DEG = 180 / Math.PI;
+    const WGS84_A = 6378137.0;
+    const WGS84_B = 6356752.314245;
+    const WGS84_E2 = 1 - (WGS84_B * WGS84_B) / (WGS84_A * WGS84_A);
+
+    function toRadians(deg) { return deg * DEG2RAD; }
+    function toDegrees(rad) { return rad * RAD2DEG; }
+
+    class Cartesian3 {
+      constructor(x=0, y=0, z=0) { this.x = x; this.y = y; this.z = z; }
+      static fromDegrees(lon, lat, height=0) {
+        return Ellipsoid.WGS84.cartographicToCartesian(
+          Cartographic.fromDegrees(lon, lat, height)
+        );
+      }
+      static fromRadians(lon, lat, height=0) {
+        return Ellipsoid.WGS84.cartographicToCartesian(
+          new Cartographic(lon, lat, height)
+        );
+      }
+      static fromDegreesArray(arr) {
+        const out = [];
+        for (let i = 0; i < arr.length; i += 2) out.push(Cartesian3.fromDegrees(arr[i], arr[i+1]));
+        return out;
+      }
+      static fromDegreesArrayHeights(arr) {
+        const out = [];
+        for (let i = 0; i < arr.length; i += 3) out.push(Cartesian3.fromDegrees(arr[i], arr[i+1], arr[i+2]));
+        return out;
+      }
+      static add(a, b, result) {
+        result.x = a.x + b.x; result.y = a.y + b.y; result.z = a.z + b.z;
+        return result;
+      }
+      static subtract(a, b, result) {
+        result.x = a.x - b.x; result.y = a.y - b.y; result.z = a.z - b.z;
+        return result;
+      }
+      static multiplyByScalar(v, s, result) {
+        result.x = v.x * s; result.y = v.y * s; result.z = v.z * s;
+        return result;
+      }
+      static distance(a, b) {
+        return Math.sqrt((a.x-b.x)**2 + (a.y-b.y)**2 + (a.z-b.z)**2);
+      }
+      static magnitude(v) {
+        return Math.sqrt(v.x**2 + v.y**2 + v.z**2);
+      }
+      static normalize(v, result) {
+        const m = Cartesian3.magnitude(v);
+        if (m === 0) { result.x=0; result.y=0; result.z=0; return result; }
+        result.x = v.x/m; result.y = v.y/m; result.z = v.z/m;
+        return result;
+      }
+      static dot(a, b) { return a.x*b.x + a.y*b.y + a.z*b.z; }
+      static cross(a, b, result) {
+        result.x = a.y*b.z - a.z*b.y;
+        result.y = a.z*b.x - a.x*b.z;
+        result.z = a.x*b.y - a.y*b.x;
+        return result;
+      }
+      static equalsEpsilon(a, b, eps=1e-6) {
+        return Math.abs(a.x-b.x)<eps && Math.abs(a.y-b.y)<eps && Math.abs(a.z-b.z)<eps;
+      }
+    }
+    Cartesian3.ZERO = new Cartesian3(0,0,0);
+
+    class Cartographic {
+      constructor(longitude=0, latitude=0, height=0) {
+        this.longitude = longitude; this.latitude = latitude; this.height = height;
+      }
+      static fromDegrees(lon, lat, height=0) {
+        return new Cartographic(toRadians(lon), toRadians(lat), height);
+      }
+      static fromRadians(lon, lat, height=0) {
+        return new Cartographic(lon, lat, height);
+      }
+      static fromCartesian(c) {
+        return Ellipsoid.WGS84.cartesianToCartographic(c);
+      }
+    }
+
+    class Ellipsoid {
+      constructor(a, b) { this.radii = { x:a, y:a, z:b }; }
+      cartographicToCartesian(c) {
+        const cosLat = Math.cos(c.latitude);
+        const sinLat = Math.sin(c.latitude);
+        const cosLon = Math.cos(c.longitude);
+        const sinLon = Math.sin(c.longitude);
+        const N = WGS84_A / Math.sqrt(1 - WGS84_E2 * sinLat * sinLat);
+        const x = (N + c.height) * cosLat * cosLon;
+        const y = (N + c.height) * cosLat * sinLon;
+        const z = (N * (1 - WGS84_E2) + c.height) * sinLat;
+        return new Cartesian3(x, y, z);
+      }
+      cartesianToCartographic(c) {
+        const p = Math.sqrt(c.x*c.x + c.y*c.y);
+        const theta = Math.atan2(c.z * WGS84_A, p * WGS84_B);
+        const sinTheta = Math.sin(theta), cosTheta = Math.cos(theta);
+        const lon = Math.atan2(c.y, c.x);
+        const lat = Math.atan2(
+          c.z + (WGS84_A**2 - WGS84_B**2)/WGS84_B**2 * WGS84_B * sinTheta**3,
+          p - (WGS84_A**2 - WGS84_B**2)/WGS84_A**2 * WGS84_A * cosTheta**3
+        );
+        const sinLat = Math.sin(lat);
+        const N = WGS84_A / Math.sqrt(1 - WGS84_E2 * sinLat * sinLat);
+        const height = p / Math.cos(lat) - N;
+        return new Cartographic(lon, lat, height);
+      }
+    }
+    Ellipsoid.WGS84 = new Ellipsoid(WGS84_A, WGS84_B);
+
+    class EllipsoidGeodesic {
+      constructor(start, end) {
+        this.start = start; this.end = end;
+        this.surfaceDistance = this._vincentyDistance(start, end);
+      }
+      _vincentyDistance(c1, c2) {
+        const a = WGS84_A, b = WGS84_B, f = 1 - b/a;
+        const L = c2.longitude - c1.longitude;
+        const U1 = Math.atan((1-f) * Math.tan(c1.latitude));
+        const U2 = Math.atan((1-f) * Math.tan(c2.latitude));
+        const sinU1 = Math.sin(U1), cosU1 = Math.cos(U1);
+        const sinU2 = Math.sin(U2), cosU2 = Math.cos(U2);
+        let lambda = L, lambdaPrev, iter = 0;
+        let sinSigma, cosSigma, sigma, sinAlpha, cos2Alpha, cos2SigmaM, C;
+        do {
+          sinSigma = Math.sqrt(
+            (cosU2*Math.sin(lambda))**2 +
+            (cosU1*sinU2 - sinU1*cosU2*Math.cos(lambda))**2
+          );
+          if (sinSigma === 0) return 0;
+          cosSigma = sinU1*sinU2 + cosU1*cosU2*Math.cos(lambda);
+          sigma = Math.atan2(sinSigma, cosSigma);
+          sinAlpha = cosU1 * cosU2 * Math.sin(lambda) / sinSigma;
+          cos2Alpha = 1 - sinAlpha**2;
+          cos2SigmaM = cosSigma - 2*sinU1*sinU2/cos2Alpha;
+          if (isNaN(cos2SigmaM)) cos2SigmaM = 0;
+          C = f/16 * cos2Alpha * (4 + f*(4 - 3*cos2Alpha));
+          lambdaPrev = lambda;
+          lambda = L + (1-C)*f*sinAlpha*(sigma + C*sinSigma*(cos2SigmaM + C*cosSigma*(-1+2*cos2SigmaM**2)));
+        } while (Math.abs(lambda - lambdaPrev) > 1e-12 && ++iter < 100);
+        const u2 = cos2Alpha * (a**2 - b**2) / b**2;
+        const A = 1 + u2/16384 * (4096 + u2*(-768 + u2*(320 - 175*u2)));
+        const B = u2/1024 * (256 + u2*(-128 + u2*(74 - 47*u2)));
+        const deltaSigma = B*sinSigma*(cos2SigmaM + B/4*(cosSigma*(-1+2*cos2SigmaM**2) - B/6*cos2SigmaM*(-3+4*sinSigma**2)*(-3+4*cos2SigmaM**2)));
+        return b * A * (sigma - deltaSigma);
+      }
+      interpolateUsingFraction(fraction) {
+        const startCar = Ellipsoid.WGS84.cartographicToCartesian(this.start);
+        const endCar = Ellipsoid.WGS84.cartographicToCartesian(this.end);
+        const mid = new Cartesian3(
+          startCar.x + (endCar.x - startCar.x) * fraction,
+          startCar.y + (endCar.y - startCar.y) * fraction,
+          startCar.z + (endCar.z - startCar.z) * fraction
+        );
+        return Ellipsoid.WGS84.cartesianToCartographic(mid);
+      }
+      interpolateUsingSurfaceDistance(distance) {
+        return this.interpolateUsingFraction(distance / this.surfaceDistance);
+      }
+    }
+
+    const Cesium = {
+      Cartesian3, Cartographic, Ellipsoid, EllipsoidGeodesic,
+      Math: { toRadians, toDegrees },
+      defined: x => x !== undefined && x !== null
+    };
+
+    window.Cesium = Cesium;
+
+    // 辅助函数
+    window.haversine = function(lon1, lat1, lon2, lat2) {
+      const R = 6371000;
+      const toRad = x => x * Math.PI / 180;
+      const dLat = toRad(lat2 - lat1);
+      const dLon = toRad(lon2 - lon1);
+      const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLon/2)**2;
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      return R * c;
+    };
+
+    window.bearing = function(lon1, lat1, lon2, lat2) {
+      const toRad = x => x * Math.PI / 180;
+      const dLon = toRad(lon2 - lon1);
+      const y = Math.sin(dLon) * Math.cos(toRad(lat2));
+      const x = Math.cos(toRad(lat1))*Math.sin(toRad(lat2)) - Math.sin(toRad(lat1))*Math.cos(toRad(lat2))*Math.cos(dLon);
+      let brng = Math.atan2(y, x) * 180 / Math.PI;
+      return (brng + 360) % 360;
+    };
+
+    window.destinationPoint = function(lon, lat, distance, bearingDeg) {
+      const R = 6371000;
+      const toRad = x => x * Math.PI / 180;
+      const toDeg = x => x * 180 / Math.PI;
+      const lat1 = toRad(lat);
+      const lon1 = toRad(lon);
+      const brng = toRad(bearingDeg);
+      const lat2 = Math.asin(Math.sin(lat1)*Math.cos(distance/R) + Math.cos(lat1)*Math.sin(distance/R)*Math.cos(brng));
+      const lon2 = lon1 + Math.atan2(Math.sin(brng)*Math.sin(distance/R)*Math.cos(lat1), Math.cos(distance/R)-Math.sin(lat1)*Math.sin(lat2));
+      return { lon: toDeg(lon2), lat: toDeg(lat2) };
+    };
+  })();
+
+  // ============================================================
+  // 控制台运行逻辑
+  // ============================================================
+  const codeBox = document.getElementById('sandbox-code');
+  const outputBox = document.getElementById('output-box');
+  const runBtn = document.getElementById('run-btn');
+  const clearBtn = document.getElementById('clear-btn');
+
+  function runCode() {
+    outputBox.innerHTML = '';
+    const originalLog = console.log;
+    const logs = [];
+    console.log = function(...args) {
+      const line = args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' ');
+      logs.push(line);
+      originalLog.apply(console, args);
+    };
+    try {
+      const result = eval(codeBox.value);
+      if (result !== undefined && logs.length === 0) {
+        logs.push(String(result));
+      }
+      outputBox.textContent = logs.join('\n') || '// 无输出';
+    } catch (err) {
+      outputBox.innerHTML = '<span class="err">[Error] ' + err.message + '</span>';
+    } finally {
+      console.log = originalLog;
+    }
+  }
+
+  runBtn.addEventListener('click', runCode);
+  clearBtn.addEventListener('click', () => { outputBox.innerHTML = '// 输出已清空'; });
+  codeBox.addEventListener('keydown', e => {
+    if (e.ctrlKey && e.key === 'Enter') { e.preventDefault(); runCode(); }
+  });
+</script>
+
+</body>
+</html>

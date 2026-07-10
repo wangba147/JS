@@ -1,0 +1,1589 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>JavaScript 每日学习 — Day 11：异步编程 Promise/async/await</title>
+  <style>
+    /* ===== 全局 ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0f1117;
+      --surface:   #1a1d27;
+      --card:      #21253a;
+      --border:    #2e3350;
+      --accent:    #61dafb;
+      --accent2:   #f7c948;
+      --accent3:   #7ee787;
+      --accent4:   #2dd4bf;
+      --text:      #cdd3e0;
+      --muted:     #6e7a96;
+      --tag-bg:    #0d3330;
+      --code-bg:   #161b2e;
+    }
+
+    body {
+      font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.75;
+      font-size: 15px;
+    }
+
+    /* ===== 顶部 Banner ===== */
+    .hero {
+      background: linear-gradient(135deg, #0d2828 0%, #134e4a 50%, #0f3d3a 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 52px 24px 40px;
+      text-align: center;
+    }
+    .hero .badge {
+      display: inline-block;
+      background: var(--accent4);
+      color: #0a1a1a;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 4px 12px;
+      border-radius: 20px;
+      margin-bottom: 16px;
+    }
+    .hero h1 {
+      font-size: clamp(24px, 5vw, 42px);
+      font-weight: 800;
+      color: #fff;
+      line-height: 1.2;
+      margin-bottom: 12px;
+    }
+    .hero h1 span { color: var(--accent4); }
+    .hero p {
+      color: var(--muted);
+      font-size: 15px;
+      max-width: 580px;
+      margin: 0 auto 24px;
+    }
+    .hero .meta {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      flex-wrap: wrap;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .hero .meta span { display: flex; align-items: center; gap: 5px; }
+
+    /* ===== 布局 ===== */
+    .container { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; }
+
+    /* ===== 目录卡片 ===== */
+    .toc {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--accent4);
+      border-radius: 12px;
+      padding: 24px 28px;
+      margin-bottom: 40px;
+    }
+    .toc h2 { font-size: 14px; letter-spacing: 1px; text-transform: uppercase; color: var(--accent4); margin-bottom: 14px; }
+    .toc ol { padding-left: 20px; }
+    .toc li { margin: 6px 0; }
+    .toc a { color: var(--text); text-decoration: none; }
+    .toc a:hover { color: var(--accent4); }
+
+    /* ===== 章节标题 ===== */
+    .section { margin-bottom: 52px; }
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 24px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    .section-num {
+      width: 38px; height: 38px;
+      border-radius: 10px;
+      background: var(--accent4);
+      color: #0a1a1a;
+      font-weight: 800;
+      font-size: 16px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .section-header h2 {
+      font-size: 22px;
+      font-weight: 700;
+      color: #fff;
+    }
+    .section-header .tag {
+      font-size: 11px;
+      background: var(--tag-bg);
+      color: var(--accent4);
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    /* ===== 卡片 ===== */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+    .card h3 {
+      font-size: 16px;
+      color: var(--accent2);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card p { margin-bottom: 10px; color: var(--text); }
+    .card p:last-child { margin-bottom: 0; }
+
+    /* ===== 代码块 ===== */
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px 22px;
+      overflow-x: auto;
+      margin: 16px 0;
+      font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+      font-size: 13.5px;
+      line-height: 1.7;
+    }
+    code { font-family: inherit; }
+
+    /* 语法着色 */
+    .kw  { color: #c792ea; }
+    .str { color: #c3e88d; }
+    .num { color: #f78c6c; }
+    .cmt { color: #546e7a; font-style: italic; }
+    .fn  { color: #82aaff; }
+    .var { color: #eeffff; }
+    .op  { color: var(--accent); }
+    .typ { color: var(--accent2); }
+    .out { color: var(--accent3); }
+    .prp { color: #ffcb6b; }
+
+    /* ===== 提示框 ===== */
+    .tip, .warn, .info {
+      border-radius: 10px;
+      padding: 14px 18px;
+      margin: 16px 0;
+      font-size: 14px;
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+    .tip  { background: #0d3321; border-left: 4px solid var(--accent3); }
+    .warn { background: #3a2500; border-left: 4px solid var(--accent2); }
+    .info { background: #0d1e3a; border-left: 4px solid var(--accent); }
+    .tip .icon, .warn .icon, .info .icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+
+    /* ===== 对比表格 ===== */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 14px;
+    }
+    th {
+      background: var(--surface);
+      color: var(--accent4);
+      padding: 12px 16px;
+      text-align: left;
+      border-bottom: 2px solid var(--border);
+      font-weight: 600;
+    }
+    td {
+      padding: 11px 16px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+      vertical-align: top;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(45, 212, 191, 0.04); }
+    .td-kw { color: #c792ea; font-family: 'Cascadia Code','Fira Code',monospace; font-weight: 600; }
+    .td-type { color: var(--accent2); }
+    .td-good { color: var(--accent3); }
+    .td-bad  { color: #ff7b72; }
+
+    /* ===== 两列网格 ===== */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 600px) { .grid-2 { grid-template-columns: 1fr; } }
+
+    /* ===== Promise 状态图 ===== */
+    .promise-states {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin: 20px 0;
+    }
+    .ps-node {
+      background: var(--card);
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 24px;
+      text-align: center;
+      min-width: 120px;
+    }
+    .ps-node strong { display: block; font-size: 16px; margin-bottom: 4px; }
+    .ps-node small { color: var(--muted); font-size: 12px; }
+    .ps-pending strong { color: var(--accent2); }
+    .ps-fulfilled { border-color: var(--accent3); }
+    .ps-fulfilled strong { color: var(--accent3); }
+    .ps-rejected { border-color: #ff7b72; }
+    .ps-rejected strong { color: #ff7b72; }
+    .ps-arrow { font-size: 24px; color: var(--muted); }
+
+    /* ===== 练习区 ===== */
+    .practice {
+      background: linear-gradient(135deg, #0d2238, #1a1a2d);
+      border: 1px solid #2a4a5a;
+      border-radius: 12px;
+      padding: 28px;
+      margin-top: 48px;
+    }
+    .practice h2 {
+      font-size: 20px;
+      color: var(--accent3);
+      margin-bottom: 8px;
+    }
+    .practice p { color: var(--muted); margin-bottom: 20px; font-size: 14px; }
+    .exercise {
+      background: var(--code-bg);
+      border: 1px dashed #2a4a5a;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+    .exercise .q {
+      color: var(--accent2);
+      font-weight: 600;
+      margin-bottom: 12px;
+      font-size: 14px;
+    }
+    .exercise pre { margin: 0; }
+
+    /* ===== 交互控制台 ===== */
+    .console-area {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-top: 48px;
+    }
+    .console-header {
+      background: var(--surface);
+      padding: 12px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+    .console-header span { color: var(--accent4); font-size: 13px; font-weight: 600; letter-spacing: 1px; }
+    .console-dots { display: flex; gap: 6px; }
+    .dot { width: 12px; height: 12px; border-radius: 50%; }
+    .dot-r { background: #ff5f57; }
+    .dot-y { background: #febc2e; }
+    .dot-g { background: #28c840; }
+    #sandbox-code {
+      width: 100%;
+      background: var(--code-bg);
+      color: var(--accent3);
+      border: none;
+      padding: 18px 20px;
+      font-family: 'Cascadia Code','Fira Code',monospace;
+      font-size: 13.5px;
+      line-height: 1.7;
+      resize: vertical;
+      min-height: 160px;
+      outline: none;
+    }
+    .console-actions {
+      padding: 12px 18px;
+      display: flex;
+      gap: 10px;
+      border-top: 1px solid var(--border);
+    }
+    .btn {
+      padding: 8px 20px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      transition: opacity .2s;
+    }
+    .btn:hover { opacity: .85; }
+    .btn-run { background: var(--accent4); color: #0a1a1a; }
+    .btn-clear { background: var(--surface); color: var(--muted); border: 1px solid var(--border); }
+    #output-box {
+      padding: 16px 20px;
+      min-height: 60px;
+      font-family: 'Cascadia Code','Fira Code',monospace;
+      font-size: 13px;
+      color: var(--accent3);
+      border-top: 1px solid var(--border);
+      white-space: pre-wrap;
+    }
+    #output-box .err { color: #ff7b72; }
+
+    /* ===== 进度条 ===== */
+    .progress-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 22px 26px;
+      margin-bottom: 40px;
+    }
+    .progress-card h3 { font-size: 13px; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); margin-bottom: 16px; }
+    .progress-list { display: flex; flex-wrap: wrap; gap: 8px; }
+    .progress-item {
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+    }
+    .pi-done  { background: #0d3321; color: var(--accent3); border: 1px solid #1a4d2a; }
+    .pi-today { background: #0d3330; color: var(--accent4); border: 1px solid #1a5a5a; }
+    .pi-next  { background: var(--card); color: var(--muted); border: 1px solid var(--border); }
+
+    /* ===== 事件循环示意图 ===== */
+    .event-loop-diagram {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      padding: 20px;
+      margin: 16px 0;
+      background: var(--surface);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+    }
+    .el-row {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .el-box {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 18px;
+      font-size: 13px;
+      text-align: center;
+      min-width: 80px;
+    }
+    .el-box.micro { border-color: var(--accent3); color: var(--accent3); }
+    .el-box.macro { border-color: var(--accent2); color: var(--accent2); }
+    .el-box.call  { border-color: var(--accent); color: var(--accent); }
+    .el-arrow { color: var(--muted); font-size: 18px; }
+
+    /* ===== 底部 ===== */
+    .footer {
+      text-align: center;
+      padding: 40px 24px 20px;
+      color: var(--muted);
+      font-size: 13px;
+      border-top: 1px solid var(--border);
+    }
+    .footer strong { color: var(--accent4); }
+
+    /* ===== inline code ===== */
+    p code, li code, td code {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      padding: 1px 6px;
+      border-radius: 5px;
+      font-family: 'Cascadia Code','Fira Code',monospace;
+      font-size: 12.5px;
+      color: var(--accent4);
+    }
+    ul { padding-left: 20px; }
+    li { margin: 5px 0; }
+
+    /* ===== 时间线动画（同步 vs 异步） ===== */
+    .timeline-demo {
+      display: flex;
+      gap: 16px;
+      margin: 16px 0;
+      flex-wrap: wrap;
+    }
+    .tl-col {
+      flex: 1;
+      min-width: 200px;
+      background: var(--surface);
+      border-radius: 10px;
+      padding: 16px;
+      border: 1px solid var(--border);
+    }
+    .tl-col h4 { color: var(--accent4); margin-bottom: 10px; font-size: 14px; }
+    .tl-item {
+      padding: 6px 12px;
+      margin: 4px 0;
+      border-radius: 6px;
+      font-size: 12px;
+      font-family: 'Cascadia Code','Fira Code',monospace;
+      background: var(--card);
+      border-left: 3px solid var(--accent);
+    }
+    .tl-item.block { border-left-color: #ff7b72; }
+    .tl-item.async { border-left-color: var(--accent3); }
+  </style>
+</head>
+<body>
+
+<!-- ===== HERO ===== -->
+<div class="hero">
+  <div class="badge">JavaScript 学习路径</div>
+  <h1>Day 11 — <span>异步编程</span> Promise / async / await</h1>
+  <p>JavaScript 是单线程的，但从不阻塞。掌握 <code>Promise</code>、<code>async/await</code>、事件循环——写出流畅的异步代码。</p>
+  <div class="meta">
+    <span>&#128197; 第 11 天</span>
+    <span>&#9201; 预计 60 分钟</span>
+    <span>&#127919; 目标：CesiumJS 地球开发</span>
+    <span>&#128202; 基础阶段 · 第2关</span>
+  </div>
+</div>
+
+<!-- ===== CONTAINER ===== -->
+<div class="container">
+
+  <!-- 学习进度 -->
+  <div class="progress-card">
+    <h3>&#128205; 学习路线图</h3>
+    <div class="progress-list">
+      <div class="progress-item pi-done">Day 01 · 变量与数据类型</div>
+      <div class="progress-item pi-done">Day 02 · 函数与作用域</div>
+      <div class="progress-item pi-done">Day 03 · 数组与对象</div>
+      <div class="progress-item pi-done">Day 04 · 控制流</div>
+      <div class="progress-item pi-done">Day 05 · DOM 操作</div>
+      <div class="progress-item pi-done">Day 06 · 事件与异步</div>
+      <div class="progress-item pi-done">Day 07 · ES6+ 语法</div>
+      <div class="progress-item pi-done">Day 08 · 模块与类</div>
+      <div class="progress-item pi-done">Day 09 · 原型与继承</div>
+      <div class="progress-item pi-done">Day 10 · 错误处理与调试</div>
+      <div class="progress-item pi-today">Day 11 · 异步编程 &#8592; 今天</div>
+      <div class="progress-item pi-next">Day 12 · 浏览器API</div>
+      <div class="progress-item pi-next">CesiumJS 阶段 &#127758;</div>
+    </div>
+  </div>
+
+  <!-- 目录 -->
+  <div class="toc">
+    <h2>&#128218; 本课目录</h2>
+    <ol>
+      <li><a href="#s1">同步 vs 异步：被"阻塞"的真相</a></li>
+      <li><a href="#s2">回调函数与"回调地狱"</a></li>
+      <li><a href="#s3">Promise 核心概念：三种状态</a></li>
+      <li><a href="#s4">Promise 链式调用</a></li>
+      <li><a href="#s5">Promise 静态方法大合集</a></li>
+      <li><a href="#s6">async/await：异步的终极语法</a></li>
+      <li><a href="#s7">async/await 错误处理</a></li>
+      <li><a href="#s8">事件循环：微任务 vs 宏任务</a></li>
+      <li><a href="#s9">异步并发控制模式</a></li>
+      <li><a href="#s10">CesiumJS 关联场景</a></li>
+      <li><a href="#s11">练习题</a></li>
+      <li><a href="#s12">在线练习控制台</a></li>
+    </ol>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 1: 同步 vs 异步                                        -->
+  <!-- ============================================================ -->
+  <div class="section" id="s1">
+    <div class="section-header">
+      <div class="section-num">1</div>
+      <h2>同步 vs 异步：被"阻塞"的真相</h2>
+      <span class="tag">核心概念</span>
+    </div>
+
+    <div class="card">
+      <h3>&#9889; JavaScript 是单线程的</h3>
+      <p>JavaScript 在浏览器中只有一个主线程（叫"调用栈"或 Call Stack）。<strong>同一时间只能做一件事</strong>。如果某件事需要 3 秒，那么整个页面会<strong>冻结 3 秒</strong>——用户什么也点不了，滚动也不行。</p>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <h3>&#128308; 同步代码（阻塞）</h3>
+<pre><code><span class="fn">console</span>.<span class="fn">log</span>(<span class="str">'1: 开始'</span>);
+
+<span class="cmt">// 模拟耗时操作：循环 3 亿次</span>
+<span class="kw">const</span> <span class="var">start</span> <span class="op">=</span> <span class="var">Date</span>.<span class="fn">now</span>();
+<span class="kw">while</span> (<span class="var">Date</span>.<span class="fn">now</span>() <span class="op">-</span> <span class="var">start</span> <span class="op">&lt;</span> <span class="num">3000</span>) {}
+<span class="cmt">// ↑ 3 秒内页面完全卡死</span>
+
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="str">'2: 结束'</span>);
+</code></pre>
+      </div>
+      <div class="card">
+        <h3>&#128994; 异步代码（非阻塞）</h3>
+<pre><code><span class="fn">console</span>.<span class="fn">log</span>(<span class="str">'1: 开始'</span>);
+
+<span class="fn">setTimeout</span>(() <span class="op">=&gt;</span> {
+  <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">'2: 3秒后执行'</span>);
+}, <span class="num">3000</span>);
+<span class="cmt">// ↑ 不会卡住页面！</span>
+
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="str">'3: 立即执行'</span>);
+<span class="cmt">// 输出顺序：1 → 3 → 2</span>
+</code></pre>
+      </div>
+    </div>
+
+    <div class="tip">
+      <span class="icon">&#128161;</span>
+      <div><strong>核心理解：</strong>异步不是"同时做多件事"（那是多线程）。异步是<strong>"把耗时任务交给别人，我继续往下走，等它做完再通知我"</strong>。这个"别人"在浏览器里叫 Web APIs（setTimeout、fetch、DOM 事件等），在 Node.js 里叫 libuv。</div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 2: 回调函数与回调地狱                                   -->
+  <!-- ============================================================ -->
+  <div class="section" id="s2">
+    <div class="section-header">
+      <div class="section-num">2</div>
+      <h2>回调函数与"回调地狱"</h2>
+      <span class="tag">历史遗留</span>
+    </div>
+
+    <div class="card">
+      <h3>&#128172; 回调函数：最原始的异步方案</h3>
+      <p>异步操作完成后，<strong>把"下一步做什么"作为函数参数传进去</strong>。这个被传进去的函数就叫"回调函数"（callback）。</p>
+<pre><code><span class="cmt">// setTimeout 的第二个参数就是一个回调函数</span>
+<span class="fn">setTimeout</span>(<span class="kw">function</span>() {
+  <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">'2秒后执行这个回调'</span>);
+}, <span class="num">2000</span>);
+
+<span class="cmt">// 事件监听也是回调</span>
+<span class="var">document</span>.<span class="fn">addEventListener</span>(<span class="str">'click'</span>, <span class="kw">function</span>() {
+  <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">'点击时执行这个回调'</span>);
+});
+
+<span class="cmt">// Node.js 风格回调 (error-first callback)</span>
+<span class="fn">fs</span>.<span class="fn">readFile</span>(<span class="str">'/data.json'</span>, (<span class="var">err</span>, <span class="var">data</span>) <span class="op">=&gt;</span> {
+  <span class="kw">if</span> (<span class="var">err</span>) <span class="kw">return</span> <span class="fn">console</span>.<span class="fn">error</span>(<span class="var">err</span>);
+  <span class="fn">console</span>.<span class="fn">log</span>(<span class="var">data</span>);
+});
+</code></pre>
+    </div>
+
+    <div class="warn">
+      <span class="icon">&#9888;&#65039;</span>
+      <div><strong>回调地狱（Callback Hell / Pyramid of Doom）：</strong>当异步任务需要按顺序执行时（A 做完做 B，B 做完做 C），层层嵌套的回调让代码变成"箭头金字塔"——读起来像一坨意大利面，错误处理几乎无法统一。</div>
+    </div>
+
+    <div class="card">
+      <h3>&#128561; 回调地狱示例</h3>
+<pre><code><span class="cmt">// 模拟：加载用户 → 加载该用户的订单 → 加载订单详情 → 加载商品信息</span>
+<span class="fn">loadUser</span>(<span class="var">userId</span>, (<span class="var">err</span>, <span class="var">user</span>) <span class="op">=&gt;</span> {
+  <span class="kw">if</span> (<span class="var">err</span>) <span class="kw">return</span> <span class="fn">handleError</span>(<span class="var">err</span>);
+  <span class="fn">loadOrders</span>(<span class="var">user</span>.<span class="var">id</span>, (<span class="var">err</span>, <span class="var">orders</span>) <span class="op">=&gt;</span> {
+    <span class="kw">if</span> (<span class="var">err</span>) <span class="kw">return</span> <span class="fn">handleError</span>(<span class="var">err</span>);
+    <span class="fn">loadOrderDetail</span>(<span class="var">orders</span>[<span class="num">0</span>].<span class="var">id</span>, (<span class="var">err</span>, <span class="var">detail</span>) <span class="op">=&gt;</span> {
+      <span class="kw">if</span> (<span class="var">err</span>) <span class="kw">return</span> <span class="fn">handleError</span>(<span class="var">err</span>);
+      <span class="fn">loadProduct</span>(<span class="var">detail</span>.<span class="var">productId</span>, (<span class="var">err</span>, <span class="var">product</span>) <span class="op">=&gt;</span> {
+        <span class="kw">if</span> (<span class="var">err</span>) <span class="kw">return</span> <span class="fn">handleError</span>(<span class="var">err</span>);
+        <span class="fn">console</span>.<span class="fn">log</span>(<span class="var">product</span>.<span class="var">name</span>); <span class="cmt">//  终于拿到结果!</span>
+      });
+    });
+  });
+});
+<span class="cmt">// 每多加一层依赖，缩进就多一级...这就是回调地狱</span>
+</code></pre>
+      <p style="margin-top:12px;color:var(--muted);">&#128071; 后面你会看到，Promise 和 async/await 如何把这个"箭头金字塔"变成"平直流水线"。</p>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 3: Promise 核心概念                                      -->
+  <!-- ============================================================ -->
+  <div class="section" id="s3">
+    <div class="section-header">
+      <div class="section-num">3</div>
+      <h2>Promise 核心概念：三种状态</h2>
+      <span class="tag">基石</span>
+    </div>
+
+    <div class="card">
+      <h3>&#129534; Promise 是什么？</h3>
+      <p>Promise 是 ES6 引入的一个<strong>对象</strong>，代表一个<strong>将来才会完成</strong>的异步操作。你可以把它想象成"外卖订单"：</p>
+      <ul>
+        <li>&#9203; <strong>pending（待处理）</strong>：你刚下了单，外卖还没到</li>
+        <li>&#9989; <strong>fulfilled（已完成）</strong>：外卖送到了，你拿到了食物（<code>resolve</code>）</li>
+        <li>&#10060; <strong>rejected（已拒绝）</strong>：商家取消了订单（<code>reject</code>）</li>
+      </ul>
+    </div>
+
+    <!-- Promise 状态图 -->
+    <div class="promise-states">
+      <div class="ps-node ps-pending">
+        <strong>pending</strong>
+        <small>等待中</small>
+      </div>
+      <div class="ps-arrow">&#10132;</div>
+      <div class="ps-node ps-fulfilled">
+        <strong>fulfilled</strong>
+        <small>resolve(value)</small>
+      </div>
+      <div class="ps-arrow" style="font-size:14px;color:var(--muted);">或</div>
+      <div class="ps-node ps-rejected">
+        <strong>rejected</strong>
+        <small>reject(error)</small>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>&#128295; Promise 基本用法</h3>
+<pre><code><span class="cmt">// 1. 创建一个 Promise（通常由 API 库创建，但了解原理很重要）</span>
+<span class="kw">const</span> <span class="var">promise</span> <span class="op">=</span> <span class="kw">new</span> <span class="typ">Promise</span>((<span class="var">resolve</span>, <span class="var">reject</span>) <span class="op">=&gt;</span> {
+  <span class="cmt">// 这里执行异步操作</span>
+  <span class="fn">setTimeout</span>(() <span class="op">=&gt;</span> {
+    <span class="kw">const</span> <span class="var">success</span> <span class="op">=</span> <span class="typ">Math</span>.<span class="fn">random</span>() <span class="op">&gt;</span> <span class="num">0.3</span>;
+    <span class="kw">if</span> (<span class="var">success</span>) {
+      <span class="fn">resolve</span>({ <span class="prp">lat</span>: <span class="num">39.9</span>, <span class="prp">lng</span>: <span class="num">116.4</span> });  <span class="cmt">// 成功：传结果</span>
+    } <span class="kw">else</span> {
+      <span class="fn">reject</span>(<span class="kw">new</span> <span class="typ">Error</span>(<span class="str">'定位失败'</span>));        <span class="cmt">// 失败：传错误</span>
+    }
+  }, <span class="num">1000</span>);
+});
+
+<span class="cmt">// 2. 消费 Promise —— .then / .catch / .finally</span>
+<span class="var">promise</span>
+  .<span class="fn">then</span>(<span class="var">result</span> <span class="op">=&gt;</span> {
+    <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">' 成功！位置:'</span>, <span class="var">result</span>.<span class="var">lat</span>, <span class="var">result</span>.<span class="var">lng</span>);
+  })
+  .<span class="fn">catch</span>(<span class="var">error</span> <span class="op">=&gt;</span> {
+    <span class="fn">console</span>.<span class="fn">error</span>(<span class="str">' 失败:'</span>, <span class="var">error</span>.<span class="var">message</span>);
+  })
+  .<span class="fn">finally</span>(() <span class="op">=&gt;</span> {
+    <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">' 无论成功失败都执行'</span>);  <span class="cmt">// 比如：关闭 loading</span>
+  });
+</code></pre>
+    </div>
+
+    <div class="info">
+      <span class="icon">&#8505;&#65039;</span>
+      <div><strong>Promise 的三个关键规则：</strong><br/>
+      1. Promise 的状态<strong>一旦改变就不可逆</strong>（pending → fulfilled 就不能再变成 rejected）<br/>
+      2. <code>.then()</code> 总是返回一个<strong>新的 Promise</strong>，这是链式调用的基础<br/>
+      3. <code>.catch()</code> 本质上是 <code>.then(null, errorHandler)</code> 的语法糖
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 4: Promise 链式调用                                     -->
+  <!-- ============================================================ -->
+  <div class="section" id="s4">
+    <div class="section-header">
+      <div class="section-num">4</div>
+      <h2>Promise 链式调用</h2>
+      <span class="tag">模式</span>
+    </div>
+
+    <div class="card">
+      <h3>&#128279; 用 .then() 串联异步操作</h3>
+      <p>每个 <code>.then()</code> 返回一个新 Promise，所以你可以用<strong>平直的形式</strong>写出顺序依赖的异步操作——告别回调地狱！</p>
+<pre><code><span class="cmt">// 回调地狱 → Promise 链（"平直流水线"）</span>
+<span class="fn">loadUser</span>(<span class="var">userId</span>)
+  .<span class="fn">then</span>(<span class="var">user</span> <span class="op">=&gt;</span> {
+    <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">'用户:'</span>, <span class="var">user</span>.<span class="var">name</span>);
+    <span class="kw">return</span> <span class="fn">loadOrders</span>(<span class="var">user</span>.<span class="var">id</span>);      <span class="cmt">// 返回 Promise</span>
+  })
+  .<span class="fn">then</span>(<span class="var">orders</span> <span class="op">=&gt;</span> {
+    <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">'订单数:'</span>, <span class="var">orders</span>.<span class="var">length</span>);
+    <span class="kw">return</span> <span class="fn">loadOrderDetail</span>(<span class="var">orders</span>[<span class="num">0</span>].<span class="var">id</span>);
+  })
+  .<span class="fn">then</span>(<span class="var">detail</span> <span class="op">=&gt;</span> {
+    <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">'详情:'</span>, <span class="var">detail</span>);
+    <span class="kw">return</span> <span class="fn">loadProduct</span>(<span class="var">detail</span>.<span class="var">productId</span>);
+  })
+  .<span class="fn">then</span>(<span class="var">product</span> <span class="op">=&gt;</span> {
+    <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">' 最终商品:'</span>, <span class="var">product</span>.<span class="var">name</span>);
+  })
+  .<span class="fn">catch</span>(<span class="var">err</span> <span class="op">=&gt;</span> {
+    <span class="fn">console</span>.<span class="fn">error</span>(<span class="str">' 任意环节出错都会到这里:'</span>, <span class="var">err</span>);
+  });
+</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>&#128640; .then() 返回值规则</h3>
+      <table>
+        <tr><th>.then() 返回...</th><th>下一个 .then() 收到...</th></tr>
+        <tr><td><span class="td-kw">普通值</span> <code>return 42</code></td><td>自动包装成 <code>Promise.resolve(42)</code></td></tr>
+        <tr><td><span class="td-kw">Promise</span> <code>return fetch(...)</code></td><td>等待该 Promise 完成，拿到结果</td></tr>
+        <tr><td><span class="td-kw">thenable 对象</span> <code>{then:fn}</code></td><td>调用其 <code>.then()</code> 方法</td></tr>
+        <tr><td><span class="td-kw">抛出错误</span> <code>throw err</code></td><td>跳到最近的 <code>.catch()</code></td></tr>
+        <tr><td><span class="td-kw">无 return</span></td><td><code>undefined</code>（包装成 resolved Promise）</td></tr>
+      </table>
+    </div>
+
+    <div class="warn">
+      <span class="icon">&#9888;&#65039;</span>
+      <div><strong>常见坑：忘记 return。</strong>如果你在 <code>.then()</code> 里调了一个异步函数但没有 <code>return</code>，后面的 <code>.then()</code> 不会等待它完成，会立即收到 <code>undefined</code>。</div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 5: Promise 静态方法                                     -->
+  <!-- ============================================================ -->
+  <div class="section" id="s5">
+    <div class="section-header">
+      <div class="section-num">5</div>
+      <h2>Promise 静态方法大合集</h2>
+      <span class="tag">工具箱</span>
+    </div>
+
+    <div class="card">
+      <h3>&#128736;&#65039; 6 个核心静态方法</h3>
+      <table>
+        <tr><th>方法</th><th>行为</th><th>何时用</th></tr>
+        <tr>
+          <td><span class="td-kw">Promise.all</span></td>
+          <td>等<strong>全部</strong>成功才成功；<strong>一个失败即失败</strong></td>
+          <td>所有数据缺一不可：同时加载地形+影像+3DTiles</td>
+        </tr>
+        <tr>
+          <td><span class="td-kw">Promise.allSettled</span></td>
+          <td>等<strong>全部</strong>完成（不管成败），返回每项结果</td>
+          <td>批量请求但不想互相影响：加载多个 GeoJSON 图层</td>
+        </tr>
+        <tr>
+          <td><span class="td-kw">Promise.race</span></td>
+          <td><strong>第一个</strong>完成的决定结果</td>
+          <td>超时控制：fetch 超 5 秒就失败</td>
+        </tr>
+        <tr>
+          <td><span class="td-kw">Promise.any</span></td>
+          <td><strong>第一个成功</strong>的返回；全部失败才 reject</td>
+          <td>多 CDN 容灾：哪个先加载完用哪个</td>
+        </tr>
+        <tr>
+          <td><span class="td-kw">Promise.resolve</span></td>
+          <td>包装成已成功的 Promise</td>
+          <td>统一异步接口</td>
+        </tr>
+        <tr>
+          <td><span class="td-kw">Promise.reject</span></td>
+          <td>包装成已失败的 Promise</td>
+          <td>快速创建 rejected Promise</td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <h3>Promise.all</h3>
+<pre><code><span class="cmt">// 全部成功才成功</span>
+<span class="kw">const</span> <span class="var">results</span> <span class="op">=</span> <span class="kw">await</span> <span class="typ">Promise</span>.<span class="fn">all</span>([
+  <span class="fn">fetch</span>(<span class="str">'/api/tiles'</span>),
+  <span class="fn">fetch</span>(<span class="str">'/api/terrain'</span>),
+  <span class="fn">fetch</span>(<span class="str">'/api/imagery'</span>)
+]);
+<span class="cmt">// 少一个都拿不到 results</span>
+</code></pre>
+      </div>
+      <div class="card">
+        <h3>Promise.allSettled</h3>
+<pre><code><span class="cmt">// 宽容并发：好用的给结果</span>
+<span class="cmt">// 失败的也不影响别人</span>
+<span class="kw">const</span> <span class="var">results</span> <span class="op">=</span> <span class="kw">await</span> <span class="typ">Promise</span>.<span class="fn">allSettled</span>([
+  <span class="fn">loadLayer</span>(<span class="str">'roads'</span>),
+  <span class="fn">loadLayer</span>(<span class="str">'buildings'</span>),
+  <span class="fn">loadLayer</span>(<span class="str">'trees'</span>)
+]);
+<span class="var">results</span>.<span class="fn">forEach</span>(<span class="var">r</span> <span class="op">=&gt;</span> {
+  <span class="kw">if</span> (<span class="var">r</span>.<span class="var">status</span> <span class="op">===</span> <span class="str">'fulfilled'</span>)
+    <span class="fn">addToMap</span>(<span class="var">r</span>.<span class="var">value</span>);
+});
+</code></pre>
+      </div>
+      <div class="card">
+        <h3>Promise.race</h3>
+<pre><code><span class="cmt">// 超时控制</span>
+<span class="kw">const</span> <span class="var">timeout</span> <span class="op">=</span> <span class="kw">new</span> <span class="typ">Promise</span>((_, <span class="var">reject</span>) <span class="op">=&gt;</span>
+  <span class="fn">setTimeout</span>(() <span class="op">=&gt;</span>
+    <span class="fn">reject</span>(<span class="str">'请求超时'</span>), <span class="num">5000</span>)
+);
+<span class="kw">const</span> <span class="var">data</span> <span class="op">=</span> <span class="kw">await</span> <span class="typ">Promise</span>.<span class="fn">race</span>([
+  <span class="fn">fetch</span>(<span class="str">'/api/geo'</span>),
+  <span class="var">timeout</span>
+]);
+</code></pre>
+      </div>
+      <div class="card">
+        <h3>Promise.any</h3>
+<pre><code><span class="cmt">// 多 CDN 容灾</span>
+<span class="kw">const</span> <span class="var">terrain</span> <span class="op">=</span> <span class="kw">await</span> <span class="typ">Promise</span>.<span class="fn">any</span>([
+  <span class="fn">fetch</span>(<span class="str">'https://cdn1.com/terrain'</span>),
+  <span class="fn">fetch</span>(<span class="str">'https://cdn2.com/terrain'</span>),
+  <span class="fn">fetch</span>(<span class="str">'https://cdn3.com/terrain'</span>)
+]);
+<span class="cmt">// 哪个 CDN 先返回就用哪个</span>
+</code></pre>
+      </div>
+    </div>
+
+    <div class="tip">
+      <span class="icon">&#128161;</span>
+      <div><strong>选型速记：</strong><code>all</code> = 缺一不可，<code>allSettled</code> = 爱谁谁，<code>race</code> = 先到先得，<code>any</code> = 有一个成功就行。在 CesiumJS 中，加载图层常用 <code>allSettled</code>（某层失败不影响其他），初始化关键资源用 <code>all</code>（地形+影像缺一不可）。</div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 6: async/await                                         -->
+  <!-- ============================================================ -->
+  <div class="section" id="s6">
+    <div class="section-header">
+      <div class="section-num">6</div>
+      <h2>async/await：异步的终极语法</h2>
+      <span class="tag">ES2017</span>
+    </div>
+
+    <div class="card">
+      <h3>&#127775; 让异步代码"看起来像同步"</h3>
+      <p><code>async/await</code> 是 ES2017 引入的语法糖，它<strong>建立在 Promise 之上</strong>。async 函数总是返回一个 Promise，await 会暂停函数执行直到 Promise 完成。</p>
+<pre><code><span class="cmt">// Promise 链式写法</span>
+<span class="kw">function</span> <span class="fn">getCityInfo</span>(<span class="var">name</span>) {
+  <span class="kw">return</span> <span class="fn">fetch</span>(<span class="str">`/api/city/<span class="op">${</span><span class="var">name</span><span class="op">}</span>`</span>)
+    .<span class="fn">then</span>(<span class="var">res</span> <span class="op">=&gt;</span> <span class="var">res</span>.<span class="fn">json</span>())
+    .<span class="fn">then</span>(<span class="var">data</span> <span class="op">=&gt;</span> <span class="var">data</span>.<span class="var">coordinates</span>);
+}
+
+<span class="cmt">// async/await 写法 —— 清晰 10 倍！</span>
+<span class="kw">async</span> <span class="kw">function</span> <span class="fn">getCityInfo</span>(<span class="var">name</span>) {
+  <span class="kw">const</span> <span class="var">res</span> <span class="op">=</span> <span class="kw">await</span> <span class="fn">fetch</span>(<span class="str">`/api/city/<span class="op">${</span><span class="var">name</span><span class="op">}</span>`</span>);
+  <span class="kw">const</span> <span class="var">data</span> <span class="op">=</span> <span class="kw">await</span> <span class="var">res</span>.<span class="fn">json</span>();
+  <span class="kw">return</span> <span class="var">data</span>.<span class="var">coordinates</span>;
+}
+</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>&#128218; async/await 核心规则</h3>
+      <table>
+        <tr><th>规则</th><th>说明</th></tr>
+        <tr><td>1. async 函数自动返回 Promise</td><td><code>async fn() { return 42 }</code> 等价于 <code>fn() { return Promise.resolve(42) }</code></td></tr>
+        <tr><td>2. await 只能在 async 函数内用</td><td>顶层 await 在 ES2022 模块中可用，但普通脚本不可以</td></tr>
+        <tr><td>3. await 会暂停执行</td><td>等待 Promise 完成，不阻塞主线程（其他代码照常运行）</td></tr>
+        <tr><td>4. await 后可以跟任何值</td><td>如果不是 Promise，自动包装成 <code>Promise.resolve(value)</code></td></tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3>&#128260; CesiumJS 中的 async/await 实战</h3>
+      <p>CesiumJS 的许多操作返回 Promise——资源加载、地形请求、影像获取等。下面是典型写法：</p>
+<pre><code><span class="cmt">// CesiumJS 中初始化场景的 async 写法</span>
+<span class="kw">async</span> <span class="kw">function</span> <span class="fn">initCesiumApp</span>(<span class="var">containerId</span>) {
+  <span class="cmt">// 1. 创建 Viewer</span>
+  <span class="kw">const</span> <span class="var">viewer</span> <span class="op">=</span> <span class="kw">new</span> <span class="typ">Cesium</span>.<span class="typ">Viewer</span>(<span class="var">containerId</span>);
+
+  <span class="cmt">// 2. 等待地形加载（返回 Promise）</span>
+  <span class="kw">const</span> <span class="var">terrainProvider</span> <span class="op">=</span> <span class="kw">await</span> <span class="typ">Cesium</span>.<span class="fn">createWorldTerrainAsync</span>();
+  <span class="var">viewer</span>.<span class="var">terrainProvider</span> <span class="op">=</span> <span class="var">terrainProvider</span>;
+
+  <span class="cmt">// 3. 加载 3D Tiles 建筑模型</span>
+  <span class="kw">const</span> <span class="var">tileset</span> <span class="op">=</span> <span class="kw">await</span> <span class="typ">Cesium</span>.<span class="typ">Cesium3DTileset</span>.<span class="fn">fromUrl</span>(
+    <span class="str">'https://assets.cesium.com/tilesets/boston/tileset.json'</span>
+  );
+  <span class="var">viewer</span>.<span class="var">scene</span>.<span class="var">primitives</span>.<span class="fn">add</span>(<span class="var">tileset</span>);
+
+  <span class="cmt">// 4. 飞到目标位置（也是异步的）</span>
+  <span class="kw">await</span> <span class="var">viewer</span>.<span class="fn">flyTo</span>(<span class="var">tileset</span>);
+
+  <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">' 场景初始化完成！'</span>);
+  <span class="kw">return</span> <span class="var">viewer</span>;
+}
+</code></pre>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 7: async/await 错误处理                                 -->
+  <!-- ============================================================ -->
+  <div class="section" id="s7">
+    <div class="section-header">
+      <div class="section-num">7</div>
+      <h2>async/await 错误处理</h2>
+      <span class="tag">实践</span>
+    </div>
+
+    <div class="card">
+      <h3>&#128737;&#65039; 用 try/catch 包裹 await</h3>
+      <p>async/await 的最大优势之一：可以用<strong>同步风格的 try/catch</strong> 来处理异步错误，不再需要 <code>.catch()</code> 链。</p>
+<pre><code><span class="kw">async</span> <span class="kw">function</span> <span class="fn">safeLoadTileset</span>(<span class="var">url</span>, <span class="var">viewer</span>) {
+  <span class="kw">try</span> {
+    <span class="kw">const</span> <span class="var">tileset</span> <span class="op">=</span> <span class="kw">await</span> <span class="typ">Cesium</span>.<span class="typ">Cesium3DTileset</span>.<span class="fn">fromUrl</span>(<span class="var">url</span>);
+    <span class="var">viewer</span>.<span class="var">scene</span>.<span class="var">primitives</span>.<span class="fn">add</span>(<span class="var">tileset</span>);
+    <span class="kw">return</span> <span class="var">tileset</span>;
+  } <span class="kw">catch</span> (<span class="var">err</span>) {
+    <span class="fn">console</span>.<span class="fn">error</span>(<span class="str">'3D Tiles 加载失败:'</span>, <span class="var">err</span>.<span class="var">message</span>);
+    <span class="fn">showUserMessage</span>(<span class="str">'抱歉，建筑模型加载失败'</span>);
+    <span class="kw">return</span> <span class="kw">null</span>;
+  }
+}
+</code></pre>
+    </div>
+
+    <div class="warn">
+      <span class="icon">&#9888;&#65039;</span>
+      <div><strong>常见坑：忘记 try/catch。</strong>如果 async 函数内部抛出错误但外部没有 <code>.catch()</code>，会变成 <code>UnhandledPromiseRejection</code>。Node.js 15+ 会直接终止进程！</div>
+    </div>
+
+    <div class="card">
+      <h3>&#128293; 高级：Go 风格的错误处理</h3>
+      <p>有些人喜欢用 <code>[error, data]</code> 元组模式，避免过多的 try/catch 嵌套：</p>
+<pre><code><span class="cmt">// 包装函数：把 Promise 转成 [error, data]</span>
+<span class="kw">async</span> <span class="kw">function</span> <span class="fn">to</span>(<span class="var">promise</span>) {
+  <span class="kw">try</span> {
+    <span class="kw">const</span> <span class="var">data</span> <span class="op">=</span> <span class="kw">await</span> <span class="var">promise</span>;
+    <span class="kw">return</span> [<span class="kw">null</span>, <span class="var">data</span>];
+  } <span class="kw">catch</span> (<span class="var">error</span>) {
+    <span class="kw">return</span> [<span class="var">error</span>, <span class="kw">null</span>];
+  }
+}
+
+<span class="cmt">// 使用——不用 try/catch，像 Go 一样</span>
+<span class="kw">const</span> [<span class="var">err</span>, <span class="var">tileset</span>] <span class="op">=</span> <span class="kw">await</span> <span class="fn">to</span>(
+  <span class="typ">Cesium</span>.<span class="typ">Cesium3DTileset</span>.<span class="fn">fromUrl</span>(<span class="var">url</span>)
+);
+<span class="kw">if</span> (<span class="var">err</span>) {
+  <span class="fn">handleError</span>(<span class="var">err</span>);
+  <span class="kw">return</span>;
+}
+<span class="var">viewer</span>.<span class="var">scene</span>.<span class="var">primitives</span>.<span class="fn">add</span>(<span class="var">tileset</span>);
+</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>&#128259; 并行 await：别串行化不该串行的</h3>
+      <p>多个 await 按顺序写会变成<strong>串行执行</strong>——这是新手常见性能坑：</p>
+<pre><code><span class="cmt">// ❌ 错误：串行执行（慢）</span>
+<span class="kw">const</span> <span class="var">user</span>    <span class="op">=</span> <span class="kw">await</span> <span class="fn">fetchUser</span>();    <span class="cmt">// 1秒</span>
+<span class="kw">const</span> <span class="var">orders</span>  <span class="op">=</span> <span class="kw">await</span> <span class="fn">fetchOrders</span>();  <span class="cmt">// +1秒 = 总共2秒</span>
+<span class="kw">const</span> <span class="var">config</span>  <span class="op">=</span> <span class="kw">await</span> <span class="fn">fetchConfig</span>();  <span class="cmt">// +1秒 = 总共3秒</span>
+
+<span class="cmt">// ✅ 正确：并行执行（快）——它们不互相依赖！</span>
+<span class="kw">const</span> [<span class="var">user</span>, <span class="var">orders</span>, <span class="var">config</span>] <span class="op">=</span> <span class="kw">await</span> <span class="typ">Promise</span>.<span class="fn">all</span>([
+  <span class="fn">fetchUser</span>(),
+  <span class="fn">fetchOrders</span>(),
+  <span class="fn">fetchConfig</span>()
+]);
+<span class="cmt">// 同时发起 3 个请求，等最慢的那个 → 约1秒</span>
+</code></pre>
+      <p style="margin-top:12px;"><strong>口诀：</strong>如果 B 依赖 A 的结果，串行 await；如果 A、B、C 互不依赖，用 <code>Promise.all</code> 并行。</p>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 8: 事件循环                                              -->
+  <!-- ============================================================ -->
+  <div class="section" id="s8">
+    <div class="section-header">
+      <div class="section-num">8</div>
+      <h2>事件循环：微任务 vs 宏任务</h2>
+      <span class="tag">底层机制</span>
+    </div>
+
+    <div class="card">
+      <h3>&#127744; JavaScript 的执行模型</h3>
+      <p>理解事件循环是面试必考题，更是理解异步执行顺序的关键。记住这个口诀：<strong>"同步先跑完，微任务清空，宏任务一个一个来"</strong></p>
+    </div>
+
+    <div class="event-loop-diagram">
+      <div class="el-row">
+        <div class="el-box call">同步代码（调用栈）</div>
+        <div class="el-arrow">&#10132;</div>
+        <div class="el-box micro">微任务队列<br/><small>Promise.then, MutationObserver</small></div>
+        <div class="el-arrow">&#10132;</div>
+        <div class="el-box macro">宏任务队列<br/><small>setTimeout, setInterval, I/O</small></div>
+      </div>
+      <div style="color:var(--muted);font-size:12px;margin-top:8px;">
+        每轮事件循环：执行1个宏任务 → 清空所有微任务 → 渲染（如果需要） → 下一个宏任务
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>&#128300; 经典面试题：输出顺序？</h3>
+<pre><code><span class="fn">console</span>.<span class="fn">log</span>(<span class="num">1</span>);
+
+<span class="fn">setTimeout</span>(() <span class="op">=&gt;</span> <span class="fn">console</span>.<span class="fn">log</span>(<span class="num">2</span>), <span class="num">0</span>);
+
+<span class="typ">Promise</span>.<span class="fn">resolve</span>().<span class="fn">then</span>(() <span class="op">=&gt;</span> <span class="fn">console</span>.<span class="fn">log</span>(<span class="num">3</span>));
+
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="num">4</span>);
+
+<span class="cmt">// 答案：1 → 4 → 3 → 2</span>
+<span class="cmt">// 原因：同步先跑(1,4) → 清空微任务(3) → 执行宏任务(2)</span>
+</code></pre>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <h3>微任务 (Microtask)</h3>
+        <ul>
+          <li><code>Promise.then()</code></li>
+          <li><code>Promise.catch()</code></li>
+          <li><code>Promise.finally()</code></li>
+          <li><code>async/await</code>（本质是 Promise）</li>
+          <li><code>queueMicrotask()</code></li>
+          <li><code>MutationObserver</code></li>
+        </ul>
+        <p style="margin-top:8px;color:var(--accent3);"><strong>每轮清空所有微任务</strong></p>
+      </div>
+      <div class="card">
+        <h3>宏任务 (Macrotask)</h3>
+        <ul>
+          <li><code>setTimeout</code></li>
+          <li><code>setInterval</code></li>
+          <li><code>setImmediate</code>（Node.js）</li>
+          <li><code>I/O</code> 操作</li>
+          <li><code>UI 渲染</code></li>
+          <li><code>postMessage</code></li>
+        </ul>
+        <p style="margin-top:8px;color:var(--accent2);"><strong>每轮只取一个执行</strong></p>
+      </div>
+    </div>
+
+    <div class="tip">
+      <span class="icon">&#128161;</span>
+      <div><strong>实际意义：</strong>在 CesiumJS 中，你经常需要"等下一帧"再执行某些操作。推荐用 <code>requestAnimationFrame</code>（属于渲染队列，在宏任务之后）。对于"等这个 tick 结束"，用 <code>Promise.resolve().then(...)</code> 或 <code>queueMicrotask</code> 把代码放到微任务。</div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 9: 异步并发控制                                        -->
+  <!-- ============================================================ -->
+  <div class="section" id="s9">
+    <div class="section-header">
+      <div class="section-num">9</div>
+      <h2>异步并发控制模式</h2>
+      <span class="tag">进阶</span>
+    </div>
+
+    <div class="card">
+      <h3>&#127981; 批量请求但限制并发数</h3>
+      <p>实际场景：你有 100 个 3D Tiles 文件要加载，但一次只能同时加载 5 个（浏览器并发连接限制 + 避免内存爆炸）。</p>
+<pre><code><span class="cmt">// 并发控制：同时最多 N 个任务</span>
+<span class="kw">async</span> <span class="kw">function</span> <span class="fn">asyncPool</span>(<span class="var">limit</span>, <span class="var">tasks</span>) {
+  <span class="kw">const</span> <span class="var">results</span> <span class="op">=</span> [];
+  <span class="kw">const</span> <span class="var">executing</span> <span class="op">=</span> <span class="kw">new</span> <span class="typ">Set</span>();
+
+  <span class="kw">for</span> (<span class="kw">const</span> <span class="var">task</span> <span class="kw">of</span> <span class="var">tasks</span>) {
+    <span class="kw">const</span> <span class="var">p</span> <span class="op">=</span> <span class="typ">Promise</span>.<span class="fn">resolve</span>().<span class="fn">then</span>(() <span class="op">=&gt;</span> <span class="fn">task</span>());
+    <span class="var">results</span>.<span class="fn">push</span>(<span class="var">p</span>);
+    <span class="kw">const</span> <span class="var">e</span> <span class="op">=</span> <span class="var">p</span>.<span class="fn">then</span>(() <span class="op">=&gt;</span> <span class="var">executing</span>.<span class="fn">delete</span>(<span class="var">e</span>));
+    <span class="var">executing</span>.<span class="fn">add</span>(<span class="var">e</span>);
+
+    <span class="kw">if</span> (<span class="var">executing</span>.<span class="var">size</span> <span class="op">&gt;=</span> <span class="var">limit</span>) {
+      <span class="kw">await</span> <span class="typ">Promise</span>.<span class="fn">race</span>(<span class="var">executing</span>);  <span class="cmt">// 等有一个完成</span>
+    }
+  }
+
+  <span class="kw">return</span> <span class="typ">Promise</span>.<span class="fn">allSettled</span>(<span class="var">results</span>);
+}
+
+<span class="cmt">// 使用：加载 100 个 tileset，同时最多 5 个</span>
+<span class="kw">const</span> <span class="var">urls</span> <span class="op">=</span> [<span class="str">'tile_0.json'</span>, <span class="str">'tile_1.json'</span>, <span class="op">...</span>]; <span class="cmt">// 100 个</span>
+<span class="kw">const</span> <span class="var">tasks</span> <span class="op">=</span> <span class="var">urls</span>.<span class="fn">map</span>(<span class="var">url</span> <span class="op">=&gt;</span> () <span class="op">=&gt;</span> <span class="fn">loadTileset</span>(<span class="var">url</span>));
+<span class="kw">const</span> <span class="var">results</span> <span class="op">=</span> <span class="kw">await</span> <span class="fn">asyncPool</span>(<span class="num">5</span>, <span class="var">tasks</span>);
+</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>&#128341; 轮询与重试</h3>
+      <p>CesiumJS 中加载资源可能需要重试：</p>
+<pre><code><span class="cmt">// 带重试的 fetch</span>
+<span class="kw">async</span> <span class="kw">function</span> <span class="fn">fetchWithRetry</span>(<span class="var">url</span>, <span class="var">maxRetries</span> <span class="op">=</span> <span class="num">3</span>, <span class="var">delay</span> <span class="op">=</span> <span class="num">1000</span>) {
+  <span class="kw">for</span> (<span class="kw">let</span> <span class="var">i</span> <span class="op">=</span> <span class="num">0</span>; <span class="var">i</span> <span class="op">&lt;</span> <span class="var">maxRetries</span>; <span class="var">i</span><span class="op">++</span>) {
+    <span class="kw">try</span> {
+      <span class="kw">const</span> <span class="var">res</span> <span class="op">=</span> <span class="kw">await</span> <span class="fn">fetch</span>(<span class="var">url</span>);
+      <span class="kw">if</span> (<span class="var">res</span>.<span class="var">ok</span>) <span class="kw">return</span> <span class="var">res</span>;
+      <span class="kw">throw</span> <span class="kw">new</span> <span class="typ">Error</span>(<span class="str">`HTTP <span class="op">${</span><span class="var">res</span>.<span class="var">status</span><span class="op">}</span>`</span>);
+    } <span class="kw">catch</span> (<span class="var">err</span>) {
+      <span class="kw">if</span> (<span class="var">i</span> <span class="op">===</span> <span class="var">maxRetries</span> <span class="op">-</span> <span class="num">1</span>) <span class="kw">throw</span> <span class="var">err</span>;
+      <span class="fn">console</span>.<span class="fn">warn</span>(<span class="str">`重试 <span class="op">${</span><span class="var">i</span><span class="op">+</span><span class="num">1</span><span class="op">}</span>/<span class="op">${</span><span class="var">maxRetries</span><span class="op">}</span>: <span class="op">${</span><span class="var">url</span><span class="op">}</span>`</span>);
+      <span class="kw">await</span> <span class="kw">new</span> <span class="typ">Promise</span>(<span class="var">r</span> <span class="op">=&gt;</span> <span class="fn">setTimeout</span>(<span class="var">r</span>, <span class="var">delay</span> <span class="op">*</span> (<span class="var">i</span> <span class="op">+</span> <span class="num">1</span>)));  <span class="cmt">// 递增延迟</span>
+    }
+  }
+}
+</code></pre>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 10: CesiumJS 关联场景                                   -->
+  <!-- ============================================================ -->
+  <div class="section" id="s10">
+    <div class="section-header">
+      <div class="section-num">10</div>
+      <h2>CesiumJS 关联场景</h2>
+      <span class="tag">目标</span>
+    </div>
+
+    <div class="card">
+      <h3>&#127760; 场景 1：顺序初始化场景</h3>
+      <p>典型的 CesiumJS 应用：创建 Viewer → 加载地形 → 加载影像 → 添加 3D Tiles → 飞到目标。每一步依赖前一步，用 async/await 清晰表达：</p>
+<pre><code><span class="kw">async</span> <span class="kw">function</span> <span class="fn">bootScene</span>(<span class="var">containerId</span>) {
+  <span class="cmt">// 步骤 1：创建 Viewer</span>
+  <span class="kw">const</span> <span class="var">viewer</span> <span class="op">=</span> <span class="kw">new</span> <span class="typ">Cesium</span>.<span class="typ">Viewer</span>(<span class="var">containerId</span>);
+
+  <span class="cmt">// 步骤 2：加载地形（基于步骤1）</span>
+  <span class="var">viewer</span>.<span class="var">terrainProvider</span> <span class="op">=</span> <span class="kw">await</span> <span class="typ">Cesium</span>.<span class="typ">CesiumTerrainProvider</span>.<span class="fn">fromUrl</span>(
+    <span class="str">'https://assets.cesium.com/1/terrain/world'</span>
+  );
+
+  <span class="cmt">// 步骤 3：加载建筑模型（基于步骤1）</span>
+  <span class="kw">const</span> <span class="var">buildings</span> <span class="op">=</span> <span class="kw">await</span> <span class="typ">Cesium</span>.<span class="fn">createOsmBuildingsAsync</span>();
+  <span class="var">viewer</span>.<span class="var">scene</span>.<span class="var">primitives</span>.<span class="fn">add</span>(<span class="var">buildings</span>);
+
+  <span class="cmt">// 步骤 4：飞过去（基于步骤3的结果）</span>
+  <span class="kw">await</span> <span class="var">viewer</span>.<span class="fn">flyTo</span>(<span class="var">buildings</span>);
+
+  <span class="kw">return</span> <span class="var">viewer</span>;
+}
+</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>&#127757; 场景 2：并行加载多个图层</h3>
+      <p>多个图层互不依赖，应该并行加载：</p>
+<pre><code><span class="kw">async</span> <span class="kw">function</span> <span class="fn">loadLayersConcurrently</span>(<span class="var">viewer</span>) {
+  <span class="cmt">// 3 个图层互不依赖，同时加载</span>
+  <span class="kw">const</span> [<span class="var">roads</span>, <span class="var">buildings</span>, <span class="var">trees</span>] <span class="op">=</span> <span class="kw">await</span> <span class="typ">Promise</span>.<span class="fn">allSettled</span>([
+    <span class="fn">loadGeoJSON</span>(<span class="str">'/data/roads.geojson'</span>),
+    <span class="fn">loadTileset</span>(<span class="str">'/tiles/boston/'</span>),
+    <span class="fn">loadCZML</span>(<span class="str">'/data/trees.czml'</span>)
+  ]);
+
+  <span class="cmt">// 把加载成功的都添加到场景</span>
+  [<span class="var">roads</span>, <span class="var">buildings</span>, <span class="var">trees</span>].<span class="fn">forEach</span>(<span class="var">result</span> <span class="op">=&gt;</span> {
+    <span class="kw">if</span> (<span class="var">result</span>.<span class="var">status</span> <span class="op">===</span> <span class="str">'fulfilled'</span>) {
+      <span class="var">viewer</span>.<span class="var">dataSources</span>.<span class="fn">add</span>(<span class="var">result</span>.<span class="var">value</span>);
+    } <span class="kw">else</span> {
+      <span class="fn">console</span>.<span class="fn">warn</span>(<span class="str">'某图层加载失败，但不影响其他图层:'</span>, <span class="var">result</span>.<span class="var">reason</span>);
+    }
+  });
+}
+</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>&#128202; 场景 3：带超时的资源加载</h3>
+      <p>防止某个 3D Tiles 加载卡住整个应用：</p>
+<pre><code><span class="kw">async</span> <span class="kw">function</span> <span class="fn">loadWithTimeout</span>(<span class="var">promise</span>, <span class="var">timeoutMs</span> <span class="op">=</span> <span class="num">30000</span>) {
+  <span class="kw">const</span> <span class="var">timeout</span> <span class="op">=</span> <span class="kw">new</span> <span class="typ">Promise</span>((_, <span class="var">reject</span>) <span class="op">=&gt;</span>
+    <span class="fn">setTimeout</span>(() <span class="op">=&gt;</span>
+      <span class="fn">reject</span>(<span class="kw">new</span> <span class="typ">Error</span>(<span class="str">`加载超时（<span class="op">${</span><span class="var">timeoutMs</span><span class="op">}</span>ms）`</span>)),
+      <span class="var">timeoutMs</span>
+    )
+  );
+  <span class="kw">return</span> <span class="typ">Promise</span>.<span class="fn">race</span>([<span class="var">promise</span>, <span class="var">timeout</span>]);
+}
+
+<span class="cmt">// 使用：</span>
+<span class="kw">const</span> <span class="var">tileset</span> <span class="op">=</span> <span class="kw">await</span> <span class="fn">loadWithTimeout</span>(
+  <span class="typ">Cesium</span>.<span class="typ">Cesium3DTileset</span>.<span class="fn">fromUrl</span>(<span class="var">url</span>),
+  <span class="num">20000</span>  <span class="cmt">// 20秒超时</span>
+);
+</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>&#128640; 场景 4：实时数据流——轮询与增量更新</h3>
+      <p>CesiumJS 中显示动态数据（飞机位置、车辆轨迹等）需要持续更新：</p>
+<pre><code><span class="kw">class</span> <span class="typ">RealTimeTracker</span> {
+  <span class="kw">constructor</span>(<span class="var">viewer</span>, <span class="var">apiEndpoint</span>) {
+    <span class="kw">this</span>.<span class="var">viewer</span> <span class="op">=</span> <span class="var">viewer</span>;
+    <span class="kw">this</span>.<span class="var">endpoint</span> <span class="op">=</span> <span class="var">apiEndpoint</span>;
+    <span class="kw">this</span>.<span class="var">entities</span> <span class="op">=</span> <span class="kw">new</span> <span class="typ">Map</span>();
+    <span class="kw">this</span>.<span class="var">running</span> <span class="op">=</span> <span class="kw">false</span>;
+  }
+
+  <span class="kw">async</span> <span class="fn">start</span>(<span class="var">intervalMs</span> <span class="op">=</span> <span class="num">2000</span>) {
+    <span class="kw">this</span>.<span class="var">running</span> <span class="op">=</span> <span class="kw">true</span>;
+    <span class="kw">while</span> (<span class="kw">this</span>.<span class="var">running</span>) {
+      <span class="kw">try</span> {
+        <span class="kw">const</span> <span class="var">positions</span> <span class="op">=</span> <span class="kw">await</span> <span class="fn">fetch</span>(<span class="kw">this</span>.<span class="var">endpoint</span>)
+          .<span class="fn">then</span>(<span class="var">r</span> <span class="op">=&gt;</span> <span class="var">r</span>.<span class="fn">json</span>());
+        <span class="kw">this</span>.<span class="fn">updateEntities</span>(<span class="var">positions</span>);
+      } <span class="kw">catch</span> (<span class="var">err</span>) {
+        <span class="fn">console</span>.<span class="fn">warn</span>(<span class="str">'轮询失败，下次重试:'</span>, <span class="var">err</span>.<span class="var">message</span>);
+      }
+      <span class="cmt">// 等待下一轮</span>
+      <span class="kw">await</span> <span class="kw">new</span> <span class="typ">Promise</span>(<span class="var">r</span> <span class="op">=&gt;</span> <span class="fn">setTimeout</span>(<span class="var">r</span>, <span class="var">intervalMs</span>));
+    }
+  }
+
+  <span class="fn">stop</span>() { <span class="kw">this</span>.<span class="var">running</span> <span class="op">=</span> <span class="kw">false</span>; }
+
+  <span class="fn">updateEntities</span>(<span class="var">positions</span>) {
+    <span class="var">positions</span>.<span class="fn">forEach</span>(<span class="var">p</span> <span class="op">=&gt;</span> {
+      <span class="kw">let</span> <span class="var">entity</span> <span class="op">=</span> <span class="kw">this</span>.<span class="var">entities</span>.<span class="fn">get</span>(<span class="var">p</span>.<span class="var">id</span>);
+      <span class="kw">if</span> (<span class="op">!</span><span class="var">entity</span>) {
+        <span class="var">entity</span> <span class="op">=</span> <span class="kw">this</span>.<span class="var">viewer</span>.<span class="var">entities</span>.<span class="fn">add</span>({
+          <span class="prp">position</span>: <span class="typ">Cesium</span>.<span class="typ">Cartesian3</span>.<span class="fn">fromDegrees</span>(<span class="var">p</span>.<span class="var">lng</span>, <span class="var">p</span>.<span class="var">lat</span>),
+          <span class="prp">point</span>: { <span class="prp">pixelSize</span>: <span class="num">8</span>, <span class="prp">color</span>: <span class="typ">Cesium</span>.<span class="typ">Color</span>.<span class="var">RED</span> }
+        });
+        <span class="kw">this</span>.<span class="var">entities</span>.<span class="fn">set</span>(<span class="var">p</span>.<span class="var">id</span>, <span class="var">entity</span>);
+      }
+      <span class="cmt">// 更新位置</span>
+      <span class="var">entity</span>.<span class="var">position</span> <span class="op">=</span> <span class="typ">Cesium</span>.<span class="typ">Cartesian3</span>.<span class="fn">fromDegrees</span>(<span class="var">p</span>.<span class="var">lng</span>, <span class="var">p</span>.<span class="var">lat</span>);
+    });
+  }
+}
+</code></pre>
+    </div>
+
+    <div class="tip">
+      <span class="icon">&#128161;</span>
+      <div><strong>CesiumJS 异步编程的核心：</strong>几乎所有资源加载都是异步的（地形、影像、3D Tiles、GeoJSON、CZML）。掌握 Promise/async-await 是高效使用 CesiumJS 的前提。记住：串行依赖用 async/await 链；独立资源用 Promise.allSettled 并行；超时就 race；资源重试用循环+timer；动态更新用定时轮询或 WebSocket。</div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 11: 练习题                                             -->
+  <!-- ============================================================ -->
+  <div class="section" id="s11">
+    <div class="section-header">
+      <div class="section-num">11</div>
+      <h2>练习题</h2>
+      <span class="tag">PRACTICE</span>
+    </div>
+
+    <div class="practice">
+      <h2>&#127919; 动手练习</h2>
+      <p>在下方控制台中输入代码并运行（Ctrl+Enter），验证你的答案：</p>
+
+      <div class="exercise">
+        <div class="q">题 1：从回调到 Promise 的转换</div>
+        <p style="color:var(--text);font-size:14px;">下面的 <code>getLocation</code> 使用回调风格。把它改写成<strong>返回 Promise</strong> 的版本 <code>getLocationAsync</code>，然后用 <code>.then</code> 消费它。</p>
+<pre><code><span class="cmt">// 原始回调风格函数</span>
+<span class="kw">function</span> <span class="fn">getLocation</span>(<span class="var">callback</span>) {
+  <span class="fn">setTimeout</span>(() <span class="op">=&gt;</span> {
+    <span class="kw">const</span> <span class="var">lat</span> <span class="op">=</span> <span class="num">39.9042</span>, <span class="var">lng</span> <span class="op">=</span> <span class="num">116.4074</span>;
+    <span class="fn">callback</span>(<span class="kw">null</span>, { <span class="var">lat</span>, <span class="var">lng</span> });  <span class="cmt">// error-first 风格</span>
+  }, <span class="num">500</span>);
+}
+
+<span class="cmt">// TODO: 改写成基于 Promise 的 getLocationAsync</span>
+<span class="kw">function</span> <span class="fn">getLocationAsync</span>() {
+  <span class="cmt">// 用 new Promise(...) 包装</span>
+}
+
+<span class="cmt">// 消费它：</span>
+<span class="cmt">// getLocationAsync().then(pos =&gt; console.log(pos));</span>
+</code></pre>
+      </div>
+
+      <div class="exercise">
+        <div class="q">题 2：async/await + 错误处理 + 并行</div>
+        <p style="color:var(--text);font-size:14px;">编写 async 函数 <code>loadCityAssets(cityName)</code>，模拟加载 3 个资源（每个用 Promise + setTimeout 模拟，20% 概率失败）。用 <code>try/catch</code> 包裹，3 个资源用 <code>Promise.allSettled</code> 并行加载。成功时打印资源列表，失败时打印错误统计。</p>
+<pre><code><span class="cmt">// 辅助：模拟加载函数</span>
+<span class="kw">function</span> <span class="fn">simulateLoad</span>(<span class="var">name</span>) {
+  <span class="kw">return</span> <span class="kw">new</span> <span class="typ">Promise</span>((<span class="var">resolve</span>, <span class="var">reject</span>) <span class="op">=&gt;</span> {
+    <span class="fn">setTimeout</span>(() <span class="op">=&gt;</span> {
+      <span class="typ">Math</span>.<span class="fn">random</span>() <span class="op">&gt;</span> <span class="num">0.2</span> <span class="op">?</span> <span class="fn">resolve</span>(<span class="str">`<span class="op">${</span><span class="var">name</span><span class="op">}</span>_OK`</span>) <span class="op">:</span> <span class="fn">reject</span>(<span class="str">`<span class="op">${</span><span class="var">name</span><span class="op">}</span>_FALL`</span>);
+    }, <span class="typ">Math</span>.<span class="fn">random</span>() <span class="op">*</span> <span class="num">500</span>);
+  });
+}
+
+<span class="kw">async</span> <span class="kw">function</span> <span class="fn">loadCityAssets</span>(<span class="var">cityName</span>) {
+  <span class="cmt">// TODO: 用 Promise.allSettled 并行加载 terrain / tiles / imagery</span>
+  <span class="cmt">// TODO: 用 try/catch 包裹</span>
+  <span class="cmt">// TODO: 统计成功和失败数量</span>
+}
+
+<span class="cmt">// 测试：loadCityAssets('Beijing');</span>
+</code></pre>
+      </div>
+
+      <div class="exercise">
+        <div class="q">题 3：事件循环输出顺序分析（面试级）</div>
+        <p style="color:var(--text);font-size:14px;">分析下面代码的输出顺序，然后在沙盒中验证。</p>
+<pre><code><span class="fn">console</span>.<span class="fn">log</span>(<span class="str">'A'</span>);
+
+<span class="fn">setTimeout</span>(() <span class="op">=&gt;</span> {
+  <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">'B'</span>);
+  <span class="typ">Promise</span>.<span class="fn">resolve</span>().<span class="fn">then</span>(() <span class="op">=&gt;</span> <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">'C'</span>));
+}, <span class="num">0</span>);
+
+<span class="typ">Promise</span>.<span class="fn">resolve</span>().<span class="fn">then</span>(() <span class="op">=&gt;</span> {
+  <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">'D'</span>);
+  <span class="fn">setTimeout</span>(() <span class="op">=&gt;</span> <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">'E'</span>), <span class="num">0</span>);
+});
+
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="str">'F'</span>);
+
+<span class="cmt">// 输出顺序： ____ → ____ → ____ → ____ → ____</span>
+<span class="cmt">// 提示：记住"同步→微→宏"的循环</span>
+</code></pre>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 12: 交互控制台                                        -->
+  <!-- ============================================================ -->
+  <div id="s12" style="margin-bottom:52px;">
+    <div class="section-header">
+      <div class="section-num">12</div>
+      <h2>在线练习控制台</h2>
+      <span class="tag">SANDBOX</span>
+    </div>
+
+    <p style="margin-bottom:16px;color:var(--muted);">在这里写 JavaScript，用 Ctrl+Enter 运行查看结果：</p>
+
+    <div class="console-area">
+      <div class="console-header">
+        <div class="console-dots">
+          <div class="dot dot-r"></div>
+          <div class="dot dot-y"></div>
+          <div class="dot dot-g"></div>
+        </div>
+        <span>JS SANDBOX</span>
+        <span style="font-size:11px;color:var(--muted);">Day 11</span>
+      </div>
+      <textarea id="sandbox-code" spellcheck="false">// ===== Day 11 沙盒：异步编程实验 =====
+
+// ---------- 1. Promise 基础 ----------
+console.log('--- Promise 基础 ---');
+const p = new Promise((resolve, reject) => {
+  setTimeout(() => {
+    Math.random() > 0.3
+      ? resolve({ lat: 39.9, lng: 116.4 })
+      : reject(new Error('定位失败'));
+  }, 500);
+});
+
+p.then(pos => console.log('✅ 位置:', pos))
+ .catch(err => console.error('❌', err.message))
+ .finally(() => console.log('操作完成'));
+
+// ---------- 2. async/await ----------
+async function getLocationAsync() {
+  return new Promise((resolve) => {
+    setTimeout(() => resolve({ lat: 39.9, lng: 116.4 }), 300);
+  });
+}
+
+// ---------- 3. Promise.allSettled 并行加载 ----------
+async function loadCityAssets(cityName) {
+  console.log(`\n--- 加载 ${cityName} 资源 ---`);
+  function simulateLoad(name) {
+    return new Promise((resolve, reject) => {
+      const delay = Math.random() * 400;
+      setTimeout(() => {
+        Math.random() > 0.2
+          ? resolve(`${name}_OK (${Math.floor(delay)}ms)`)
+          : reject(`${name}_FAIL`);
+      }, delay);
+    });
+  }
+
+  try {
+    const results = await Promise.allSettled([
+      simulateLoad('terrain'),
+      simulateLoad('tiles'),
+      simulateLoad('imagery')
+    ]);
+
+    let ok = 0, fail = 0;
+    results.forEach(r => {
+      if (r.status === 'fulfilled') {
+        console.log('  ✅', r.value);
+        ok++;
+      } else {
+        console.warn('  ⚠️', r.reason);
+        fail++;
+      }
+    });
+    console.log(`结果: ${ok} 成功, ${fail} 失败`);
+  } catch (err) {
+    console.error('致命错误:', err);
+  }
+}
+
+// 稍后执行（等待 Promise 基础示例先完成）
+setTimeout(() => loadCityAssets('Beijing'), 800);
+
+// ---------- 4. 事件循环测试 ----------
+setTimeout(() => {
+  console.log('\n--- 事件循环测试 ---');
+  console.log('A');
+
+  setTimeout(() => {
+    console.log('B');
+    Promise.resolve().then(() => console.log('C'));
+  }, 0);
+
+  Promise.resolve().then(() => {
+    console.log('D');
+    setTimeout(() => console.log('E'), 0);
+  });
+
+  console.log('F');
+  // 正确答案: A → F → D → B → C → E
+}, 1800);
+
+// ---------- 5. Promise.race 超时控制 ----------
+setTimeout(async () => {
+  console.log('\n--- 超时控制 ---');
+  const timeout = new Promise((_, reject) =>
+    setTimeout(() => reject(new Error('超时!')), 200)
+  );
+  const work = new Promise(resolve =>
+    setTimeout(() => resolve('完成!'), 300)
+  );
+
+  try {
+    const result = await Promise.race([work, timeout]);
+    console.log('结果:', result);
+  } catch (err) {
+    console.warn('超时捕获:', err.message);
+  }
+}, 2500);
+</textarea>
+      <div class="console-actions">
+        <button class="btn btn-run" onclick="runCode()">&#9654; 运行</button>
+        <button class="btn btn-clear" onclick="clearOutput()">清空输出</button>
+        <button class="btn btn-clear" onclick="resetCode()">重置代码</button>
+      </div>
+      <div id="output-box">// 点击"运行"查看输出结果...</div>
+    </div>
+  </div>
+
+
+  <!-- 今日总结 -->
+  <div class="card" style="border-color:var(--accent4);border-left-width:4px;">
+    <h3 style="color:var(--accent4)">&#128203; 今日知识点总结</h3>
+    <ul style="margin-top:12px;">
+      <li>&#9989; JavaScript 是单线程的，异步通过事件循环 + 任务队列实现，不阻塞主线程</li>
+      <li>&#9989; 回调函数是最原始的异步方案，但嵌套会导致"回调地狱"</li>
+      <li>&#9989; Promise 有三种状态：pending → fulfilled / rejected，状态不可逆</li>
+      <li>&#9989; <code>.then()</code> 返回新 Promise，<strong>必须 return 才能传递结果</strong>给下一个 .then()</li>
+      <li>&#9989; <code>Promise.all</code>（缺一不可）、<code>allSettled</code>（宽容）、<code>race</code>（先到先得）、<code>any</code>（一胜即可）</li>
+      <li>&#9989; async/await 是 Promise 的语法糖，让异步代码看起来像同步</li>
+      <li>&#9989; async 函数始终返回 Promise，await 会暂停执行但不阻塞线程</li>
+      <li>&#9989; 用 <code>try/catch</code> 包裹 await 处理错误；互不依赖的任务用 <code>Promise.all</code> 并行</li>
+      <li>&#9989; 事件循环：同步 → 清空微任务（Promise.then）→ 一个宏任务（setTimeout）→ 渲染 → 循环</li>
+      <li>&#9989; 并发控制：用计数器 + Promise.race 实现"池限制"；重试用循环 + 递增延迟</li>
+      <li>&#9989; CesiumJS 中：场景初始化是串行 async/await；多图层加载用 allSettled 并行；资源加载用 race 做超时；实时数据用轮询</li>
+    </ul>
+  </div>
+
+</div><!-- /container -->
+
+<!-- ===== FOOTER ===== -->
+<div class="footer">
+  <p>&#128640; <strong>每日JS</strong> — JavaScript &rarr; CesiumJS 学习路径</p>
+  <p style="margin-top:6px;">Day 11 / 异步编程 Promise/async/await &middot; 明天继续：<strong>浏览器 API 与 Web API</strong></p>
+</div>
+
+
+<!-- ===== SCRIPT ===== -->
+<script>
+  const DEFAULT_CODE = document.getElementById('sandbox-code').value;
+
+  function runCode() {
+    const code = document.getElementById('sandbox-code').value;
+    const outputBox = document.getElementById('output-box');
+    const logs = [];
+
+    const origLog = console.log;
+    const origError = console.error;
+    const origWarn = console.warn;
+
+    console.log = (...args) => {
+      logs.push(args.map(a => {
+        if (typeof a === 'object' && a !== null) {
+          try { return JSON.stringify(a, null, 2); } catch { return String(a); }
+        }
+        return String(a);
+      }).join(' '));
+      origLog(...args);
+    };
+    console.error = (...args) => {
+      logs.push('\u274C ' + args.join(' '));
+      origError(...args);
+    };
+    console.warn = (...args) => {
+      logs.push('\u26A0\uFE0F ' + args.join(' '));
+      origWarn(...args);
+    };
+
+    try {
+      eval(code);
+      // Wait a bit for async code to produce output, then show
+      setTimeout(() => {
+        outputBox.innerHTML = logs.length
+          ? logs.map(l => '<span>' + escHtml(l) + '</span>').join('\n')
+          : '<span style="color:var(--muted)">// 代码运行中（异步操作可能稍后有输出）</span>';
+
+        console.log = origLog;
+        console.error = origError;
+        console.warn = origWarn;
+      }, 100);
+    } catch(e) {
+      outputBox.innerHTML = '<span class="err">\u274C ' + escHtml(e.message) + '</span>';
+      console.log = origLog;
+      console.error = origError;
+      console.warn = origWarn;
+    }
+
+    // Also capture async console output
+    setTimeout(() => {
+      if (logs.length > 0) {
+        outputBox.innerHTML = logs.map(l => '<span>' + escHtml(l) + '</span>').join('\n');
+      }
+    }, 3500);
+  }
+
+  function clearOutput() {
+    document.getElementById('output-box').innerHTML = '// 输出已清空...';
+  }
+
+  function resetCode() {
+    document.getElementById('sandbox-code').value = DEFAULT_CODE;
+    clearOutput();
+  }
+
+  function escHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  document.getElementById('sandbox-code').addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      e.preventDefault();
+      runCode();
+    }
+  });
+</script>
+</body>
+</html>

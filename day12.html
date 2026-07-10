@@ -1,0 +1,1545 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>JavaScript 每日学习 — Day 12：浏览器 API 与 Web API</title>
+  <style>
+    /* ===== 全局 ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0f1117;
+      --surface:   #1a1d27;
+      --card:      #21253a;
+      --border:    #2e3350;
+      --accent:    #61dafb;
+      --accent2:   #f7c948;
+      --accent3:   #7ee787;
+      --accent4:   #818cf8;
+      --text:      #cdd3e0;
+      --muted:     #6e7a96;
+      --tag-bg:    #1e1b4b;
+      --code-bg:   #161b2e;
+    }
+
+    body {
+      font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.75;
+      font-size: 15px;
+    }
+
+    /* ===== 顶部 Banner ===== */
+    .hero {
+      background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #1e1b4b 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 52px 24px 40px;
+      text-align: center;
+    }
+    .hero .badge {
+      display: inline-block;
+      background: var(--accent4);
+      color: #0f0e1a;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 4px 12px;
+      border-radius: 20px;
+      margin-bottom: 16px;
+    }
+    .hero h1 {
+      font-size: clamp(24px, 5vw, 42px);
+      font-weight: 800;
+      color: #fff;
+      line-height: 1.2;
+      margin-bottom: 12px;
+    }
+    .hero h1 span { color: var(--accent4); }
+    .hero p {
+      color: var(--muted);
+      font-size: 15px;
+      max-width: 580px;
+      margin: 0 auto 24px;
+    }
+    .hero .meta {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      flex-wrap: wrap;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .hero .meta span { display: flex; align-items: center; gap: 5px; }
+
+    /* ===== 布局 ===== */
+    .container { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; }
+
+    /* ===== 目录卡片 ===== */
+    .toc {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--accent4);
+      border-radius: 12px;
+      padding: 24px 28px;
+      margin-bottom: 40px;
+    }
+    .toc h2 { font-size: 14px; letter-spacing: 1px; text-transform: uppercase; color: var(--accent4); margin-bottom: 14px; }
+    .toc ol { padding-left: 20px; }
+    .toc li { margin: 6px 0; }
+    .toc a { color: var(--text); text-decoration: none; }
+    .toc a:hover { color: var(--accent4); }
+
+    /* ===== 章节标题 ===== */
+    .section { margin-bottom: 52px; }
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 24px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    .section-num {
+      width: 38px; height: 38px;
+      border-radius: 10px;
+      background: var(--accent4);
+      color: #0f0e1a;
+      font-weight: 800;
+      font-size: 16px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .section-header h2 {
+      font-size: 22px;
+      font-weight: 700;
+      color: #fff;
+    }
+    .section-header .tag {
+      font-size: 11px;
+      background: var(--tag-bg);
+      color: var(--accent4);
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    /* ===== 卡片 ===== */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+    .card h3 {
+      font-size: 16px;
+      color: var(--accent2);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card p { margin-bottom: 10px; color: var(--text); }
+    .card p:last-child { margin-bottom: 0; }
+
+    /* ===== 代码块 ===== */
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px 22px;
+      overflow-x: auto;
+      margin: 16px 0;
+      font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+      font-size: 13.5px;
+      line-height: 1.7;
+    }
+    code { font-family: inherit; }
+
+    /* 语法着色 */
+    .kw  { color: #c792ea; }
+    .str { color: #c3e88d; }
+    .num { color: #f78c6c; }
+    .cmt { color: #546e7a; font-style: italic; }
+    .fn  { color: #82aaff; }
+    .var { color: #eeffff; }
+    .op  { color: var(--accent); }
+    .typ { color: var(--accent2); }
+    .out { color: var(--accent3); }
+    .prp { color: #ffcb6b; }
+
+    /* ===== 提示框 ===== */
+    .tip, .warn, .info {
+      border-radius: 10px;
+      padding: 14px 18px;
+      margin: 16px 0;
+      font-size: 14px;
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+    .tip  { background: #0d3321; border-left: 4px solid var(--accent3); }
+    .warn { background: #3a2500; border-left: 4px solid var(--accent2); }
+    .info { background: #1e1b4b; border-left: 4px solid var(--accent4); }
+    .tip .icon, .warn .icon, .info .icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+
+    /* ===== 对比表格 ===== */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 14px;
+    }
+    th {
+      background: var(--surface);
+      color: var(--accent4);
+      padding: 12px 16px;
+      text-align: left;
+      border-bottom: 2px solid var(--border);
+      font-weight: 600;
+    }
+    td {
+      padding: 11px 16px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+      vertical-align: top;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(129, 140, 248, 0.04); }
+    .td-kw { color: #c792ea; font-family: 'Cascadia Code','Fira Code',monospace; font-weight: 600; }
+    .td-type { color: var(--accent2); }
+    .td-good { color: var(--accent3); }
+    .td-bad  { color: #ff7b72; }
+
+    /* ===== 两列网格 ===== */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 600px) { .grid-2 { grid-template-columns: 1fr; } }
+
+    /* ===== 大卡片 ===== */
+    .big-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 28px;
+      margin-bottom: 20px;
+    }
+    .big-card h3 { font-size: 17px; color: var(--accent4); margin-bottom: 16px; }
+
+    /* ===== API 速查表 ===== */
+    .api-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 12px;
+      margin: 16px 0;
+    }
+    .api-item {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      text-align: center;
+      transition: border-color 0.2s;
+    }
+    .api-item:hover { border-color: var(--accent4); }
+    .api-item .icon { font-size: 28px; margin-bottom: 8px; display: block; }
+    .api-item strong { display: block; color: var(--accent4); font-size: 14px; }
+    .api-item small { display: block; color: var(--muted); font-size: 12px; margin-top: 4px; }
+
+    /* ===== 练习区 ===== */
+    .practice {
+      background: linear-gradient(135deg, #1e1b3a, #1a1a2d);
+      border: 1px solid #3b3580;
+      border-radius: 12px;
+      padding: 28px;
+      margin-top: 48px;
+    }
+    .practice h2 {
+      font-size: 20px;
+      color: var(--accent3);
+      margin-bottom: 8px;
+    }
+    .practice p { color: var(--muted); margin-bottom: 20px; font-size: 14px; }
+    .exercise {
+      background: var(--code-bg);
+      border: 1px dashed #3b3580;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+    .exercise .q {
+      color: var(--accent2);
+      font-weight: 600;
+      margin-bottom: 12px;
+      font-size: 14px;
+    }
+    .exercise pre { margin: 0; }
+
+    /* ===== 交互控制台 ===== */
+    .console-area {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-top: 48px;
+    }
+    .console-header {
+      background: var(--surface);
+      padding: 12px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+    .console-header span { color: var(--accent4); font-size: 13px; font-weight: 600; letter-spacing: 1px; }
+    .console-dots { display: flex; gap: 6px; }
+    .dot { width: 12px; height: 12px; border-radius: 50%; }
+    .dot-r { background: #ff5f57; }
+    .dot-y { background: #febc2e; }
+    .dot-g { background: #28c840; }
+    #sandbox-code {
+      width: 100%;
+      background: var(--code-bg);
+      color: var(--accent3);
+      border: none;
+      padding: 18px 20px;
+      font-family: 'Cascadia Code','Fira Code',monospace;
+      font-size: 13.5px;
+      line-height: 1.7;
+      resize: vertical;
+      min-height: 160px;
+      outline: none;
+    }
+    .console-actions {
+      padding: 12px 18px;
+      display: flex;
+      gap: 10px;
+      border-top: 1px solid var(--border);
+    }
+    .btn {
+      padding: 8px 20px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      transition: opacity .2s;
+    }
+    .btn:hover { opacity: .85; }
+    .btn-run { background: var(--accent4); color: #0f0e1a; }
+    .btn-clear { background: var(--surface); color: var(--muted); border: 1px solid var(--border); }
+    #output-box {
+      padding: 16px 20px;
+      min-height: 60px;
+      font-family: 'Cascadia Code','Fira Code',monospace;
+      font-size: 13px;
+      color: var(--accent3);
+      border-top: 1px solid var(--border);
+      white-space: pre-wrap;
+    }
+    #output-box .err { color: #ff7b72; }
+
+    /* ===== Canvas 演示区 ===== */
+    .canvas-demo {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px;
+      text-align: center;
+      margin: 16px 0;
+    }
+    .canvas-demo canvas {
+      border: 1px dashed var(--border);
+      border-radius: 6px;
+      display: block;
+      margin: 10px auto;
+    }
+
+    /* ===== 进度条 ===== */
+    .progress-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 22px 26px;
+      margin-bottom: 40px;
+    }
+    .progress-card h3 { font-size: 13px; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); margin-bottom: 16px; }
+    .progress-list { display: flex; flex-wrap: wrap; gap: 8px; }
+    .progress-item {
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+    }
+    .pi-done  { background: #0d3321; color: var(--accent3); border: 1px solid #1a4d2a; }
+    .pi-today { background: #1e1b4b; color: var(--accent4); border: 1px solid #312e81; }
+    .pi-next  { background: var(--card); color: var(--muted); border: 1px solid var(--border); }
+
+    /* ===== API 层级图 ===== */
+    .layer-diagram {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      padding: 20px;
+      margin: 16px 0;
+      background: var(--surface);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+    }
+    .layer-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .layer-box {
+      padding: 10px 18px;
+      border-radius: 8px;
+      font-size: 13px;
+      min-width: 150px;
+      text-align: center;
+    }
+    .lr-app  { background: #1e293b; border: 1px solid var(--accent4); color: var(--accent4); }
+    .lr-bom  { background: #1e293b; border: 1px solid var(--accent);  color: var(--accent);  }
+    .lr-dom  { background: #1e293b; border: 1px solid var(--accent3); color: var(--accent3); }
+    .lr-js   { background: #1e293b; border: 1px solid var(--accent2); color: var(--accent2); }
+    .layer-arrow { color: var(--muted); font-size: 18px; }
+
+    /* ===== 底部 ===== */
+    .footer {
+      text-align: center;
+      padding: 40px 24px 20px;
+      color: var(--muted);
+      font-size: 13px;
+      border-top: 1px solid var(--border);
+    }
+    .footer strong { color: var(--accent4); }
+
+    /* ===== inline code ===== */
+    p code, li code, td code {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      padding: 1px 6px;
+      border-radius: 5px;
+      font-family: 'Cascadia Code','Fira Code',monospace;
+      font-size: 12.5px;
+      color: var(--accent4);
+    }
+    ul { padding-left: 20px; }
+    li { margin: 5px 0; }
+  </style>
+</head>
+<body>
+
+<!-- ===== HERO ===== -->
+<div class="hero">
+  <div class="badge">JavaScript 学习路径 · 基础篇终章</div>
+  <h1>Day 12 — <span>浏览器 API</span> 与 Web API</h1>
+  <p>浏览器不只是一个"显示 HTML"的工具——它是一台强大的<strong>操作系统</strong>。掌握 <code>Fetch</code>、<code>Storage</code>、<code>Canvas</code>、<code>Geolocation</code>、<code>WebSocket</code>——你就能写出真正的 Web 应用，也为 CesiumJS 的底层原理打下坚实基础。</p>
+  <div class="meta">
+    <span>&#128197; 第 12 天</span>
+    <span>&#9201; 预计 70 分钟</span>
+    <span>&#127919; 目标：CesiumJS 地球开发</span>
+    <span>&#127881; 基础阶段 · 最后一关</span>
+  </div>
+</div>
+
+<!-- ===== CONTAINER ===== -->
+<div class="container">
+
+  <!-- 学习进度 -->
+  <div class="progress-card">
+    <h3>&#128205; 学习路线图</h3>
+    <div class="progress-list">
+      <div class="progress-item pi-done">Day 01 · 变量与数据类型</div>
+      <div class="progress-item pi-done">Day 02 · 函数与作用域</div>
+      <div class="progress-item pi-done">Day 03 · 数组与对象</div>
+      <div class="progress-item pi-done">Day 04 · 控制流</div>
+      <div class="progress-item pi-done">Day 05 · DOM 操作</div>
+      <div class="progress-item pi-done">Day 06 · 事件与异步</div>
+      <div class="progress-item pi-done">Day 07 · ES6+ 语法</div>
+      <div class="progress-item pi-done">Day 08 · 模块与类</div>
+      <div class="progress-item pi-done">Day 09 · 原型与继承</div>
+      <div class="progress-item pi-done">Day 10 · 错误处理与调试</div>
+      <div class="progress-item pi-done">Day 11 · 异步编程</div>
+      <div class="progress-item pi-today">Day 12 · 浏览器API &#8592; 今天</div>
+      <div class="progress-item pi-next">CesiumJS 阶段 &#127758;</div>
+    </div>
+  </div>
+
+  <!-- 目录 -->
+  <div class="toc">
+    <h2>&#128218; 本课目录</h2>
+    <ol>
+      <li><a href="#s1">Web API 全景图：浏览器即操作系统</a></li>
+      <li><a href="#s2">Storage API：localStorage / sessionStorage</a></li>
+      <li><a href="#s3">Fetch API：现代网络请求</a></li>
+      <li><a href="#s4">Geolocation API：获取用户位置</a></li>
+      <li><a href="#s5">Canvas API：2D 绘图入门</a></li>
+      <li><a href="#s6">Web Workers：多线程计算</a></li>
+      <li><a href="#s7">History API & URL API</a></li>
+      <li><a href="#s8">WebSocket：实时双向通信</a></li>
+      <li><a href="#s9">其他常用 Web API 速查</a></li>
+      <li><a href="#s10">CesiumJS 关联场景</a></li>
+      <li><a href="#s11">练习题</a></li>
+      <li><a href="#s12">在线练习控制台</a></li>
+    </ol>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 1: Web API 全景图                                       -->
+  <!-- ============================================================ -->
+  <div class="section" id="s1">
+    <div class="section-header">
+      <div class="section-num">1</div>
+      <h2>Web API 全景图：浏览器即操作系统</h2>
+      <span class="tag">核心概念</span>
+    </div>
+
+    <div class="card">
+      <h3>&#127760; 什么是 Web API？</h3>
+      <p>Web API 是<strong>浏览器提供给 JavaScript 的接口集合</strong>。它们不是 JavaScript 语言本身的一部分（不属于 ECMAScript 规范），而是浏览器这个"宿主环境"额外提供的功能。Node.js 没有 <code>document</code>、没有 <code>localStorage</code>，因为它们属于浏览器运行时，不属于 JS 语言核心。</p>
+    </div>
+
+    <div class="layer-diagram">
+      <div class="layer-row">
+        <div class="layer-box lr-app" style="font-size:16px;font-weight:700;">&#127968; 你的 Web 应用</div>
+      </div>
+      <div class="layer-arrow">&#8595;</div>
+      <div class="layer-row">
+        <div class="layer-box lr-js">ECMAScript 核心<br/><small>变量/函数/对象/类/Promise</small></div>
+        <div class="layer-box lr-dom">DOM API<br/><small>document / Element 事件</small></div>
+        <div class="layer-box lr-bom">BOM API<br/><small>navigator / location / history</small></div>
+      </div>
+      <div class="layer-arrow">&#8595;</div>
+      <div class="layer-row">
+        <div class="layer-box" style="background:#0d3321;border:1px solid var(--accent3);color:var(--accent3);">
+          浏览器引擎<br/><small>渲染引擎 + JS 引擎(V8/SpiderMonkey)</small>
+        </div>
+      </div>
+    </div>
+
+    <div class="info">
+      <span class="icon">&#128161;</span>
+      <div><strong>核心区分：</strong>ECMAScript = 语言本身（if/for/function/class/Promise）；Web API = 浏览器提供的额外超能力（DOM、fetch、Canvas、Geolocation、WebSocket……）。日常开发中你两者都在用，但面试时常问"这是 JS 还是浏览器 API？"——比如 <code>setTimeout</code> 是浏览器 API，不是 ECMAScript！</div>
+    </div>
+
+    <div class="card">
+      <h3>&#128640; 浏览器 API 全家福（按类别）</h3>
+      <div class="api-grid">
+        <div class="api-item"><span class="icon">&#128190;</span><strong>Storage</strong><small>localStorage / IndexedDB</small></div>
+        <div class="api-item"><span class="icon">&#127760;</span><strong>Fetch / XHR</strong><small>HTTP 网络请求</small></div>
+        <div class="api-item"><span class="icon">&#127758;</span><strong>Geolocation</strong><small>GPS 定位</small></div>
+        <div class="api-item"><span class="icon">&#127912;</span><strong>Canvas</strong><small>2D/WebGL 绘图</small></div>
+        <div class="api-item"><span class="icon">&#9881;&#65039;</span><strong>Web Workers</strong><small>后台多线程</small></div>
+        <div class="api-item"><span class="icon">&#128279;</span><strong>History / URL</strong><small>路由与地址栏</small></div>
+        <div class="api-item"><span class="icon">&#128225;</span><strong>WebSocket</strong><small>实时双向通信</small></div>
+        <div class="api-item"><span class="icon">&#128264;</span><strong>Notification</strong><small>桌面通知</small></div>
+        <div class="api-item"><span class="icon">&#127909;</span><strong>Media / Video</strong><small>音视频采集</small></div>
+        <div class="api-item"><span class="icon">&#128451;&#65039;</span><strong>Clipboard</strong><small>剪贴板读写</small></div>
+        <div class="api-item"><span class="icon">&#127925;</span><strong>Web Audio</strong><small>音频处理</small></div>
+        <div class="api-item"><span class="icon">&#128187;</span><strong>Screen / Fullscreen</strong><small>屏幕信息与全屏</small></div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 2: Storage API                                         -->
+  <!-- ============================================================ -->
+  <div class="section" id="s2">
+    <div class="section-header">
+      <div class="section-num">2</div>
+      <h2>Storage API：localStorage / sessionStorage</h2>
+      <span class="tag">持久化</span>
+    </div>
+
+    <div class="card">
+      <h3>&#128190; 浏览器存储三剑客</h3>
+      <p>浏览器提供多种本地存储方式，各有适用场景。最常用的三种：</p>
+      <table>
+        <tr><th>特性</th><th>localStorage</th><th>sessionStorage</th><th>Cookie</th></tr>
+        <tr>
+          <td class="td-kw">容量</td>
+          <td class="td-good">~5MB</td>
+          <td class="td-good">~5MB</td>
+          <td class="td-bad">~4KB</td>
+        </tr>
+        <tr>
+          <td class="td-kw">生命周期</td>
+          <td>永久（手动清除）</td>
+          <td>标签页关闭即销毁</td>
+          <td>可设过期时间</td>
+        </tr>
+        <tr>
+          <td class="td-kw">作用域</td>
+          <td>同源所有标签页共享</td>
+          <td>仅当前标签页</td>
+          <td>同源，可设 path</td>
+        </tr>
+        <tr>
+          <td class="td-kw">随请求发送</td>
+          <td class="td-good">不会（省带宽）</td>
+          <td class="td-good">不会（省带宽）</td>
+          <td class="td-bad">会（影响性能）</td>
+        </tr>
+        <tr>
+          <td class="td-kw">API 复杂度</td>
+          <td class="td-good">极简</td>
+          <td class="td-good">极简</td>
+          <td>需要手动解析</td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3>&#128295; localStorage 核心 API</h3>
+<pre><code><span class="cmt">// ===== 写入 =====</span>
+<span class="var">localStorage</span>.<span class="fn">setItem</span>(<span class="str">'userName'</span>, <span class="str">'Alice'</span>);
+<span class="var">localStorage</span>.<span class="var">theme</span> <span class="op">=</span> <span class="str">'dark'</span>;           <span class="cmt">// 也可以用属性写法</span>
+
+<span class="cmt">// ===== 读取 =====</span>
+<span class="kw">const</span> <span class="var">name</span> <span class="op">=</span> <span class="var">localStorage</span>.<span class="fn">getItem</span>(<span class="str">'userName'</span>); <span class="cmt">// "Alice"</span>
+<span class="kw">const</span> <span class="var">missing</span> <span class="op">=</span> <span class="var">localStorage</span>.<span class="fn">getItem</span>(<span class="str">'xxx'</span>);   <span class="cmt">// null（不存在）</span>
+
+<span class="cmt">// ===== 删除 =====</span>
+<span class="var">localStorage</span>.<span class="fn">removeItem</span>(<span class="str">'userName'</span>); <span class="cmt">// 删除单个</span>
+<span class="var">localStorage</span>.<span class="fn">clear</span>();                  <span class="cmt">// 清空全部</span>
+
+<span class="cmt">// ===== 遍历 =====</span>
+<span class="kw">for</span> (<span class="kw">let</span> <span class="var">i</span> <span class="op">=</span> <span class="num">0</span>; <span class="var">i</span> <span class="op">&lt;</span> <span class="var">localStorage</span>.<span class="var">length</span>; <span class="var">i</span><span class="op">++</span>) {
+  <span class="kw">const</span> <span class="var">key</span>   <span class="op">=</span> <span class="var">localStorage</span>.<span class="fn">key</span>(<span class="var">i</span>);
+  <span class="kw">const</span> <span class="var">value</span> <span class="op">=</span> <span class="var">localStorage</span>.<span class="fn">getItem</span>(<span class="var">key</span>);
+  <span class="fn">console</span>.<span class="fn">log</span>(<span class="var">key</span>, <span class="var">value</span>);
+}
+</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>&#128273; 对象存取技巧（JSON 序列化）</h3>
+      <p>localStorage <strong>只能存储字符串</strong>。存储对象/数组必须用 <code>JSON.stringify</code>，取出时用 <code>JSON.parse</code>：</p>
+<pre><code><span class="kw">const</span> <span class="var">user</span> <span class="op">=</span> { <span class="var">name</span>: <span class="str">'Alice'</span>, <span class="var">age</span>: <span class="num">28</span>, <span class="var">roles</span>: [<span class="str">'admin'</span>] };
+
+<span class="cmt">// 存储</span>
+<span class="var">localStorage</span>.<span class="fn">setItem</span>(<span class="str">'user'</span>, <span class="typ">JSON</span>.<span class="fn">stringify</span>(<span class="var">user</span>));
+
+<span class="cmt">// 读取</span>
+<span class="kw">const</span> <span class="var">saved</span> <span class="op">=</span> <span class="typ">JSON</span>.<span class="fn">parse</span>(<span class="var">localStorage</span>.<span class="fn">getItem</span>(<span class="str">'user'</span>));
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">saved</span>.<span class="var">name</span>); <span class="cmt">// "Alice"</span>
+
+<span class="cmt">// 封装成工具函数</span>
+<span class="kw">function</span> <span class="fn">setJSON</span>(<span class="var">key</span>, <span class="var">value</span>) {
+  <span class="var">localStorage</span>.<span class="fn">setItem</span>(<span class="var">key</span>, <span class="typ">JSON</span>.<span class="fn">stringify</span>(<span class="var">value</span>));
+}
+<span class="kw">function</span> <span class="fn">getJSON</span>(<span class="var">key</span>, <span class="var">defaultVal</span> <span class="op">=</span> <span class="kw">null</span>) {
+  <span class="kw">const</span> <span class="var">raw</span> <span class="op">=</span> <span class="var">localStorage</span>.<span class="fn">getItem</span>(<span class="var">key</span>);
+  <span class="kw">try</span> { <span class="kw">return</span> <span class="var">raw</span> <span class="op">?</span> <span class="typ">JSON</span>.<span class="fn">parse</span>(<span class="var">raw</span>) : <span class="var">defaultVal</span>; }
+  <span class="kw">catch</span> { <span class="kw">return</span> <span class="var">defaultVal</span>; }
+}
+</code></pre>
+    </div>
+
+    <div class="tip">
+      <span class="icon">&#128161;</span>
+      <div><strong>localStorage 的限制：</strong>①仅 5MB 左右；②同步 API（会阻塞主线程，不宜存大量数据）；③只能存字符串。如需大容量、结构化、异步存储，用 <strong>IndexedDB</strong>（见下文 CesiumJS 关联场景）。</div>
+    </div>
+
+    <div class="warn">
+      <span class="icon">&#9888;&#65039;</span>
+      <div><strong>sessionStorage 的坑：</strong>在新标签页中 <code>window.open(url)</code> 会<strong>复制</strong>当前 sessionStorage，但用户手动 Ctrl+T 打开的新标签页不会共享 sessionStorage。如果发现数据"莫名其妙丢了"，先检查是不是这个原因。</div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 3: Fetch API                                           -->
+  <!-- ============================================================ -->
+  <div class="section" id="s3">
+    <div class="section-header">
+      <div class="section-num">3</div>
+      <h2>Fetch API：现代网络请求</h2>
+      <span class="tag">网络</span>
+    </div>
+
+    <div class="card">
+      <h3>&#127760; 告别 XMLHttpRequest</h3>
+      <p><code>fetch()</code> 是现代浏览器内置的网络请求 API，基于 Promise，语法简洁，是 <code>XMLHttpRequest</code> 的现代替代品。</p>
+<pre><code><span class="cmt">// 基本 GET 请求</span>
+<span class="kw">const</span> <span class="var">response</span> <span class="op">=</span> <span class="kw">await</span> <span class="fn">fetch</span>(<span class="str">'https://api.example.com/data'</span>);
+<span class="kw">const</span> <span class="var">data</span>    <span class="op">=</span> <span class="kw">await</span> <span class="var">response</span>.<span class="fn">json</span>();  <span class="cmt">// 解析 JSON</span>
+
+<span class="cmt">// POST 请求（发送 JSON）</span>
+<span class="kw">const</span> <span class="var">res</span> <span class="op">=</span> <span class="kw">await</span> <span class="fn">fetch</span>(<span class="str">'https://api.example.com/submit'</span>, {
+  <span class="var">method</span>:  <span class="str">'POST'</span>,
+  <span class="var">headers</span>: { <span class="str">'Content-Type'</span>: <span class="str">'application/json'</span> },
+  <span class="var">body</span>:    <span class="typ">JSON</span>.<span class="fn">stringify</span>({ <span class="var">name</span>: <span class="str">'Alice'</span>, <span class="var">age</span>: <span class="num">28</span> })
+});
+</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>&#128295; Response 对象：别被状态码骗了</h3>
+      <p><strong>重要：</strong><code>fetch()</code> 只在网络故障时 reject（如断网、DNS 解析失败）。HTTP 404/500 等错误状态码<strong>不会导致 reject</strong>——你需要手动检查 <code>response.ok</code>。</p>
+<pre><code><span class="kw">async</span> <span class="kw">function</span> <span class="fn">safeFetch</span>(<span class="var">url</span>, <span class="var">options</span> <span class="op">=</span> {}) {
+  <span class="kw">const</span> <span class="var">res</span> <span class="op">=</span> <span class="kw">await</span> <span class="fn">fetch</span>(<span class="var">url</span>, <span class="var">options</span>);
+
+  <span class="kw">if</span> (<span class="op">!</span><span class="var">res</span>.<span class="var">ok</span>) {  <span class="cmt">// 等价于 status 不在 200-299</span>
+    <span class="kw">throw</span> <span class="kw">new</span> <span class="typ">Error</span>(<span class="str">`HTTP <span class="op">${</span><span class="var">res</span>.<span class="var">status</span><span class="op">}</span>: <span class="op">${</span><span class="var">res</span>.<span class="var">statusText</span><span class="op">}</span>`</span>);
+  }
+  <span class="kw">return</span> <span class="kw">await</span> <span class="var">res</span>.<span class="fn">json</span>();
+}
+
+<span class="cmt">// 常用 Response 方法</span>
+<span class="kw">const</span> <span class="var">json</span>  <span class="op">=</span> <span class="kw">await</span> <span class="var">res</span>.<span class="fn">json</span>();   <span class="cmt">// JSON</span>
+<span class="kw">const</span> <span class="var">text</span>  <span class="op">=</span> <span class="kw">await</span> <span class="var">res</span>.<span class="fn">text</span>();   <span class="cmt">// 纯文本</span>
+<span class="kw">const</span> <span class="var">blob</span>  <span class="op">=</span> <span class="kw">await</span> <span class="var">res</span>.<span class="fn">blob</span>();   <span class="cmt">// 二进制（图片/文件）</span>
+<span class="kw">const</span> <span class="var">buf</span>   <span class="op">=</span> <span class="kw">await</span> <span class="var">res</span>.<span class="fn">arrayBuffer</span>();  <span class="cmt">// 原始字节 → WebGL/Web Worker</span>
+</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>&#128230; 上传文件与 FormData</h3>
+<pre><code><span class="kw">const</span> <span class="var">formData</span> <span class="op">=</span> <span class="kw">new</span> <span class="typ">FormData</span>();
+<span class="var">formData</span>.<span class="fn">append</span>(<span class="str">'file'</span>, <span class="var">fileInput</span>.<span class="var">files</span>[<span class="num">0</span>]);
+<span class="var">formData</span>.<span class="fn">append</span>(<span class="str">'description'</span>, <span class="str">'地形高度图'</span>);
+
+<span class="cmt">// fetch 会自动设置 Content-Type 为 multipart/form-data</span>
+<span class="kw">const</span> <span class="var">res</span> <span class="op">=</span> <span class="kw">await</span> <span class="fn">fetch</span>(<span class="str">'https://api.example.com/upload'</span>, {
+  <span class="var">method</span>: <span class="str">'POST'</span>,
+  <span class="var">body</span>:   <span class="var">formData</span>
+});
+</code></pre>
+    </div>
+
+    <div class="info">
+      <span class="icon">&#128161;</span>
+      <div><strong>fetch vs XHR：</strong>fetch 基于 Promise，语法更清晰；但 fetch 默认不携带 cookie（需要设 <code>credentials: 'include'</code>），也没有原生超时（需配合 <code>AbortController</code> 实现）。</div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 4: Geolocation API                                     -->
+  <!-- ============================================================ -->
+  <div class="section" id="s4">
+    <div class="section-header">
+      <div class="section-num">4</div>
+      <h2>Geolocation API：获取用户位置</h2>
+      <span class="tag">定位</span>
+    </div>
+
+    <div class="card">
+      <h3>&#127758; navigator.geolocation</h3>
+      <p>浏览器可以获取用户的地理位置（需用户授权），返回经度、纬度、海拔、精度等信息。这是所有地图应用的基础——也是 CesiumJS 定位功能的底层依赖。</p>
+<pre><code><span class="kw">if</span> (<span class="str">'geolocation'</span> <span class="kw">in</span> <span class="var">navigator</span>) {
+  <span class="var">navigator</span>.<span class="var">geolocation</span>.<span class="fn">getCurrentPosition</span>(
+    (<span class="var">position</span>) <span class="op">=&gt;</span> {
+      <span class="kw">const</span> { <span class="var">latitude</span>, <span class="var">longitude</span> } <span class="op">=</span> <span class="var">position</span>.<span class="var">coords</span>;
+      <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">`位置: <span class="op">${</span><span class="var">latitude</span><span class="op">}</span>, <span class="op">${</span><span class="var">longitude</span><span class="op">}</span>`</span>);
+      <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">`精度: <span class="op">${</span><span class="var">position</span>.<span class="var">coords</span>.<span class="var">accuracy</span><span class="op">}</span> 米`</span>);
+    },
+    (<span class="var">err</span>) <span class="op">=&gt;</span> <span class="fn">console</span>.<span class="fn">error</span>(<span class="str">'定位失败:'</span>, <span class="var">err</span>.<span class="var">message</span>),
+    {
+      <span class="var">enableHighAccuracy</span>: <span class="kw">true</span>,  <span class="cmt">// 请求高精度（会耗电）</span>
+      <span class="var">timeout</span>:           <span class="num">10000</span>,  <span class="cmt">// 10秒超时</span>
+      <span class="var">maximumAge</span>:        <span class="num">0</span>       <span class="cmt">// 不使用缓存位置</span>
+    }
+  );
+}
+</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>&#128260; 持续追踪位置：watchPosition</h3>
+      <p><code>getCurrentPosition</code> 只获取一次。<code>watchPosition</code> 会持续追踪位置变化（就像手机导航），返回一个 watchId 用于取消。</p>
+<pre><code><span class="kw">const</span> <span class="var">watchId</span> <span class="op">=</span> <span class="var">navigator</span>.<span class="var">geolocation</span>.<span class="fn">watchPosition</span>(
+  (<span class="var">pos</span>) <span class="op">=&gt;</span> {
+    <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">`移动到了: <span class="op">${</span><span class="var">pos</span>.<span class="var">coords</span>.<span class="var">latitude</span><span class="op">}</span>, <span class="op">${</span><span class="var">pos</span>.<span class="var">coords</span>.<span class="var">longitude</span><span class="op">}</span>`</span>);
+    <span class="cmt">// 实时更新地图上的位置标记</span>
+  },
+  (<span class="var">err</span>) <span class="op">=&gt;</span> <span class="fn">console</span>.<span class="fn">error</span>(<span class="var">err</span>),
+  { <span class="var">enableHighAccuracy</span>: <span class="kw">true</span>, <span class="var">maximumAge</span>: <span class="num">1000</span> }
+);
+
+<span class="cmt">// 停止追踪</span>
+<span class="var">navigator</span>.<span class="var">geolocation</span>.<span class="fn">clearWatch</span>(<span class="var">watchId</span>);
+</code></pre>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 5: Canvas API                                          -->
+  <!-- ============================================================ -->
+  <div class="section" id="s5">
+    <div class="section-header">
+      <div class="section-num">5</div>
+      <h2>Canvas API：2D 绘图入门</h2>
+      <span class="tag">图形</span>
+    </div>
+
+    <div class="card">
+      <h3>&#127912; Canvas 是什么？</h3>
+      <p><code>&lt;canvas&gt;</code> 是一个<strong>像素画布</strong>——你可以用 JavaScript 在上面绘制任意图形。它有两个上下文：<strong>2d</strong>（二维绘图）和 <strong>webgl</strong>（三维渲染，CesiumJS 的核心）。理解 Canvas 2D 是理解 WebGL/CesiumJS 渲染管线的第一步。</p>
+    </div>
+
+    <div class="card">
+      <h3>&#127912; 基本绘图流程</h3>
+<pre><code><span class="cmt">// 1. 获取 canvas 和 2D 上下文</span>
+<span class="kw">const</span> <span class="var">canvas</span>  <span class="op">=</span> <span class="var">document</span>.<span class="fn">querySelector</span>(<span class="str">'#myCanvas'</span>);
+<span class="kw">const</span> <span class="var">ctx</span>     <span class="op">=</span> <span class="var">canvas</span>.<span class="fn">getContext</span>(<span class="str">'2d'</span>);
+
+<span class="cmt">// 2. 设置样式</span>
+<span class="var">ctx</span>.<span class="var">fillStyle</span>   <span class="op">=</span> <span class="str">'#818cf8'</span>;   <span class="cmt">// 填充颜色</span>
+<span class="var">ctx</span>.<span class="var">strokeStyle</span> <span class="op">=</span> <span class="str">'#ffffff'</span>;   <span class="cmt">// 描边颜色</span>
+<span class="var">ctx</span>.<span class="var">lineWidth</span>   <span class="op">=</span> <span class="num">2</span>;            <span class="cmt">// 线宽</span>
+<span class="var">ctx</span>.<span class="var">font</span>        <span class="op">=</span> <span class="str">'18px sans-serif'</span>;
+
+<span class="cmt">// 3. 绘制形状</span>
+<span class="var">ctx</span>.<span class="fn">fillRect</span>(<span class="num">10</span>, <span class="num">10</span>, <span class="num">100</span>, <span class="num">60</span>);   <span class="cmt">// 填充矩形</span>
+<span class="var">ctx</span>.<span class="fn">strokeRect</span>(<span class="num">130</span>, <span class="num">10</span>, <span class="num">100</span>, <span class="num">60</span>); <span class="cmt">// 描边矩形</span>
+
+<span class="cmt">// 4. 路径绘图</span>
+<span class="var">ctx</span>.<span class="fn">beginPath</span>();
+<span class="var">ctx</span>.<span class="fn">arc</span>(<span class="num">300</span>, <span class="num">40</span>, <span class="num">30</span>, <span class="num">0</span>, <span class="typ">Math</span>.<span class="var">PI</span> <span class="op">*</span> <span class="num">2</span>);  <span class="cmt">// 圆形</span>
+<span class="var">ctx</span>.<span class="fn">fill</span>();
+
+<span class="cmt">// 5. 文字</span>
+<span class="var">ctx</span>.<span class="fn">fillText</span>(<span class="str">'Hello Canvas!'</span>, <span class="num">350</span>, <span class="num">45</span>);
+</code></pre>
+    </div>
+
+    <div class="canvas-demo">
+      <p style="color:var(--muted);margin-bottom:10px;">&#127912; 实时 Canvas 演示</p>
+      <canvas id="demoCanvas" width="560" height="120"></canvas>
+      <script>
+        (function() {
+          var c = document.getElementById('demoCanvas');
+          if (!c) return;
+          var ctx = c.getContext('2d');
+          var w = c.width, h = c.height;
+          // Background
+          ctx.fillStyle = '#161b2e';
+          ctx.fillRect(0, 0, w, h);
+          // Grid
+          ctx.strokeStyle = '#2e3350';
+          ctx.lineWidth = 0.5;
+          for (var i = 0; i < w; i += 40) { ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, h); ctx.stroke(); }
+          for (var j = 0; j < h; j += 40) { ctx.beginPath(); ctx.moveTo(0, j); ctx.lineTo(w, j); ctx.stroke(); }
+          // Rect + Arc + Text
+          ctx.fillStyle = '#818cf8'; ctx.fillRect(30, 25, 80, 70);
+          ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2; ctx.strokeRect(140, 25, 80, 70);
+          ctx.fillStyle = '#7ee787'; ctx.beginPath(); ctx.arc(280, 60, 35, 0, Math.PI * 2); ctx.fill();
+          ctx.strokeStyle = '#f7c948'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(385, 60, 35, 0, Math.PI * 2); ctx.stroke();
+          ctx.fillStyle = '#61dafb'; ctx.font = 'bold 16px "Segoe UI","PingFang SC",sans-serif'; ctx.fillText('Canvas = 像素画布', 430, 66);
+        })();
+      </script>
+    </div>
+
+    <div class="info">
+      <span class="icon">&#128161;</span>
+      <div><strong>Canvas 2D vs WebGL：</strong>Canvas 2D 是 CPU 渲染的 2D 绘图 API；WebGL 是 GPU 加速的 3D 渲染，通过 <code>canvas.getContext('webgl')</code> 获取。CesiumJS 底层用的就是 <strong>WebGL</strong>——它比 Canvas 2D 复杂得多，但基本概念（坐标系、变换、着色器）都是从这里延伸的。</div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 6: Web Workers                                        -->
+  <!-- ============================================================ -->
+  <div class="section" id="s6">
+    <div class="section-header">
+      <div class="section-num">6</div>
+      <h2>Web Workers：多线程计算</h2>
+      <span class="tag">性能</span>
+    </div>
+
+    <div class="card">
+      <h3>&#9881;&#65039; 为什么需要 Worker？</h3>
+      <p>JavaScript 默认是<strong>单线程</strong>的——复杂计算会冻结整个页面（回想 Day 11 的同步阻塞例子）。Web Worker 让你在<strong>独立的后台线程</strong>中运行 JS 代码，不阻塞 UI。</p>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <h3>&#128295; 主线程代码</h3>
+<pre><code><span class="cmt">// 创建 Worker 实例</span>
+<span class="kw">const</span> <span class="var">worker</span> <span class="op">=</span> <span class="kw">new</span> <span class="typ">Worker</span>(<span class="str">'worker.js'</span>);
+
+<span class="cmt">// 发送数据给 Worker</span>
+<span class="var">worker</span>.<span class="fn">postMessage</span>({
+  <span class="var">data</span>: <span class="var">hugeArray</span>,
+  <span class="var">type</span>: <span class="str">'processTerrain'</span>
+});
+
+<span class="cmt">// 接收 Worker 返回的结果</span>
+<span class="var">worker</span>.<span class="fn">onmessage</span> <span class="op">=</span> (<span class="var">e</span>) <span class="op">=&gt;</span> {
+  <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">'Worker 计算结果:'</span>, <span class="var">e</span>.<span class="var">data</span>);
+};
+
+<span class="cmt">// 错误处理</span>
+<span class="var">worker</span>.<span class="fn">onerror</span> <span class="op">=</span> (<span class="var">err</span>) <span class="op">=&gt;</span> <span class="fn">console</span>.<span class="fn">error</span>(<span class="var">err</span>);
+
+<span class="cmt">// 终止 Worker</span>
+<span class="var">worker</span>.<span class="fn">terminate</span>();
+</code></pre>
+      </div>
+      <div class="card">
+        <h3>&#128295; worker.js 文件</h3>
+<pre><code><span class="cmt">// Worker 线程代码</span>
+<span class="var">self</span>.<span class="fn">onmessage</span> <span class="op">=</span> (<span class="var">e</span>) <span class="op">=&gt;</span> {
+  <span class="kw">const</span> { <span class="var">data</span>, <span class="var">type</span> } <span class="op">=</span> <span class="var">e</span>.<span class="var">data</span>;
+
+  <span class="kw">if</span> (<span class="var">type</span> <span class="op">===</span> <span class="str">'processTerrain'</span>) {
+    <span class="cmt">// 处理地形数据（不阻塞 UI）</span>
+    <span class="kw">const</span> <span class="var">result</span> <span class="op">=</span> <span class="var">data</span>.<span class="fn">map</span>(<span class="var">h</span> <span class="op">=&gt;</span> <span class="var">h</span> <span class="op">*</span> <span class="num">1.2</span>);
+    <span class="var">self</span>.<span class="fn">postMessage</span>(<span class="var">result</span>);
+  }
+};
+
+<span class="cmt">// Worker 也可以 importScripts</span>
+<span class="var">self</span>.<span class="fn">importScripts</span>(<span class="str">'/lib/geometry.js'</span>);
+</code></pre>
+      </div>
+    </div>
+
+    <div class="warn">
+      <span class="icon">&#9888;&#65039;</span>
+      <div><strong>Worker 的三大限制：</strong>①不能访问 DOM（没有 <code>document</code>、<code>window</code>）；②通过 <code>postMessage</code> 传递数据是<strong>值拷贝</strong>（大数组会消耗内存，推荐用 Transferable Objects）；③不能使用 <code>localStorage</code>，但可以用 <code>IndexedDB</code>。</div>
+    </div>
+
+    <div class="card">
+      <h3>&#128640; 内联 Worker（不用单独文件）</h3>
+<pre><code><span class="cmt">// 把 Worker 代码写成字符串，转成 Blob URL</span>
+<span class="kw">const</span> <span class="var">code</span> <span class="op">=</span> <span class="str">`
+  self.onmessage = (e) =&gt; {
+    const fib = (n) =&gt; n &lt;= 1 ? n : fib(n-1) + fib(n-2);
+    self.postMessage(fib(e.data));
+  };
+`</span>;
+<span class="kw">const</span> <span class="var">blob</span> <span class="op">=</span> <span class="kw">new</span> <span class="typ">Blob</span>([<span class="var">code</span>], { <span class="var">type</span>: <span class="str">'application/javascript'</span> });
+<span class="kw">const</span> <span class="var">worker</span> <span class="op">=</span> <span class="kw">new</span> <span class="typ">Worker</span>(<span class="typ">URL</span>.<span class="fn">createObjectURL</span>(<span class="var">blob</span>));
+
+<span class="var">worker</span>.<span class="fn">postMessage</span>(<span class="num">40</span>);
+<span class="var">worker</span>.<span class="fn">onmessage</span> <span class="op">=</span> (<span class="var">e</span>) <span class="op">=&gt;</span> <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">'Fibonacci(40):'</span>, <span class="var">e</span>.<span class="var">data</span>);
+</code></pre>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 7: History API & URL API                               -->
+  <!-- ============================================================ -->
+  <div class="section" id="s7">
+    <div class="section-header">
+      <div class="section-num">7</div>
+      <h2>History API & URL API</h2>
+      <span class="tag">路由</span>
+    </div>
+
+    <div class="card">
+      <h3>&#128279; History API：无刷新改变 URL</h3>
+      <p>SPA（单页应用）的核心技术。通过 <code>history.pushState</code> 改变浏览器地址栏但不刷新页面——这是 React Router、Vue Router 等所有前端路由库的底层基础。</p>
+<pre><code><span class="cmt">// pushState：新增一条历史记录</span>
+<span class="var">history</span>.<span class="fn">pushState</span>({ <span class="var">page</span>: <span class="num">1</span> }, <span class="str">''</span>, <span class="str">'/page/1'</span>);
+<span class="cmt">//           ↑ state 对象      ↑ title(废弃)  ↑ 新 URL</span>
+
+<span class="cmt">// replaceState：替换当前历史记录（不新增）</span>
+<span class="var">history</span>.<span class="fn">replaceState</span>({ <span class="var">page</span>: <span class="num">2</span> }, <span class="str">''</span>, <span class="str">'/page/2'</span>);
+
+<span class="cmt">// 监听浏览器前进/后退（用户点按钮）</span>
+<span class="var">window</span>.<span class="fn">addEventListener</span>(<span class="str">'popstate'</span>, (<span class="var">e</span>) <span class="op">=&gt;</span> {
+  <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">'用户导航到了:'</span>, <span class="var">location</span>.<span class="var">pathname</span>);
+  <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">'State:'</span>, <span class="var">e</span>.<span class="var">state</span>);  <span class="cmt">// pushState 传的 state 对象</span>
+});
+</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>&#128269; URL API：不用正则解析 URL</h3>
+      <p>原生 <code>URL</code> 构造函数可以优雅地解析和构建 URL——告别手写正则的痛苦：</p>
+<pre><code><span class="kw">const</span> <span class="var">url</span> <span class="op">=</span> <span class="kw">new</span> <span class="typ">URL</span>(<span class="str">'https://cesium.com/ion/assets?type=3DTiles&amp;id=12345'</span>);
+
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">url</span>.<span class="var">protocol</span>); <span class="cmt">// "https:"</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">url</span>.<span class="var">hostname</span>); <span class="cmt">// "cesium.com"</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">url</span>.<span class="var">pathname</span>); <span class="cmt">// "/ion/assets"</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">url</span>.<span class="var">searchParams</span>.<span class="fn">get</span>(<span class="str">'type'</span>)); <span class="cmt">// "3DTiles"</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">url</span>.<span class="var">searchParams</span>.<span class="fn">get</span>(<span class="str">'id'</span>));   <span class="cmt">// "12345"</span>
+
+<span class="cmt">// 动态构建 URL</span>
+<span class="var">url</span>.<span class="var">searchParams</span>.<span class="fn">set</span>(<span class="str">'version'</span>, <span class="str">'2.0'</span>);
+<span class="var">url</span>.<span class="var">searchParams</span>.<span class="fn">append</span>(<span class="str">'format'</span>, <span class="str">'json'</span>);
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">url</span>.<span class="var">href</span>);
+<span class="cmt">// "https://cesium.com/ion/assets?type=3DTiles&amp;id=12345&amp;version=2.0&amp;format=json"</span>
+
+<span class="cmt">// URLSearchParams 也可以单独使用</span>
+<span class="kw">const</span> <span class="var">params</span> <span class="op">=</span> <span class="kw">new</span> <span class="typ">URLSearchParams</span>(<span class="var">location</span>.<span class="var">search</span>);
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="kw">[...</span><span class="var">params</span><span class="kw">]</span>); <span class="cmt">// [["type","3DTiles"],["id","12345"]]</span>
+</code></pre>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 8: WebSocket                                           -->
+  <!-- ============================================================ -->
+  <div class="section" id="s8">
+    <div class="section-header">
+      <div class="section-num">8</div>
+      <h2>WebSocket：实时双向通信</h2>
+      <span class="tag">实时</span>
+    </div>
+
+    <div class="card">
+      <h3>&#128225; HTTP vs WebSocket</h3>
+      <p>HTTP 是"请求-响应"模式——客户端问一句，服务器答一句。WebSocket 是<strong>全双工通道</strong>——建立连接后，双方可以随时互发消息，无需轮询。这是 CesiumJS 实时数据推送（飞机轨迹、船舶 AIS、IoT 传感器）的传输层。</p>
+      <table>
+        <tr><th>特性</th><th>HTTP</th><th>WebSocket</th></tr>
+        <tr><td class="td-kw">通信模式</td><td>请求→响应（单向）</td><td class="td-good">双向任意发</td></tr>
+        <tr><td class="td-kw">连接</td><td>每请求新建</td><td class="td-good">一次连接持久</td></tr>
+        <tr><td class="td-kw">延迟</td><td>高（握手开销）</td><td class="td-good">极低</td></tr>
+        <tr><td class="td-kw">协议</td><td>http://https://</td><td class="td-good">ws://wss://</td></tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3>&#128295; WebSocket 客户端使用</h3>
+<pre><code><span class="cmt">// 1. 建立连接</span>
+<span class="kw">const</span> <span class="var">ws</span> <span class="op">=</span> <span class="kw">new</span> <span class="typ">WebSocket</span>(<span class="str">'wss://realtime.example.com/tracks'</span>);
+
+<span class="cmt">// 2. 连接成功</span>
+<span class="var">ws</span>.<span class="fn">onopen</span> <span class="op">=</span> () <span class="op">=&gt;</span> {
+  <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">'WebSocket 已连接'</span>);
+  <span class="cmt">// 发送订阅消息</span>
+  <span class="var">ws</span>.<span class="fn">send</span>(<span class="typ">JSON</span>.<span class="fn">stringify</span>({
+    <span class="var">type</span>: <span class="str">'subscribe'</span>,
+    <span class="var">channel</span>: <span class="str">'aircraft_SHA'</span>
+  }));
+};
+
+<span class="cmt">// 3. 接收消息</span>
+<span class="var">ws</span>.<span class="fn">onmessage</span> <span class="op">=</span> (<span class="var">event</span>) <span class="op">=&gt;</span> {
+  <span class="kw">const</span> <span class="var">pos</span> <span class="op">=</span> <span class="typ">JSON</span>.<span class="fn">parse</span>(<span class="var">event</span>.<span class="var">data</span>);
+  <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">`飞机 <span class="op">${</span><span class="var">pos</span>.<span class="var">flightId</span><span class="op">}</span>: 经度=<span class="op">${</span><span class="var">pos</span>.<span class="var">lng</span><span class="op">}</span> 纬度=<span class="op">${</span><span class="var">pos</span>.<span class="var">lat</span><span class="op">}</span> 高度=<span class="op">${</span><span class="var">pos</span>.<span class="var">alt</span><span class="op">}</span>`</span>);
+  <span class="cmt">// 更新 CesiumJS 实体位置</span>
+};
+
+<span class="cmt">// 4. 错误与关闭</span>
+<span class="var">ws</span>.<span class="fn">onerror</span> <span class="op">=</span> (<span class="var">err</span>) <span class="op">=&gt;</span> <span class="fn">console</span>.<span class="fn">error</span>(<span class="str">'WebSocket 错误'</span>, <span class="var">err</span>);
+<span class="var">ws</span>.<span class="fn">onclose</span> <span class="op">=</span> () <span class="op">=&gt;</span> <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">'WebSocket 已断开'</span>);
+
+<span class="cmt">// 5. 主动关闭</span>
+<span class="var">ws</span>.<span class="fn">close</span>(<span class="num">1000</span>, <span class="str">'正常关闭'</span>);
+</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>&#128259; 自动重连机制</h3>
+      <p>WebSocket 连接可能断掉（网络波动、服务器重启），生产环境必须有重连逻辑：</p>
+<pre><code><span class="kw">class</span> <span class="typ">ReconnectingWS</span> {
+  <span class="fn">constructor</span>(<span class="var">url</span>, <span class="var">maxRetries</span> <span class="op">=</span> <span class="num">5</span>) {
+    <span class="kw">this</span>.<span class="var">url</span> <span class="op">=</span> <span class="var">url</span>;
+    <span class="kw">this</span>.<span class="var">maxRetries</span> <span class="op">=</span> <span class="var">maxRetries</span>;
+    <span class="kw">this</span>.<span class="var">retries</span> <span class="op">=</span> <span class="num">0</span>;
+    <span class="kw">this</span>.<span class="fn">connect</span>();
+  }
+  <span class="fn">connect</span>() {
+    <span class="kw">this</span>.<span class="var">ws</span> <span class="op">=</span> <span class="kw">new</span> <span class="typ">WebSocket</span>(<span class="kw">this</span>.<span class="var">url</span>);
+    <span class="kw">this</span>.<span class="var">ws</span>.<span class="var">onopen</span>  <span class="op">=</span> () <span class="op">=&gt;</span> { <span class="kw">this</span>.<span class="var">retries</span> <span class="op">=</span> <span class="num">0</span>; <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">'已连接'</span>); };
+    <span class="kw">this</span>.<span class="var">ws</span>.<span class="var">onclose</span> <span class="op">=</span> () <span class="op">=&gt;</span> {
+      <span class="kw">if</span> (<span class="kw">this</span>.<span class="var">retries</span> <span class="op">&lt;</span> <span class="kw">this</span>.<span class="var">maxRetries</span>) {
+        <span class="kw">const</span> <span class="var">delay</span> <span class="op">=</span> <span class="typ">Math</span>.<span class="fn">min</span>(<span class="num">1000</span> <span class="op">*</span> <span class="num">2</span> <span class="op">**</span> <span class="kw">this</span>.<span class="var">retries</span>, <span class="num">30000</span>);
+        <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">`将在 <span class="op">${</span><span class="var">delay</span><span class="op">/</span><span class="num">1000</span><span class="op">}</span> 秒后重连...`</span>);
+        <span class="fn">setTimeout</span>(() <span class="op">=&gt;</span> { <span class="kw">this</span>.<span class="var">retries</span><span class="op">++</span>; <span class="kw">this</span>.<span class="fn">connect</span>(); }, <span class="var">delay</span>);
+      } <span class="kw">else</span> {
+        <span class="fn">console</span>.<span class="fn">error</span>(<span class="str">'重连次数已达上限'</span>);
+      }
+    };
+  }
+}
+</code></pre>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 9: 其他常用 Web API 速查                                -->
+  <!-- ============================================================ -->
+  <div class="section" id="s9">
+    <div class="section-header">
+      <div class="section-num">9</div>
+      <h2>其他常用 Web API 速查</h2>
+      <span class="tag">速查</span>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <h3>&#128264; Notification API</h3>
+        <p>浏览器桌面通知（需授权）</p>
+<pre><code><span class="typ">Notification</span>.<span class="fn">requestPermission</span>().<span class="fn">then</span>(<span class="var">p</span> <span class="op">=&gt;</span> {
+  <span class="kw">if</span> (<span class="var">p</span> <span class="op">===</span> <span class="str">'granted'</span>) {
+    <span class="kw">new</span> <span class="typ">Notification</span>(<span class="str">'CesiumJS 加载完成'</span>, {
+      <span class="var">body</span>: <span class="str">'3D 场景已就绪'</span>
+    });
+  }
+});
+</code></pre>
+      </div>
+      <div class="card">
+        <h3>&#128451;&#65039; Clipboard API</h3>
+        <p>读写剪贴板（需用户手势或权限）</p>
+<pre><code><span class="cmt">// 写入剪贴板</span>
+<span class="kw">await</span> <span class="var">navigator</span>.<span class="var">clipboard</span>.<span class="fn">writeText</span>(<span class="str">'复制的内容'</span>);
+
+<span class="cmt">// 读取剪贴板</span>
+<span class="kw">const</span> <span class="var">text</span> <span class="op">=</span> <span class="kw">await</span> <span class="var">navigator</span>.<span class="var">clipboard</span>.<span class="fn">readText</span>();
+</code></pre>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <h3>&#128187; Screen API</h3>
+<pre><code><span class="cmt">// 屏幕信息</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">screen</span>.<span class="var">width</span>, <span class="var">screen</span>.<span class="var">height</span>);
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">screen</span>.<span class="var">colorDepth</span>);
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">window</span>.<span class="var">devicePixelRatio</span>);
+
+<span class="cmt">// 全屏（需用户手势触发）</span>
+<span class="var">element</span>.<span class="fn">requestFullscreen</span>();
+</code></pre>
+      </div>
+      <div class="card">
+        <h3>&#9200; Performance API</h3>
+<pre><code><span class="cmt">// 高精度时间戳</span>
+<span class="kw">const</span> <span class="var">t0</span> <span class="op">=</span> <span class="var">performance</span>.<span class="fn">now</span>();
+<span class="cmt">// ... 执行某些操作 ...</span>
+<span class="kw">const</span> <span class="var">t1</span> <span class="op">=</span> <span class="var">performance</span>.<span class="fn">now</span>();
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="str">`耗时 <span class="op">${</span><span class="var">t1</span> <span class="op">-</span> <span class="var">t0</span><span class="op">}</span>ms`</span>);
+</code></pre>
+      </div>
+    </div>
+
+    <div class="tip">
+      <span class="icon">&#128161;</span>
+      <div><strong>学到这里你的知识地图：</strong>你已经掌握了 ECMAScript 核心（变量/函数/对象/类/异步）和 Web API（DOM/事件/存储/网络/绘图/Worker/WebSocket）。这些是构建任何 Web 应用的全部基础——也是攻克 CesiumJS 所需的所有前置知识。恭喜，基础阶段全部完成了！&#127881;</div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 10: CesiumJS 关联场景                                   -->
+  <!-- ============================================================ -->
+  <div class="section" id="s10">
+    <div class="section-header">
+      <div class="section-num">10</div>
+      <h2>CesiumJS 关联场景</h2>
+      <span class="tag">目标</span>
+    </div>
+
+    <div class="big-card">
+      <h3>&#127760; 场景 1：Fetch API 加载 GeoJSON / CZML / 3D Tiles</h3>
+      <p>CesiumJS 中所有数据源——GeoJSON（矢量）、CZML（动态时序）、3D Tiles（三维模型）——本质上都是通过网络请求加载的。底层用的就是 <code>fetch</code> 或 <code>XMLHttpRequest</code>。</p>
+<pre><code><span class="cmt">// CesiumJS 核心数据加载流程</span>
+<span class="kw">async</span> <span class="kw">function</span> <span class="fn">loadGeoJSONOverlay</span>(<span class="var">viewer</span>) {
+  <span class="cmt">// 1. 用 fetch 从服务器拉取 GeoJSON</span>
+  <span class="kw">const</span> <span class="var">response</span> <span class="op">=</span> <span class="kw">await</span> <span class="fn">fetch</span>(<span class="str">'/data/earthquakes.geojson'</span>);
+  <span class="kw">const</span> <span class="var">geojson</span>  <span class="op">=</span> <span class="kw">await</span> <span class="var">response</span>.<span class="fn">json</span>();
+
+  <span class="cmt">// 2. 加载到 Cesium 场景</span>
+  <span class="kw">const</span> <span class="var">dataSource</span> <span class="op">=</span> <span class="kw">await</span> <span class="typ">Cesium</span>.<span class="typ">GeoJsonDataSource</span>.<span class="fn">load</span>(<span class="var">geojson</span>, {
+    <span class="var">stroke</span>: <span class="typ">Cesium</span>.<span class="typ">Color</span>.<span class="var">RED</span>,
+    <span class="var">fill</span>:   <span class="typ">Cesium</span>.<span class="typ">Color</span>.<span class="var">RED</span>.<span class="fn">withAlpha</span>(<span class="num">0.3</span>)
+  });
+  <span class="var">viewer</span>.<span class="var">dataSources</span>.<span class="fn">add</span>(<span class="var">dataSource</span>);
+}
+</code></pre>
+    </div>
+
+    <div class="big-card">
+      <h3>&#128506;&#65039; 场景 2：Web Workers 处理大规模地形数据</h3>
+      <p>CesiumJS 处理全球地形时，需要在后台进行大量的高度采样和几何计算。这些工作都在 Web Workers 中完成，保证主线程不卡顿。</p>
+<pre><code><span class="cmt">// CesiumJS 内部使用 Worker 处理地形瓦片</span>
+<span class="cmt">// 伪代码——实际 Cesium 源码类似这样：</span>
+
+<span class="cmt">// 主线程：创建地形 Worker</span>
+<span class="kw">const</span> <span class="var">terrainWorker</span> <span class="op">=</span> <span class="kw">new</span> <span class="typ">Worker</span>(<span class="str">'/Cesium/Workers/createVerticesFromHeightmap.js'</span>);
+
+<span class="var">terrainWorker</span>.<span class="fn">postMessage</span>({
+  <span class="var">heights</span>:    <span class="var">heightmapData</span>,  <span class="cmt">// 高度图像素数据</span>
+  <span class="var">tileRect</span>:   <span class="var">tileRectangle</span>,  <span class="cmt">// 瓦片范围</span>
+  <span class="var">resolution</span>: <span class="num">65</span>               <span class="cmt">// 网格分辨率</span>
+}, [<span class="var">heightmapData</span>.<span class="var">buffer</span>]);  <span class="cmt">// Transferable 零拷贝传输</span>
+
+<span class="var">terrainWorker</span>.<span class="var">onmessage</span> <span class="op">=</span> (<span class="var">e</span>) <span class="op">=&gt;</span> {
+  <span class="kw">const</span> { <span class="var">vertices</span>, <span class="var">indices</span>, <span class="var">boundingSphere</span> } <span class="op">=</span> <span class="var">e</span>.<span class="var">data</span>;
+  <span class="cmt">// 主线程拿到顶点数据后，交给 WebGL 渲染</span>
+  <span class="var">glBuffer</span> <span class="op">=</span> <span class="var">context</span>.<span class="fn">createVertexBuffer</span>(<span class="var">vertices</span>);
+};
+</code></pre>
+    </div>
+
+    <div class="big-card">
+      <h3>&#127758; 场景 3：Geolocation + CesiumJS 定位</h3>
+      <p>获取用户当前位置，让 CesiumJS 飞到那里——这是很多 GIS 应用的入口功能。</p>
+<pre><code><span class="kw">function</span> <span class="fn">flyToMyLocation</span>(<span class="var">viewer</span>) {
+  <span class="kw">if</span> (<span class="op">!</span>(<span class="str">'geolocation'</span> <span class="kw">in</span> <span class="var">navigator</span>)) {
+    <span class="kw">return</span> <span class="fn">alert</span>(<span class="str">'您的浏览器不支持定位'</span>);
+  }
+
+  <span class="var">navigator</span>.<span class="var">geolocation</span>.<span class="fn">getCurrentPosition</span>(
+    (<span class="var">pos</span>) <span class="op">=&gt;</span> {
+      <span class="kw">const</span> { <span class="var">latitude</span>, <span class="var">longitude</span> } <span class="op">=</span> <span class="var">pos</span>.<span class="var">coords</span>;
+
+      <span class="cmt">// 让 CesiumJS 飞过去</span>
+      <span class="var">viewer</span>.<span class="var">camera</span>.<span class="fn">flyTo</span>({
+        <span class="var">destination</span>: <span class="typ">Cesium</span>.<span class="typ">Cartesian3</span>.<span class="fn">fromDegrees</span>(
+          <span class="var">longitude</span>, <span class="var">latitude</span>, <span class="num">5000</span>   <span class="cmt">// 高度 5000 米</span>
+        ),
+        <span class="var">orientation</span>: {
+          <span class="var">heading</span>: <span class="typ">Cesium</span>.<span class="typ">Math</span>.<span class="fn">toRadians</span>(<span class="num">0</span>),
+          <span class="var">pitch</span>:   <span class="typ">Cesium</span>.<span class="typ">Math</span>.<span class="fn">toRadians</span>(<span class="op">-</span><span class="num">45</span>),
+          <span class="var">roll</span>:    <span class="num">0</span>
+        },
+        <span class="var">duration</span>: <span class="num">3</span>                  <span class="cmt">// 3 秒飞行动画</span>
+      });
+
+      <span class="cmt">// 添加一个位置标记</span>
+      <span class="var">viewer</span>.<span class="var">entities</span>.<span class="fn">add</span>({
+        <span class="var">position</span>: <span class="typ">Cesium</span>.<span class="typ">Cartesian3</span>.<span class="fn">fromDegrees</span>(<span class="var">longitude</span>, <span class="var">latitude</span>),
+        <span class="var">point</span>: {
+          <span class="var">pixelSize</span>: <span class="num">12</span>,
+          <span class="var">color</span>: <span class="typ">Cesium</span>.<span class="typ">Color</span>.<span class="var">DODGERBLUE</span>
+        },
+        <span class="var">label</span>: {
+          <span class="var">text</span>: <span class="str">'我的位置'</span>,
+          <span class="var">font</span>: <span class="str">'14px sans-serif'</span>
+        }
+      });
+    },
+    (<span class="var">err</span>) <span class="op">=&gt;</span> <span class="fn">console</span>.<span class="fn">warn</span>(<span class="str">'定位失败:'</span>, <span class="var">err</span>.<span class="var">message</span>)
+  );
+}
+</code></pre>
+    </div>
+
+    <div class="big-card">
+      <h3>&#128225; 场景 4：WebSocket 实时追踪飞机/船舶</h3>
+      <p>这是 CesiumJS 最典型的实时应用场景——用 WebSocket 接收飞机/船舶/车辆的位置更新，然后实时更新地球上的实体：</p>
+<pre><code><span class="kw">async</span> <span class="kw">function</span> <span class="fn">startLiveTracking</span>(<span class="var">viewer</span>) {
+  <span class="kw">const</span> <span class="var">ws</span> <span class="op">=</span> <span class="kw">new</span> <span class="typ">WebSocket</span>(<span class="str">'wss://adsb.example.com/live'</span>);
+
+  <span class="cmt">// 维护飞机 ID → Cesium Entity 的映射</span>
+  <span class="kw">const</span> <span class="var">aircraftMap</span> <span class="op">=</span> <span class="kw">new</span> <span class="typ">Map</span>();
+
+  <span class="var">ws</span>.<span class="var">onmessage</span> <span class="op">=</span> (<span class="var">event</span>) <span class="op">=&gt;</span> {
+    <span class="kw">const</span> { <span class="var">flightId</span>, <span class="var">lng</span>, <span class="var">lat</span>, <span class="var">alt</span> } <span class="op">=</span> <span class="typ">JSON</span>.<span class="fn">parse</span>(<span class="var">event</span>.<span class="var">data</span>);
+    <span class="kw">const</span> <span class="var">pos</span> <span class="op">=</span> <span class="typ">Cesium</span>.<span class="typ">Cartesian3</span>.<span class="fn">fromDegrees</span>(<span class="var">lng</span>, <span class="var">lat</span>, <span class="var">alt</span>);
+
+    <span class="kw">if</span> (<span class="var">aircraftMap</span>.<span class="fn">has</span>(<span class="var">flightId</span>)) {
+      <span class="cmt">// 更新已有飞机的位姿</span>
+      <span class="kw">const</span> <span class="var">entity</span> <span class="op">=</span> <span class="var">aircraftMap</span>.<span class="fn">get</span>(<span class="var">flightId</span>);
+      <span class="var">entity</span>.<span class="var">position</span> <span class="op">=</span> <span class="var">pos</span>;
+    } <span class="kw">else</span> {
+      <span class="cmt">// 新飞机：创建 Cesium 实体</span>
+      <span class="kw">const</span> <span class="var">entity</span> <span class="op">=</span> <span class="var">viewer</span>.<span class="var">entities</span>.<span class="fn">add</span>({
+        <span class="var">id</span>:      <span class="var">flightId</span>,
+        <span class="var">name</span>:    <span class="var">flightId</span>,
+        <span class="var">position</span>: <span class="var">pos</span>,
+        <span class="var">model</span>: {
+          <span class="var">uri</span>: <span class="str">'/models/airplane.glb'</span>,
+          <span class="var">minimumPixelSize</span>: <span class="num">32</span>
+        }
+      });
+      <span class="var">aircraftMap</span>.<span class="fn">set</span>(<span class="var">flightId</span>, <span class="var">entity</span>);
+    }
+  };
+
+  <span class="var">ws</span>.<span class="var">onclose</span> <span class="op">=</span> () <span class="op">=&gt;</span> {
+    <span class="fn">console</span>.<span class="fn">warn</span>(<span class="str">'实时追踪已断开，3秒后重连...'</span>);
+    <span class="fn">setTimeout</span>(() <span class="op">=&gt;</span> <span class="fn">startLiveTracking</span>(<span class="var">viewer</span>), <span class="num">3000</span>);
+  };
+}
+</code></pre>
+    </div>
+
+    <div class="big-card">
+      <h3>&#128190; 场景 5：IndexedDB 缓存 CesiumJS 离线数据</h3>
+      <p>CesiumJS 的地形和影像瓦片数量巨大，每次都从服务器请求太慢。IndexedDB 可以缓存瓦片到本地，实现离线使用：</p>
+<pre><code><span class="cmt">// CesiumJS 的离线缓存思路</span>
+<span class="kw">async</span> <span class="kw">function</span> <span class="fn">cacheTileOffline</span>(<span class="var">tileUrl</span>) {
+  <span class="kw">const</span> <span class="var">db</span>    <span class="op">=</span> <span class="kw">await</span> <span class="fn">openDB</span>(<span class="str">'CesiumCache'</span>, <span class="num">1</span>);
+  <span class="kw">const</span> <span class="var">tx</span>    <span class="op">=</span> <span class="var">db</span>.<span class="fn">transaction</span>(<span class="str">'tiles'</span>, <span class="str">'readwrite'</span>);
+  <span class="kw">const</span> <span class="var">store</span> <span class="op">=</span> <span class="var">tx</span>.<span class="fn">objectStore</span>(<span class="str">'tiles'</span>);
+
+  <span class="cmt">// 先查缓存</span>
+  <span class="kw">const</span> <span class="var">cached</span> <span class="op">=</span> <span class="kw">await</span> <span class="var">store</span>.<span class="fn">get</span>(<span class="var">tileUrl</span>);
+  <span class="kw">if</span> (<span class="var">cached</span>) <span class="kw">return</span> <span class="var">cached</span>.<span class="var">data</span>;
+
+  <span class="cmt">// 缓存未命中：fetch + 存入 IndexedDB</span>
+  <span class="kw">const</span> <span class="var">res</span>  <span class="op">=</span> <span class="kw">await</span> <span class="fn">fetch</span>(<span class="var">tileUrl</span>);
+  <span class="kw">const</span> <span class="var">data</span> <span class="op">=</span> <span class="kw">await</span> <span class="var">res</span>.<span class="fn">arrayBuffer</span>();
+  <span class="kw">await</span> <span class="var">store</span>.<span class="fn">put</span>({ <span class="var">url</span>: <span class="var">tileUrl</span>, <span class="var">data</span>: <span class="var">data</span>, <span class="var">timestamp</span>: <span class="var">Date</span>.<span class="fn">now</span>() });
+  <span class="kw">return</span> <span class="var">data</span>;
+}
+</code></pre>
+    </div>
+
+    <div class="info">
+      <span class="icon">&#128161;</span>
+      <div><strong>总结：</strong>今天学的所有这些 Web API，在 CesiumJS 开发中每一天都会遇到——Fetch 拉数据、Worker 算地形、Canvas 给 WebGL、Geolocation 定位置、WebSocket 推实时、IndexedDB 做缓存。它们不是"学了就忘"的孤立知识点——它们是构建三维地球应用的**全部原材料**。</div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 11: 练习题                                            -->
+  <!-- ============================================================ -->
+  <div class="section" id="s11">
+    <div class="section-header">
+      <div class="section-num">11</div>
+      <h2>练习题</h2>
+      <span class="tag">练习</span>
+    </div>
+
+    <div class="practice">
+      <h2>&#9997;&#65039; 今日练习（3 道）</h2>
+      <p>每一题都有提示和参考答案。先自己尝试！</p>
+
+      <div class="exercise">
+        <div class="q">&#9312; localStorage 存取用户配置</div>
+        <p style="color:var(--muted); margin-bottom:12px;">编写函数 <code>saveConfig</code> 和 <code>loadConfig</code>，支持将以下对象存入 localStorage 的 <code>'appConfig'</code> 键，并正确还原：<br/>
+        <code>{ theme: 'dark', fontSize: 16, layers: ['terrain', 'buildings'] }</code></p>
+<pre><code><span class="cmt">// TODO: 实现这两个函数</span>
+<span class="kw">function</span> <span class="fn">saveConfig</span>(<span class="var">config</span>) {
+  <span class="cmt">// 你的代码</span>
+}
+
+<span class="kw">function</span> <span class="fn">loadConfig</span>() {
+  <span class="cmt">// 你的代码（不存在时返回默认值）</span>
+}
+
+<span class="cmt">// 测试</span>
+<span class="fn">saveConfig</span>({ <span class="var">theme</span>: <span class="str">'dark'</span>, <span class="var">fontSize</span>: <span class="num">16</span>, <span class="var">layers</span>: [<span class="str">'terrain'</span>, <span class="str">'buildings'</span>] });
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="fn">loadConfig</span>().<span class="var">theme</span>); <span class="cmt">// "dark"</span>
+</code></pre>
+      </div>
+
+      <div class="exercise">
+        <div class="q">&#9313; 带超时和重试的 fetch</div>
+        <p style="color:var(--muted); margin-bottom:12px;">编写一个 <code>fetchWithTimeout</code> 函数，接受 url 和 timeoutMs（默认 5000ms）。用 <code>AbortController</code> 实现超时取消。提示：<code>AbortController.signal</code> + <code>fetch(url, { signal })</code></p>
+<pre><code><span class="kw">async</span> <span class="kw">function</span> <span class="fn">fetchWithTimeout</span>(<span class="var">url</span>, <span class="var">timeoutMs</span> <span class="op">=</span> <span class="num">5000</span>) {
+  <span class="cmt">// TODO: 用 AbortController 实现超时</span>
+}
+
+<span class="cmt">// 测试</span>
+<span class="kw">try</span> {
+  <span class="kw">const</span> <span class="var">data</span> <span class="op">=</span> <span class="kw">await</span> <span class="fn">fetchWithTimeout</span>(<span class="str">'https://httpbin.org/delay/10'</span>, <span class="num">3000</span>);
+  <span class="fn">console</span>.<span class="fn">log</span>(<span class="var">data</span>);
+} <span class="kw">catch</span> (<span class="var">err</span>) {
+  <span class="fn">console</span>.<span class="fn">error</span>(<span class="str">'请求超时或失败:'</span>, <span class="var">err</span>.<span class="var">message</span>);
+}
+</code></pre>
+      </div>
+
+      <div class="exercise">
+        <div class="q">&#9314; WebSocket 消息分发器</div>
+        <p style="color:var(--muted); margin-bottom:12px;">设计一个 <code>WSManager</code> 类，支持：①连接 URL；②按 <code>data.type</code> 字段分发到对应的处理器；③断线自动重连（指数退避）。</p>
+<pre><code><span class="kw">class</span> <span class="typ">WSManager</span> {
+  <span class="cmt">// TODO: 实现</span>
+  <span class="cmt">// - handlers: Map 存储 type → handler 映射</span>
+  <span class="cmt">// - on(type, handler): 注册处理器</span>
+  <span class="cmt">// - 自动重连（指数退避，最多 5 次）</span>
+}
+
+<span class="cmt">// 使用示例</span>
+<span class="kw">const</span> <span class="var">manager</span> <span class="op">=</span> <span class="kw">new</span> <span class="typ">WSManager</span>(<span class="str">'wss://realtime.example.com'</span>);
+<span class="var">manager</span>.<span class="fn">on</span>(<span class="str">'aircraft'</span>,    <span class="var">data</span> <span class="op">=&gt;</span> <span class="fn">updateAircraft</span>(<span class="var">data</span>));
+<span class="var">manager</span>.<span class="fn">on</span>(<span class="str">'weather'</span>,     <span class="var">data</span> <span class="op">=&gt;</span> <span class="fn">updateWeather</span>(<span class="var">data</span>));
+<span class="var">manager</span>.<span class="fn">on</span>(<span class="str">'earthquake'</span>, <span class="var">data</span> <span class="op">=&gt;</span> <span class="fn">showEarthquake</span>(<span class="var">data</span>));
+</code></pre>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 12: 交互沙盒                                          -->
+  <!-- ============================================================ -->
+  <div class="section" id="s12">
+    <div class="section-header">
+      <div class="section-num">12</div>
+      <h2>在线练习控制台</h2>
+      <span class="tag">动手</span>
+    </div>
+
+    <div class="console-area">
+      <div class="console-header">
+        <div class="console-dots">
+          <div class="dot dot-r"></div>
+          <div class="dot dot-y"></div>
+          <div class="dot dot-g"></div>
+        </div>
+        <span>&#128187; JavaScript 交互沙盒 (Ctrl+Enter 运行)</span>
+      </div>
+      <textarea id="sandbox-code" spellcheck="false">// ===== 浏览器 API 实验区 =====
+// 在这里练习 localStorage、fetch、URL 解析等
+
+// 示例 1：localStorage 存取
+const config = { theme: 'dark', layers: ['terrain', 'buildings'] };
+localStorage.setItem('demoConfig', JSON.stringify(config));
+const loaded = JSON.parse(localStorage.getItem('demoConfig'));
+console.log('已加载配置:', loaded);
+
+// 示例 2：URL 解析
+const url = new URL('https://cesium.com/ion/assets?type=3DTiles&id=12345');
+console.log('协议:', url.protocol);
+console.log('主机:', url.hostname);
+console.log('参数 type:', url.searchParams.get('type'));
+
+// 示例 3：performance.now 计时
+const t0 = performance.now();
+// 模拟一些计算
+let sum = 0;
+for (let i = 0; i < 100000; i++) { sum += Math.sqrt(i); }
+const t1 = performance.now();
+console.log(`计算 10 万次 sqrt 耗时: ${(t1 - t0).toFixed(2)} ms`);
+
+// ===== 自己动手 =====
+// 试着获取当前页面 URL 的各个部分：
+console.log('\n--- 当前页面信息 ---');
+console.log('完整 URL:', location.href);
+console.log('路径:', location.pathname);
+console.log('查询参数:', location.search);
+console.log('UserAgent:', navigator.userAgent.slice(0, 60) + '...');
+
+// 试着存储一些数据到 sessionStorage：
+sessionStorage.setItem('pageLoadedAt', new Date().toISOString());
+console.log('sessionStorage 写入时间:', sessionStorage.getItem('pageLoadedAt'));</textarea>
+      <div class="console-actions">
+        <button class="btn btn-run" onclick="runCode()">&#9654; 运行</button>
+        <button class="btn btn-clear" onclick="clearOutput()">清空输出</button>
+        <button class="btn btn-clear" onclick="resetCode()">重置代码</button>
+      </div>
+      <div id="output-box">// 点击"运行"查看输出结果...</div>
+    </div>
+  </div>
+
+
+  <!-- 今日总结 -->
+  <div class="card" style="border-color:var(--accent4);border-left-width:4px;">
+    <h3 style="color:var(--accent4)">&#128203; 今日知识点总结</h3>
+    <ul style="margin-top:12px;">
+      <li>&#9989; Web API 是浏览器提供的接口集合，不属于 ECMAScript 核心——包括 DOM、BOM、fetch、Canvas、Worker 等</li>
+      <li>&#9989; <strong>Storage API：</strong>localStorage（永久/5MB/同源共享）；sessionStorage（标签页关闭即销毁）；Cookie（小/4KB/随请求发送）</li>
+      <li>&#9989; localStorage 只能存字符串，存取对象须用 <code>JSON.stringify</code> / <code>JSON.parse</code></li>
+      <li>&#9989; <strong>Fetch API：</strong>基于 Promise 的现代网络请求 API；HTTP 404/500 不会导致 reject，需手动检查 <code>response.ok</code></li>
+      <li>&#9989; 用 <code>AbortController</code> 给 fetch 加超时；用 <code>FormData</code> 上传文件</li>
+      <li>&#9989; <strong>Geolocation API：</strong><code>getCurrentPosition</code>（一次定位）；<code>watchPosition</code>（持续追踪）</li>
+      <li>&#9989; <strong>Canvas API：</strong>2d 上下文用于像素绘图；webgl 上下文用于 3D 渲染（CesiumJS 的底层）</li>
+      <li>&#9989; <strong>Web Workers：</strong>独立后台线程，不阻塞 UI；不能访问 DOM；通过 <code>postMessage</code>/<code>onmessage</code> 通信</li>
+      <li>&#9989; <strong>History API：</strong><code>pushState</code>/<code>replaceState</code> 无刷新改变 URL；<code>popstate</code> 监听导航</li>
+      <li>&#9989; <strong>URL API：</strong><code>new URL()</code> 解析；<code>searchParams</code> 读写查询参数——告别正则</li>
+      <li>&#9989; <strong>WebSocket：</strong>全双工实时通信；<code>onmessage</code> 接收；<code>send</code> 发送；需实现重连机制</li>
+      <li>&#9989; CesiumJS 中：fetch 加载数据源、Worker 处理地形、Geolocation 定位、WebSocket 推实时轨迹、IndexedDB 缓存离线瓦片</li>
+    </ul>
+  </div>
+
+  <!-- 阶段完成里程碑 -->
+  <div class="card" style="border-color:var(--accent3); border-left-width:4px; background:linear-gradient(135deg,#0d3321,#1a1d27);">
+    <h3 style="color:var(--accent3)">&#127881; 里程碑：JavaScript 基础阶段全部完成！</h3>
+    <p style="margin-top:8px;">从变量、函数、数组、对象、DOM、事件、异步，到今日的浏览器 API——<strong>12 天</strong>，你走完了从零基础到掌握 Web 开发全部核心知识的路程。</p>
+    <p style="margin-top:8px;color:var(--accent);"><strong>下一步：CesiumJS 三维地球开发 &#127758;</strong>——你已经有足够的基础去理解任何一个 CesiumJS 应用的所有代码。下一阶段将深入三维图形学、地形渲染、3D Tiles、粒子系统、时间动画等。</p>
+  </div>
+
+</div><!-- /container -->
+
+<!-- ===== FOOTER ===== -->
+<div class="footer">
+  <p>&#128640; <strong>每日JS</strong> — JavaScript &rarr; CesiumJS 学习路径</p>
+  <p style="margin-top:6px;">Day 12 / 浏览器 API 与 Web API &middot; 明天开始：<strong>CesiumJS 三维地球开发 &#127758;</strong></p>
+</div>
+
+
+<!-- ===== SCRIPT ===== -->
+<script>
+  const DEFAULT_CODE = document.getElementById('sandbox-code').value;
+
+  function runCode() {
+    const code = document.getElementById('sandbox-code').value;
+    const outputBox = document.getElementById('output-box');
+    const logs = [];
+
+    const origLog = console.log;
+    const origError = console.error;
+    const origWarn = console.warn;
+
+    console.log = (...args) => {
+      logs.push(args.map(a => {
+        if (typeof a === 'object' && a !== null) {
+          try { return JSON.stringify(a, null, 2); } catch { return String(a); }
+        }
+        return String(a);
+      }).join(' '));
+      origLog(...args);
+    };
+    console.error = (...args) => {
+      logs.push('\u274C ' + args.join(' '));
+      origError(...args);
+    };
+    console.warn = (...args) => {
+      logs.push('\u26A0\uFE0F ' + args.join(' '));
+      origWarn(...args);
+    };
+
+    try {
+      eval(code);
+      setTimeout(() => {
+        outputBox.innerHTML = logs.length
+          ? logs.map(l => '<span>' + escHtml(l) + '</span>').join('\n')
+          : '<span style="color:var(--muted)">// 代码执行完毕，无输出</span>';
+
+        console.log = origLog;
+        console.error = origError;
+        console.warn = origWarn;
+      }, 150);
+    } catch(e) {
+      outputBox.innerHTML = '<span class="err">\u274C ' + escHtml(e.message) + '</span>';
+      console.log = origLog;
+      console.error = origError;
+      console.warn = origWarn;
+    }
+
+    setTimeout(() => {
+      if (logs.length > 0) {
+        outputBox.innerHTML = logs.map(l => '<span>' + escHtml(l) + '</span>').join('\n');
+      }
+    }, 3000);
+  }
+
+  function clearOutput() {
+    document.getElementById('output-box').innerHTML = '// 输出已清空...';
+  }
+
+  function resetCode() {
+    document.getElementById('sandbox-code').value = DEFAULT_CODE;
+    clearOutput();
+  }
+
+  function escHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  document.getElementById('sandbox-code').addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      e.preventDefault();
+      runCode();
+    }
+  });
+</script>
+</body>
+</html>

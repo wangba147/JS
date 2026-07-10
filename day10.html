@@ -1,0 +1,1493 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>JavaScript 每日学习 — Day 10：错误处理与调试</title>
+  <style>
+    /* ===== 全局 ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0f1117;
+      --surface:   #1a1d27;
+      --card:      #21253a;
+      --border:    #2e3350;
+      --accent:    #61dafb;
+      --accent2:   #f7c948;
+      --accent3:   #7ee787;
+      --accent4:   #ff7b72;
+      --text:      #cdd3e0;
+      --muted:     #6e7a96;
+      --tag-bg:    #1e3a5f;
+      --code-bg:   #161b2e;
+    }
+
+    body {
+      font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.75;
+      font-size: 15px;
+    }
+
+    /* ===== 顶部 Banner ===== */
+    .hero {
+      background: linear-gradient(135deg, #3e0d0d 0%, #5a1a1a 50%, #400f0f 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 52px 24px 40px;
+      text-align: center;
+    }
+    .hero .badge {
+      display: inline-block;
+      background: var(--accent4);
+      color: #1a0a0a;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 4px 12px;
+      border-radius: 20px;
+      margin-bottom: 16px;
+    }
+    .hero h1 {
+      font-size: clamp(24px, 5vw, 42px);
+      font-weight: 800;
+      color: #fff;
+      line-height: 1.2;
+      margin-bottom: 12px;
+    }
+    .hero h1 span { color: var(--accent4); }
+    .hero p {
+      color: var(--muted);
+      font-size: 15px;
+      max-width: 580px;
+      margin: 0 auto 24px;
+    }
+    .hero .meta {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      flex-wrap: wrap;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .hero .meta span { display: flex; align-items: center; gap: 5px; }
+
+    /* ===== 布局 ===== */
+    .container { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; }
+
+    /* ===== 目录卡片 ===== */
+    .toc {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--accent4);
+      border-radius: 12px;
+      padding: 24px 28px;
+      margin-bottom: 40px;
+    }
+    .toc h2 { font-size: 14px; letter-spacing: 1px; text-transform: uppercase; color: var(--accent4); margin-bottom: 14px; }
+    .toc ol { padding-left: 20px; }
+    .toc li { margin: 6px 0; }
+    .toc a { color: var(--text); text-decoration: none; }
+    .toc a:hover { color: var(--accent4); }
+
+    /* ===== 章节标题 ===== */
+    .section { margin-bottom: 52px; }
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 24px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    .section-num {
+      width: 38px; height: 38px;
+      border-radius: 10px;
+      background: var(--accent4);
+      color: #1a0a0a;
+      font-weight: 800;
+      font-size: 16px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .section-header h2 {
+      font-size: 22px;
+      font-weight: 700;
+      color: #fff;
+    }
+    .section-header .tag {
+      font-size: 11px;
+      background: var(--tag-bg);
+      color: var(--accent4);
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    /* ===== 卡片 ===== */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+    .card h3 {
+      font-size: 16px;
+      color: var(--accent2);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card p { margin-bottom: 10px; color: var(--text); }
+    .card p:last-child { margin-bottom: 0; }
+
+    /* ===== 代码块 ===== */
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px 22px;
+      overflow-x: auto;
+      margin: 16px 0;
+      font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+      font-size: 13.5px;
+      line-height: 1.7;
+    }
+    code { font-family: inherit; }
+
+    /* 语法着色 */
+    .kw  { color: #c792ea; }
+    .str { color: #c3e88d; }
+    .num { color: #f78c6c; }
+    .cmt { color: #546e7a; font-style: italic; }
+    .fn  { color: #82aaff; }
+    .var { color: #eeffff; }
+    .op  { color: var(--accent); }
+    .typ { color: var(--accent2); }
+    .out { color: var(--accent3); }
+    .prp { color: #ffcb6b; }
+
+    /* ===== 提示框 ===== */
+    .tip, .warn, .info {
+      border-radius: 10px;
+      padding: 14px 18px;
+      margin: 16px 0;
+      font-size: 14px;
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+    .tip  { background: #0d3321; border-left: 4px solid var(--accent3); }
+    .warn { background: #3a2500; border-left: 4px solid var(--accent2); }
+    .info { background: #0d1e3a; border-left: 4px solid var(--accent); }
+    .tip .icon, .warn .icon, .info .icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+
+    /* ===== 对比表格 ===== */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 14px;
+    }
+    th {
+      background: var(--surface);
+      color: var(--accent4);
+      padding: 12px 16px;
+      text-align: left;
+      border-bottom: 2px solid var(--border);
+      font-weight: 600;
+    }
+    td {
+      padding: 11px 16px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+      vertical-align: top;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(255, 123, 114, 0.04); }
+    .td-kw { color: #c792ea; font-family: 'Cascadia Code','Fira Code',monospace; font-weight: 600; }
+    .td-type { color: var(--accent2); }
+    .td-good { color: var(--accent3); }
+    .td-bad  { color: var(--accent4); }
+
+    /* ===== 两列网格 ===== */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 600px) { .grid-2 { grid-template-columns: 1fr; } }
+
+    /* ===== 练习区 ===== */
+    .practice {
+      background: linear-gradient(135deg, #380d22, #2d1a1a);
+      border: 1px solid #4a2a2a;
+      border-radius: 12px;
+      padding: 28px;
+      margin-top: 48px;
+    }
+    .practice h2 {
+      font-size: 20px;
+      color: var(--accent3);
+      margin-bottom: 8px;
+    }
+    .practice p { color: var(--muted); margin-bottom: 20px; font-size: 14px; }
+    .exercise {
+      background: var(--code-bg);
+      border: 1px dashed #4a2a2a;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+    .exercise .q {
+      color: var(--accent2);
+      font-weight: 600;
+      margin-bottom: 12px;
+      font-size: 14px;
+    }
+    .exercise pre { margin: 0; }
+
+    /* ===== 交互控制台 ===== */
+    .console-area {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-top: 48px;
+    }
+    .console-header {
+      background: var(--surface);
+      padding: 12px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+    .console-header span { color: var(--accent4); font-size: 13px; font-weight: 600; letter-spacing: 1px; }
+    .console-dots { display: flex; gap: 6px; }
+    .dot { width: 12px; height: 12px; border-radius: 50%; }
+    .dot-r { background: #ff5f57; }
+    .dot-y { background: #febc2e; }
+    .dot-g { background: #28c840; }
+    #sandbox-code {
+      width: 100%;
+      background: var(--code-bg);
+      color: var(--accent3);
+      border: none;
+      padding: 18px 20px;
+      font-family: 'Cascadia Code','Fira Code',monospace;
+      font-size: 13.5px;
+      line-height: 1.7;
+      resize: vertical;
+      min-height: 160px;
+      outline: none;
+    }
+    .console-actions {
+      padding: 12px 18px;
+      display: flex;
+      gap: 10px;
+      border-top: 1px solid var(--border);
+    }
+    .btn {
+      padding: 8px 20px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      transition: opacity .2s;
+    }
+    .btn:hover { opacity: .85; }
+    .btn-run { background: var(--accent4); color: #1a0a0a; }
+    .btn-clear { background: var(--surface); color: var(--muted); border: 1px solid var(--border); }
+    #output-box {
+      padding: 16px 20px;
+      min-height: 60px;
+      font-family: 'Cascadia Code','Fira Code',monospace;
+      font-size: 13px;
+      color: var(--accent3);
+      border-top: 1px solid var(--border);
+      white-space: pre-wrap;
+    }
+    #output-box .err { color: var(--accent4); }
+
+    /* ===== 进度条 ===== */
+    .progress-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 22px 26px;
+      margin-bottom: 40px;
+    }
+    .progress-card h3 { font-size: 13px; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); margin-bottom: 16px; }
+    .progress-list { display: flex; flex-wrap: wrap; gap: 8px; }
+    .progress-item {
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+    }
+    .pi-done  { background: #0d3321; color: var(--accent3); border: 1px solid #1a4d2a; }
+    .pi-today { background: #5f1e1e; color: var(--accent4); border: 1px solid #8f2a2a; }
+    .pi-next  { background: var(--card); color: var(--muted); border: 1px solid var(--border); }
+
+    /* ===== 底部 ===== */
+    .footer {
+      text-align: center;
+      padding: 40px 24px 20px;
+      color: var(--muted);
+      font-size: 13px;
+      border-top: 1px solid var(--border);
+    }
+    .footer strong { color: var(--accent4); }
+
+    /* ===== inline code ===== */
+    p code, li code, td code {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      padding: 1px 6px;
+      border-radius: 5px;
+      font-family: 'Cascadia Code','Fira Code',monospace;
+      font-size: 12.5px;
+      color: var(--accent4);
+    }
+    ul { padding-left: 20px; }
+    li { margin: 5px 0; }
+  </style>
+</head>
+<body>
+
+<!-- ===== HERO ===== -->
+<div class="hero">
+  <div class="badge">JavaScript 学习路径</div>
+  <h1>Day 10 — <span>错误处理</span>与调试</h1>
+  <p>代码总会出 bug。掌握 <code>try/catch</code>、自定义异常、堆栈追踪、<code>console</code> 调试技巧——让程序优雅地"活"下去。</p>
+  <div class="meta">
+    <span>&#128197; 第 10 天</span>
+    <span>&#9201; 预计 50 分钟</span>
+    <span>&#127919; 目标：CesiumJS 地球开发</span>
+    <span>&#128202; 基础阶段 · 收官</span>
+  </div>
+</div>
+
+<!-- ===== CONTAINER ===== -->
+<div class="container">
+
+  <!-- 学习进度 -->
+  <div class="progress-card">
+    <h3>&#128205; 学习路线图</h3>
+    <div class="progress-list">
+      <div class="progress-item pi-done">Day 01 · 变量与数据类型</div>
+      <div class="progress-item pi-done">Day 02 · 函数与作用域</div>
+      <div class="progress-item pi-done">Day 03 · 数组与对象</div>
+      <div class="progress-item pi-done">Day 04 · 控制流</div>
+      <div class="progress-item pi-done">Day 05 · DOM 操作</div>
+      <div class="progress-item pi-done">Day 06 · 事件与异步</div>
+      <div class="progress-item pi-done">Day 07 · ES6+ 语法</div>
+      <div class="progress-item pi-done">Day 08 · 模块与类</div>
+      <div class="progress-item pi-done">Day 09 · 原型与继承</div>
+      <div class="progress-item pi-today">Day 10 · 错误处理与调试 &#8592; 今天</div>
+      <div class="progress-item pi-next">Day 11 · 异步编程</div>
+      <div class="progress-item pi-next">Day 12 · 浏览器API</div>
+      <div class="progress-item pi-next">CesiumJS 阶段 &#127758;</div>
+    </div>
+  </div>
+
+  <!-- 目录 -->
+  <div class="toc">
+    <h2>&#128218; 本课目录</h2>
+    <ol>
+      <li><a href="#s1">为什么需要错误处理</a></li>
+      <li><a href="#s2">JavaScript 的错误类型</a></li>
+      <li><a href="#s3">try/catch/finally 基础</a></li>
+      <li><a href="#s4">throw：主动抛出异常</a></li>
+      <li><a href="#s5">自定义错误类</a></li>
+      <li><a href="#s6">Error 对象的属性</a></li>
+      <li><a href="#s7">异步代码的错误处理</a></li>
+      <li><a href="#s8">全局错误捕获</a></li>
+      <li><a href="#s9">console 调试技巧全家桶</a></li>
+      <li><a href="#s10">浏览器 DevTools 调试术</a></li>
+      <li><a href="#s11">CesiumJS 关联场景</a></li>
+      <li><a href="#s12">练习题</a></li>
+      <li><a href="#s13">在线练习控制台</a></li>
+    </ol>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 1: 为什么需要错误处理                                 -->
+  <!-- ============================================================ -->
+  <div class="section" id="s1">
+    <div class="section-header">
+      <div class="section-num">1</div>
+      <h2>为什么需要错误处理</h2>
+      <span class="tag">WHY</span>
+    </div>
+
+    <div class="card">
+      <h3>&#128165; 现实：代码不可能一次就写对</h3>
+      <p>从第一天学 JavaScript 开始，你已经遇到了无数个 <code>Uncaught TypeError</code>、<code>ReferenceError</code>。这不是你菜——是常态：</p>
+      <ul>
+        <li>&#128308; 用户输入了非法的坐标（<code>lat=91</code> 越界）</li>
+        <li>&#128308; CesiumJS 加载 3D Tiles 失败（网络问题）</li>
+        <li>&#128308; GeoJSON 文件格式错误、字段缺失</li>
+        <li>&#128308; 后端 API 返回 500，<code>response.json()</code> 解析失败</li>
+        <li>&#128308; 用户浏览器不支持 WebGL，初始化崩溃</li>
+      </ul>
+    </div>
+
+    <div class="warn">
+      <span class="icon">&#9888;&#65039;</span>
+      <div><strong>没有错误处理的代价：</strong>用户在地图上看到一个白屏、点不到任何东西、控制台一堆红字却不知道是哪一步出错。好的错误处理 = 用户看到友好提示 + 开发者能看到详细日志。</div>
+    </div>
+
+    <div class="card">
+      <h3>&#127919; 本课目标</h3>
+      <ul>
+        <li>&#9989; 认识 JavaScript 的 7 种内置错误类型</li>
+        <li>&#9989; 熟练使用 <code>try/catch/finally</code></li>
+        <li>&#9989; 学会主动 <code>throw</code> 异常、定义自己的错误类</li>
+        <li>&#9989; 掌握异步代码中的错误处理（Promise、async/await）</li>
+        <li>&#9989; 用 <code>window.onerror</code>、<code>unhandledrejection</code> 兜底全局</li>
+        <li>&#9989; 掌握 <code>console</code> 调试全家桶和 DevTools 断点技巧</li>
+      </ul>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 2: JavaScript 的错误类型                              -->
+  <!-- ============================================================ -->
+  <div class="section" id="s2">
+    <div class="section-header">
+      <div class="section-num">2</div>
+      <h2>JavaScript 的错误类型</h2>
+      <span class="tag">ERRORS</span>
+    </div>
+
+    <div class="card">
+      <h3>&#128218; 7 个内置错误构造函数</h3>
+      <p>JavaScript 内置了 7 种错误类型，它们都是 <code>Error</code> 的子类。了解这些类型，<strong>看错误信息就能知道是哪类问题</strong>：</p>
+<pre><code><span class="kw">new</span> <span class="typ">Error</span>(<span class="str">'通用错误'</span>);                  <span class="cmt">// 所有错误的基类</span>
+<span class="kw">new</span> <span class="typ">SyntaxError</span>(<span class="str">'语法错误'</span>);           <span class="cmt">// eval 解析失败等</span>
+<span class="kw">new</span> <span class="typ">ReferenceError</span>(<span class="str">'引用错误'</span>);        <span class="cmt">// 访问未声明的变量</span>
+<span class="kw">new</span> <span class="typ">TypeError</span>(<span class="str">'类型错误'</span>);              <span class="cmt">// 类型不匹配，最常见</span>
+<span class="kw">new</span> <span class="typ">RangeError</span>(<span class="str">'范围错误'</span>);            <span class="cmt">// 数组越界、递归爆栈</span>
+<span class="kw">new</span> <span class="typ">URIError</span>(<span class="str">'URI 错误'</span>);               <span class="cmt">// encodeURI/decodeURI 失败</span>
+<span class="kw">new</span> <span class="typ">EvalError</span>(<span class="str">'eval 错误'</span>);             <span class="cmt">// 几乎遇不到</span>
+</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>&#128269; 实战案例：常见错误触发</h3>
+<pre><code><span class="cmt">// 1. ReferenceError —— 使用未声明的变量</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">undeclaredVar</span>);    <span class="cmt">// Uncaught ReferenceError</span>
+
+<span class="cmt">// 2. TypeError —— 类型不匹配（最常见）</span>
+<span class="kw">const</span> <span class="var">pos</span> <span class="op">=</span> <span class="kw">null</span>;
+<span class="var">pos</span>.<span class="fn">x</span>();                       <span class="cmt">// Uncaught TypeError: Cannot read property 'x' of null</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="num">123</span>().<span class="fn">toString</span>);   <span class="cmt">// 数字不是函数</span>
+
+<span class="cmt">// 3. RangeError —— 数组越界 / 递归爆栈</span>
+<span class="kw">const</span> <span class="var">arr</span> <span class="op">=</span> [<span class="num">1</span>, <span class="num">2</span>];
+<span class="var">arr</span>[<span class="num">99</span>] <span class="op">=</span> <span class="num">3</span>;                  <span class="cmt">// OK（不报错）</span>
+<span class="var">arr</span>.<span class="fn">push</span>(<span class="num">3</span>).<span class="fn">length</span>;           <span class="cmt">// TypeError，push 不返回数组</span>
+
+<span class="cmt">// 4. SyntaxError —— 语法写错（eval 中可捕获）</span>
+<span class="fn">eval</span>(<span class="str">'const x =; '</span>);              <span class="cmt">// SyntaxError</span>
+
+<span class="cmt">// 5. URIError —— 编码失败</span>
+<span class="fn">decodeURI</span>(<span class="str">'%'</span>);                  <span class="cmt">// URIError: URI malformed</span>
+</code></pre>
+    </div>
+
+    <div class="tip">
+      <span class="icon">&#128161;</span>
+      <div><strong>最常见的 3 种错误：</strong><code>SyntaxError</code>（写错代码）、<code>ReferenceError</code>（拼错变量名）、<code>TypeError</code>（在 null/undefined 上调用方法）。在 CesiumJS 中，<code>TypeError</code> 最为常见，比如对未创建的 Entity 调用方法。</div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 3: try/catch/finally 基础                              -->
+  <!-- ============================================================ -->
+  <div class="section" id="s3">
+    <div class="section-header">
+      <div class="section-num">3</div>
+      <h2>try/catch/finally 基础</h2>
+      <span class="tag">TRY-CATCH</span>
+    </div>
+
+    <div class="card">
+      <h3>&#128296; 三段式：try / catch / finally</h3>
+      <p>这是 JavaScript 错误处理的<strong>基本骨架</strong>：</p>
+<pre><code><span class="kw">try</span> {
+  <span class="cmt">// 尝试执行的代码（可能抛错）</span>
+  <span class="kw">const</span> <span class="var">data</span> <span class="op">=</span> <span class="fn">JSON</span>.<span class="fn">parse</span>(<span class="var">jsonString</span>);
+  <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">'解析成功'</span>, <span class="var">data</span>);
+} <span class="kw">catch</span> (<span class="var">err</span>) {
+  <span class="cmt">// 出错时进入这里（err 是 Error 对象）</span>
+  <span class="fn">console</span>.<span class="fn">error</span>(<span class="str">'解析失败:'</span>, <span class="var">err</span>.<span class="var">message</span>);
+} <span class="kw">finally</span> {
+  <span class="cmt">// 无论是否出错都会执行（可选）</span>
+  <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">'清理工作完成'</span>);
+}
+</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>&#127919; 实战：解析用户输入的坐标</h3>
+<pre><code><span class="kw">function</span> <span class="fn">parseCoordinate</span>(<span class="var">input</span>) {
+  <span class="kw">try</span> {
+    <span class="kw">const</span> <span class="var">coord</span> <span class="op">=</span> <span class="fn">JSON</span>.<span class="fn">parse</span>(<span class="var">input</span>);
+
+    <span class="cmt">// 主动校验</span>
+    <span class="kw">if</span> (<span class="kw">typeof</span> <span class="var">coord</span>.<span class="var">lat</span> <span class="op">!==</span> <span class="str">'number'</span> <span class="op">||</span> <span class="kw">typeof</span> <span class="var">coord</span>.<span class="var">lon</span> <span class="op">!==</span> <span class="str">'number'</span>) {
+      <span class="kw">throw</span> <span class="kw">new</span> <span class="typ">TypeError</span>(<span class="str">'坐标必须是数字'</span>);
+    }
+
+    <span class="kw">if</span> (<span class="var">coord</span>.<span class="var">lat</span> <span class="op">&lt;</span> <span class="op">-</span><span class="num">90</span> <span class="op">||</span> <span class="var">coord</span>.<span class="var">lat</span> <span class="op">&gt;</span> <span class="num">90</span>) {
+      <span class="kw">throw</span> <span class="kw">new</span> <span class="typ">RangeError</span>(<span class="str">'纬度必须在 -90 到 90 之间'</span>);
+    }
+    <span class="kw">if</span> (<span class="var">coord</span>.<span class="var">lon</span> <span class="op">&lt;</span> <span class="op">-</span><span class="num">180</span> <span class="op">||</span> <span class="var">coord</span>.<span class="var">lon</span> <span class="op">&gt;</span> <span class="num">180</span>) {
+      <span class="kw">throw</span> <span class="kw">new</span> <span class="typ">RangeError</span>(<span class="str">'经度必须在 -180 到 180 之间'</span>);
+    }
+
+    <span class="kw">return</span> <span class="var">coord</span>;
+  } <span class="kw">catch</span> (<span class="var">err</span>) {
+    <span class="cmt">// 区分错误类型，给用户友好提示</span>
+    <span class="kw">if</span> (<span class="var">err</span> <span class="kw">instanceof</span> <span class="typ">SyntaxError</span>) {
+      <span class="kw">return</span> { <span class="prp">error</span>: <span class="str">'输入不是合法 JSON'</span> };
+    } <span class="kw">else</span> <span class="kw">if</span> (<span class="var">err</span> <span class="kw">instanceof</span> <span class="typ">TypeError</span>) {
+      <span class="kw">return</span> { <span class="prp">error</span>: <span class="str">'坐标类型错误: '</span> <span class="op">+</span> <span class="var">err</span>.<span class="var">message</span> };
+    } <span class="kw">else</span> <span class="kw">if</span> (<span class="var">err</span> <span class="kw">instanceof</span> <span class="typ">RangeError</span>) {
+      <span class="kw">return</span> { <span class="prp">error</span>: <span class="str">'坐标越界: '</span> <span class="op">+</span> <span class="var">err</span>.<span class="var">message</span> };
+    } <span class="kw">else</span> {
+      <span class="kw">return</span> { <span class="prp">error</span>: <span class="str">'未知错误: '</span> <span class="op">+</span> <span class="var">err</span>.<span class="var">message</span> };
+    }
+  }
+}
+
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="fn">parseCoordinate</span>(<span class="str">'{lat: 39.9, lon: 116.4}'</span>));  <span class="cmt">// 合法</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="fn">parseCoordinate</span>(<span class="str">'{"lat": "abc", "lon": 116}'</span>)); <span class="cmt">// TypeError</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="fn">parseCoordinate</span>(<span class="str">'{"lat": 91, "lon": 0}'</span>));  <span class="cmt">// RangeError</span>
+</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>&#128260; 控制流：try/catch 不会终止后续代码</h3>
+<pre><code><span class="cmt">// 关键：try/catch "吃掉"了错误，程序不会崩</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="str">'1. 开始'</span>);
+
+<span class="kw">try</span> {
+  <span class="fn">undefinedFunction</span>();   <span class="cmt">// ReferenceError，但被捕获</span>
+} <span class="kw">catch</span> (<span class="var">e</span>) {
+  <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">'2. 捕获到错误:'</span>, <span class="var">e</span>.<span class="var">name</span>);
+}
+
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="str">'3. 继续执行'</span>);  <span class="cmt">// 依然会执行</span>
+
+<span class="cmt">// 输出：</span>
+<span class="cmt">// 1. 开始</span>
+<span class="cmt">// 2. 捕获到错误: ReferenceError</span>
+<span class="cmt">// 3. 继续执行</span>
+</code></pre>
+    </div>
+
+    <div class="tip">
+      <span class="icon">&#128161;</span>
+      <div><strong>finally 的妙用：</strong>无论 try/catch 怎么走，finally 都会执行。最适合<strong>释放资源</strong>：关闭数据库连接、停止 loading 动画、清理临时文件。即使 return 也不会跳过它！</div>
+    </div>
+
+    <div class="warn">
+      <span class="icon">&#9888;&#65039;</span>
+      <div><strong>try/catch 的代价：</strong>V8 引擎在 V8 6.0+ 已经优化了 try/catch 的性能，几乎无开销。但<strong>不要把整个文件用 try 包起来</strong>，那样会让其他正常错误也被吞掉，难以调试。只在"可能出错"的小段代码块周围使用。</div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 4: throw：主动抛出异常                                -->
+  <!-- ============================================================ -->
+  <div class="section" id="s4">
+    <div class="section-header">
+      <div class="section-num">4</div>
+      <h2>throw：主动抛出异常</h2>
+      <span class="tag">THROW</span>
+    </div>
+
+    <div class="card">
+      <h3>&#128227; 不止 try-catch，你也可以"主动抛错"</h3>
+      <p>当遇到<strong>不该继续执行的非法状态</strong>时，主动 <code>throw</code> 比让程序继续跑下去更安全：</p>
+<pre><code><span class="cmt">// 1. 抛字符串（不推荐，看不出类型）</span>
+<span class="kw">throw</span> <span class="str">'出错了'</span>;  <span class="cmt">// 不推荐</span>
+
+<span class="cmt">// 2. 抛 Error 对象（推荐）</span>
+<span class="kw">throw</span> <span class="kw">new</span> <span class="typ">Error</span>(<span class="str">'连接数据库失败'</span>);
+
+<span class="cmt">// 3. 抛特定类型（更精准）</span>
+<span class="kw">throw</span> <span class="kw">new</span> <span class="typ">TypeError</span>(<span class="str">'参数必须是字符串'</span>);
+
+<span class="cmt">// 4. 抛自定义对象（高级用法）</span>
+<span class="kw">throw</span> { <span class="prp">code</span>: <span class="num">401</span>, <span class="prp">msg</span>: <span class="str">'未授权'</span>, <span class="prp">retryable</span>: <span class="kw">false</span> };
+</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>&#127919; CesiumJS 风格的参数校验</h3>
+<pre><code><span class="cmt">// CesiumJS 内部大量使用这种风格的参数校验</span>
+<span class="kw">function</span> <span class="fn">flyToCoordinate</span>(<span class="var">longitude</span>, <span class="var">latitude</span>, <span class="var">height</span>) {
+  <span class="cmt">// 防御性检查</span>
+  <span class="kw">if</span> (<span class="kw">typeof</span> <span class="var">longitude</span> <span class="op">!==</span> <span class="str">'number'</span>) {
+    <span class="kw">throw</span> <span class="kw">new</span> <span class="typ">TypeError</span>(<span class="str">'longitude 必须是数字，实际收到: '</span> <span class="op">+</span> <span class="kw">typeof</span> <span class="var">longitude</span>);
+  }
+  <span class="kw">if</span> (<span class="kw">typeof</span> <span class="var">latitude</span> <span class="op">!==</span> <span class="str">'number'</span>) {
+    <span class="kw">throw</span> <span class="kw">new</span> <span class="typ">TypeError</span>(<span class="str">'latitude 必须是数字'</span>);
+  }
+  <span class="kw">if</span> (<span class="var">latitude</span> <span class="op">&lt;</span> <span class="op">-</span><span class="num">90</span> <span class="op">||</span> <span class="var">latitude</span> <span class="op">&gt;</span> <span class="num">90</span>) {
+    <span class="kw">throw</span> <span class="kw">new</span> <span class="typ">RangeError</span>(<span class="str">'latitude 超出 [-90, 90] 范围: '</span> <span class="op">+</span> <span class="var">latitude</span>);
+  }
+  <span class="kw">if</span> (<span class="var">longitude</span> <span class="op">&lt;</span> <span class="op">-</span><span class="num">180</span> <span class="op">||</span> <span class="var">longitude</span> <span class="op">&gt;</span> <span class="num">180</span>) {
+    <span class="kw">throw</span> <span class="kw">new</span> <span class="typ">RangeError</span>(<span class="str">'longitude 超出 [-180, 180] 范围'</span>);
+  }
+  <span class="kw">if</span> (<span class="var">height</span> <span class="op">!==</span> <span class="kw">undefined</span> <span class="op">&amp;&amp;</span> <span class="var">height</span> <span class="op">&lt;</span> <span class="num">0</span>) {
+    <span class="kw">throw</span> <span class="kw">new</span> <span class="typ">RangeError</span>(<span class="str">'height 不能为负数'</span>);
+  }
+
+  <span class="cmt">// 实际业务...</span>
+  <span class="kw">return</span> <span class="str">`已飞行到 (经=<span class="op">${</span><span class="var">longitude</span><span class="op">}</span>, 纬=<span class="op">${</span><span class="var">latitude</span><span class="op">}</span>, 高=<span class="op">${</span><span class="var">height</span> <span class="op">||</span> <span class="num">0</span><span class="op">}</span>)`</span>;
+}
+
+<span class="cmt">// 调用</span>
+<span class="kw">try</span> {
+  <span class="fn">flyToCoordinate</span>(<span class="str">'北京'</span>, <span class="num">39.9</span>);  <span class="cmt">// 抛 TypeError</span>
+} <span class="kw">catch</span> (<span class="var">e</span>) {
+  <span class="fn">console</span>.<span class="fn">error</span>(<span class="var">e</span>.<span class="var">message</span>);
+}
+</code></pre>
+    </div>
+
+    <div class="info">
+      <span class="icon">&#8505;&#65039;</span>
+      <div><strong>"抛 vs 返"的原则：</strong>如果错误是<strong>调用方能立即处理</strong>（比如重试、给默认值），用返回值（<code>return { error: ... }</code>）；如果错误是<strong>无法恢复的非法状态</strong>（比如参数错得离谱），用 <code>throw</code>。</div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 5: 自定义错误类                                        -->
+  <!-- ============================================================ -->
+  <div class="section" id="s5">
+    <div class="section-header">
+      <div class="section-num">5</div>
+      <h2>自定义错误类</h2>
+      <span class="tag">CUSTOM</span>
+    </div>
+
+    <div class="card">
+      <h3>&#127974; 继承 Error 创建业务专属错误</h3>
+      <p>在大型项目（特别是 CesiumJS 这种库开发）中，<strong>自定义错误类</strong>让你的错误处理更清晰：</p>
+<pre><code><span class="cmt">// 自定义错误基类</span>
+<span class="kw">class</span> <span class="typ">GeoAppError</span> <span class="kw">extends</span> <span class="typ">Error</span> {
+  <span class="fn">constructor</span>(<span class="var">message</span>, <span class="var">code</span>, <span class="var">context</span>) {
+    <span class="kw">super</span>(<span class="var">message</span>);
+    <span class="kw">this</span>.<span class="prp">name</span> <span class="op">=</span> <span class="str">'GeoAppError'</span>;
+    <span class="kw">this</span>.<span class="prp">code</span> <span class="op">=</span> <span class="var">code</span>;
+    <span class="kw">this</span>.<span class="prp">context</span> <span class="op">=</span> <span class="var">context</span> <span class="op">||</span> {};
+    <span class="kw">this</span>.<span class="prp">timestamp</span> <span class="op">=</span> <span class="kw">new</span> <span class="typ">Date</span>().<span class="fn">toISOString</span>();
+  }
+}
+
+<span class="cmt">// 派生出具体的业务错误</span>
+<span class="kw">class</span> <span class="typ">InvalidCoordinateError</span> <span class="kw">extends</span> <span class="typ">GeoAppError</span> {
+  <span class="fn">constructor</span>(<span class="var">coord</span>, <span class="var">reason</span>) {
+    <span class="kw">super</span>(
+      <span class="str">`无效坐标 (lat=<span class="op">${</span><span class="var">coord</span>.<span class="var">lat</span><span class="op">}</span>, lon=<span class="op">${</span><span class="var">coord</span>.<span class="var">lon</span><span class="op">}</span>): <span class="op">${</span><span class="var">reason</span><span class="op">}</span>`</span>,
+      <span class="str">'INVALID_COORD'</span>,
+      { <span class="prp">coord</span>, <span class="prp">reason</span> }
+    );
+    <span class="kw">this</span>.<span class="prp">name</span> <span class="op">=</span> <span class="str">'InvalidCoordinateError'</span>;
+  }
+}
+
+<span class="kw">class</span> <span class="typ">TileLoadError</span> <span class="kw">extends</span> <span class="typ">GeoAppError</span> {
+  <span class="fn">constructor</span>(<span class="var">url</span>, <span class="var">httpStatus</span>) {
+    <span class="kw">super</span>(<span class="str">`3D Tiles 加载失败: <span class="op">${</span><span class="var">url</span><span class="op">}</span> (HTTP <span class="op">${</span><span class="var">httpStatus</span><span class="op">}</span>)`</span>, <span class="str">'TILE_LOAD_FAIL'</span>, { <span class="prp">url</span> });
+    <span class="kw">this</span>.<span class="prp">name</span> <span class="op">=</span> <span class="str">'TileLoadError'</span>;
+  }
+}
+
+<span class="cmt">// 使用：精准捕获特定错误</span>
+<span class="kw">function</span> <span class="fn">addMarker</span>(<span class="var">entity</span>) {
+  <span class="kw">const</span> <span class="var">c</span> <span class="op">=</span> <span class="var">entity</span>.<span class="var">position</span>;
+  <span class="kw">if</span> (<span class="op">!</span><span class="var">c</span> <span class="op">||</span> <span class="var">c</span>.<span class="var">lat</span> <span class="op">&lt;</span> <span class="op">-</span><span class="num">90</span> <span class="op">||</span> <span class="var">c</span>.<span class="var">lat</span> <span class="op">&gt;</span> <span class="num">90</span>) {
+    <span class="kw">throw</span> <span class="kw">new</span> <span class="typ">InvalidCoordinateError</span>(<span class="var">c</span> <span class="op">||</span> {}, <span class="str">'纬度越界'</span>);
+  }
+  <span class="cmt">// ...</span>
+}
+
+<span class="kw">try</span> {
+  <span class="fn">addMarker</span>({ <span class="prp">position</span>: { <span class="prp">lat</span>: <span class="num">999</span>, <span class="prp">lon</span>: <span class="num">100</span> } });
+} <span class="kw">catch</span> (<span class="var">e</span>) {
+  <span class="kw">if</span> (<span class="var">e</span> <span class="kw">instanceof</span> <span class="typ">InvalidCoordinateError</span>) {
+    <span class="fn">console</span>.<span class="fn">warn</span>(<span class="str">'坐标错误，请检查输入。Code:'</span>, <span class="var">e</span>.<span class="var">code</span>);
+  } <span class="kw">else</span> {
+    <span class="kw">throw</span> <span class="var">e</span>;  <span class="cmt">// 未知错误继续往上抛</span>
+  }
+}
+</code></pre>
+    </div>
+
+    <div class="tip">
+      <span class="icon">&#128161;</span>
+      <div><strong>自定义错误的好处：</strong><code>instanceof</code> 判断更精准，可以附加<strong>业务字段</strong>（错误码、上下文、原始数据），让上层能根据错误码做不同处理（如 401 跳登录、500 重试）。</div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 6: Error 对象的属性                                   -->
+  <!-- ============================================================ -->
+  <div class="section" id="s6">
+    <div class="section-header">
+      <div class="section-num">6</div>
+      <h2>Error 对象的属性</h2>
+      <span class="tag">PROPERTIES</span>
+    </div>
+
+    <div class="card">
+      <h3>&#128194; 3 个核心属性</h3>
+      <p>任何 <code>Error</code> 实例都有这些属性：</p>
+<pre><code><span class="kw">try</span> {
+  <span class="kw">throw</span> <span class="kw">new</span> <span class="typ">TypeError</span>(<span class="str">'参数错'</span>);
+} <span class="kw">catch</span> (<span class="var">err</span>) {
+  <span class="fn">console</span>.<span class="fn">log</span>(<span class="var">err</span>.<span class="prp">name</span>);     <span class="cmt">// "TypeError"（错误类名）</span>
+  <span class="fn">console</span>.<span class="fn">log</span>(<span class="var">err</span>.<span class="prp">message</span>);  <span class="cmt">// "参数错"（人读）</span>
+  <span class="fn">console</span>.<span class="fn">log</span>(<span class="var">err</span>.<span class="prp">stack</span>);    <span class="cmt">// "TypeError: 参数错\n  at ...（调用栈）"</span>
+  <span class="fn">console</span>.<span class="fn">log</span>(<span class="var">err</span>.<span class="fn">toString</span>()); <span class="cmt">// "TypeError: 参数错"</span>
+}
+</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>&#128269; 堆栈追踪（Stack Trace）的妙用</h3>
+      <p><code>err.stack</code> 记录了错误发生的<strong>完整调用链</strong>——这是调试的"金矿"：</p>
+<pre><code><span class="kw">function</span> <span class="fn">c</span>() {
+  <span class="kw">throw</span> <span class="kw">new</span> <span class="typ">Error</span>(<span class="str">'爆炸了'</span>);
+}
+<span class="kw">function</span> <span class="fn">b</span>() {
+  <span class="fn">c</span>();
+}
+<span class="kw">function</span> <span class="fn">a</span>() {
+  <span class="fn">b</span>();
+}
+<span class="kw">try</span> {
+  <span class="fn">a</span>();
+} <span class="kw">catch</span> (<span class="var">e</span>) {
+  <span class="fn">console</span>.<span class="fn">log</span>(<span class="var">e</span>.<span class="var">stack</span>);
+  <span class="cmt">// 输出：</span>
+  <span class="cmt">// Error: 爆炸了</span>
+  <span class="cmt">//   at c (script.js:2:9)</span>
+  <span class="cmt">//   at b (script.js:5:3)</span>
+  <span class="cmt">//   at a (script.js:8:3)</span>
+  <span class="cmt">//   at &lt;global&gt; (script.js:11:3)</span>
+  <span class="cmt">// 含义：c 抛错，被 b 调用，b 被 a 调用，a 从全局直接调用</span>
+}
+</code></pre>
+    </div>
+
+    <div class="info">
+      <span class="icon">&#8505;&#65039;</span>
+      <div><strong>格式化堆栈：</strong>Node.js 提供了 <code>Error.captureStackTrace(target, constructorOpt)</code>，可以隐藏构造函数自身的栈帧。CesiumJS 内部用得很巧妙——包装错误时去掉中间的"胶水代码"层，只暴露给开发者真正业务相关的栈。</div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 7: 异步代码的错误处理                                 -->
+  <!-- ============================================================ -->
+  <div class="section" id="s7">
+    <div class="section-header">
+      <div class="section-num">7</div>
+      <h2>异步代码的错误处理</h2>
+      <span class="tag">ASYNC</span>
+    </div>
+
+    <div class="card">
+      <h3>&#128257; Promise 链：catch 兜底</h3>
+<pre><code><span class="cmt">// 1. 经典 Promise 链式</span>
+<span class="fn">fetch</span>(<span class="str">'/api/cities'</span>)
+  .<span class="fn">then</span>(<span class="var">res</span> <span class="op">=&gt;</span> {
+    <span class="kw">if</span> (<span class="op">!</span><span class="var">res</span>.<span class="var">ok</span>) <span class="kw">throw</span> <span class="kw">new</span> <span class="typ">Error</span>(<span class="str">`HTTP <span class="op">${</span><span class="var">res</span>.<span class="var">status</span><span class="op">}</span>`</span>);
+    <span class="kw">return</span> <span class="var">res</span>.<span class="fn">json</span>();
+  })
+  .<span class="fn">then</span>(<span class="var">data</span> <span class="op">=&gt;</span> <span class="fn">console</span>.<span class="fn">log</span>(<span class="var">data</span>))
+  .<span class="fn">catch</span>(<span class="var">err</span> <span class="op">=&gt;</span> <span class="fn">console</span>.<span class="fn">error</span>(<span class="str">'加载城市失败:'</span>, <span class="var">err</span>));
+
+<span class="cmt">// 2. Promise.all 的批量处理</span>
+<span class="typ">Promise</span>.<span class="fn">all</span>([
+  <span class="fn">loadTileset</span>(<span class="str">'cityA'</span>),
+  <span class="fn">loadTileset</span>(<span class="str">'cityB'</span>),
+  <span class="fn">loadTileset</span>(<span class="str">'cityC'</span>)
+])
+  .<span class="fn">then</span>(<span class="var">results</span> <span class="op">=&gt;</span> <span class="fn">addToScene</span>(<span class="var">results</span>))
+  .<span class="fn">catch</span>(<span class="var">err</span> <span class="op">=&gt;</span> <span class="fn">console</span>.<span class="fn">error</span>(<span class="str">'某个 tileset 加载失败:'</span>, <span class="var">err</span>));
+</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>&#128640; async/await：try/catch 回归</h3>
+      <p>async/await 最大的好处就是<strong>可以像同步代码一样用 try/catch</strong>：</p>
+<pre><code><span class="cmt">// async 函数中可以正常用 try/catch</span>
+<span class="kw">async</span> <span class="kw">function</span> <span class="fn">loadCityData</span>(<span class="var">cityName</span>) {
+  <span class="kw">try</span> {
+    <span class="fn">showLoading</span>(<span class="str">`正在加载 <span class="op">${</span><span class="var">cityName</span><span class="op">}</span>...`</span>);
+
+    <span class="kw">const</span> <span class="var">response</span> <span class="op">=</span> <span class="kw">await</span> <span class="fn">fetch</span>(<span class="str">`/api/cities/<span class="op">${</span><span class="var">cityName</span><span class="op">}</span>`</span>);
+    <span class="kw">if</span> (<span class="op">!</span><span class="var">response</span>.<span class="var">ok</span>) {
+      <span class="kw">throw</span> <span class="kw">new</span> <span class="typ">Error</span>(<span class="str">`城市 <span class="op">${</span><span class="var">cityName</span><span class="op">}</span> 不存在 (HTTP <span class="op">${</span><span class="var">response</span>.<span class="var">status</span><span class="op">}</span>)`</span>);
+    }
+    <span class="kw">const</span> <span class="var">data</span> <span class="op">=</span> <span class="kw">await</span> <span class="var">response</span>.<span class="fn">json</span>();
+
+    <span class="cmt">// 数据校验</span>
+    <span class="kw">if</span> (<span class="op">!</span><span class="var">data</span>.<span class="var">lat</span> <span class="op">||</span> <span class="op">!</span><span class="var">data</span>.<span class="var">lon</span>) {
+      <span class="kw">throw</span> <span class="kw">new</span> <span class="typ">TypeError</span>(<span class="str">'城市数据缺少坐标字段'</span>);
+    }
+
+    <span class="kw">return</span> <span class="var">data</span>;
+  } <span class="kw">catch</span> (<span class="var">err</span>) {
+    <span class="fn">console</span>.<span class="fn">error</span>(<span class="str">'加载失败:'</span>, <span class="var">err</span>.<span class="var">message</span>);
+    <span class="cmt">// 上报错误到日志服务</span>
+    <span class="fn">reportError</span>(<span class="var">err</span>);
+    <span class="cmt">// 返回默认值（可选）</span>
+    <span class="kw">return</span> <span class="kw">null</span>;
+  } <span class="kw">finally</span> {
+    <span class="fn">hideLoading</span>();  <span class="cmt">// 无论如何都关掉 loading</span>
+  }
+}
+</code></pre>
+    </div>
+
+    <div class="warn">
+      <span class="icon">&#9888;&#65039;</span>
+      <div><strong>async 函数的"陷阱"：</strong>async 函数总是返回 <strong>Promise</strong>。如果在 async 函数内部 <code>throw</code> 但没被 try/catch 捕获，外层用 <code>.then()</code> 链时需要再加 <code>.catch()</code>。否则错误会变成"unhandled promise rejection"（未处理的 Promise 拒绝）。</div>
+    </div>
+
+    <div class="card">
+      <h3>&#128296; Promise.allSettled：宽容的并发</h3>
+<pre><code><span class="cmt">// 与 Promise.all 不同：allSettled 不会因为一个失败就全盘放弃</span>
+<span class="kw">const</span> <span class="var">results</span> <span class="op">=</span> <span class="kw">await</span> <span class="typ">Promise</span>.<span class="fn">allSettled</span>([
+  <span class="fn">loadLayer</span>(<span class="str">'buildings'</span>),
+  <span class="fn">loadLayer</span>(<span class="str">'roads'</span>),
+  <span class="fn">loadLayer</span>(<span class="str">'poi'</span>)   <span class="cmt">// 即使这个失败，别的也照常加载</span>
+]);
+
+<span class="var">results</span>.<span class="fn">forEach</span>(<span class="var">r</span> <span class="op">=&gt;</span> {
+  <span class="kw">if</span> (<span class="var">r</span>.<span class="var">status</span> <span class="op">===</span> <span class="str">'fulfilled'</span>) {
+    <span class="fn">addLayer</span>(<span class="var">r</span>.<span class="var">value</span>);
+  } <span class="kw">else</span> {
+    <span class="fn">console</span>.<span class="fn">warn</span>(<span class="str">'图层加载失败:'</span>, <span class="var">r</span>.<span class="var">reason</span>.<span class="var">message</span>);
+  }
+});
+</code></pre>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 8: 全局错误捕获                                       -->
+  <!-- ============================================================ -->
+  <div class="section" id="s8">
+    <div class="section-header">
+      <div class="section-num">8</div>
+      <h2>全局错误捕获</h2>
+      <span class="tag">GLOBAL</span>
+    </div>
+
+    <div class="card">
+      <h3>&#127968; 三大全局兜底事件</h3>
+      <p>总有一些错误会从 try/catch 缝隙中溜走——浏览器提供 3 个事件"网兜"住它们：</p>
+<pre><code><span class="cmt">// 1. window.onerror：捕获所有未处理的同步错误</span>
+<span class="var">window</span>.<span class="fn">addEventListener</span>(<span class="str">'error'</span>, (<span class="var">event</span>) <span class="op">=&gt;</span> {
+  <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">'全局错误:'</span>, <span class="var">event</span>.<span class="var">message</span>);
+  <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">'出错文件:'</span>, <span class="var">event</span>.<span class="var">filename</span>);
+  <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">'行号:'</span>, <span class="var">event</span>.<span class="var">lineno</span>);
+  <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">'列号:'</span>, <span class="var">event</span>.<span class="var">colno</span>);
+  <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">`  at <span class="op">${</span><span class="var">event</span>.<span class="var">filename</span><span class="op">}</span>:<span class="op">${</span><span class="var">event</span>.<span class="var">lineno</span><span class="op">}</span>`</span>);
+
+  <span class="cmt">// 重要：返回 true 阻止默认上报到控制台</span>
+  <span class="kw">return</span> <span class="kw">true</span>;
+});
+
+<span class="cmt">// 2. unhandledrejection：捕获未处理的 Promise 拒绝</span>
+<span class="var">window</span>.<span class="fn">addEventListener</span>(<span class="str">'unhandledrejection'</span>, (<span class="var">event</span>) <span class="op">=&gt;</span> {
+  <span class="fn">console</span>.<span class="fn">error</span>(<span class="str">'Promise 拒绝:'</span>, <span class="var">event</span>.<span class="var">reason</span>);
+  <span class="cmt">// event.promise 是被拒绝的 Promise</span>
+  <span class="cmt">// event.reason 是拒绝原因（通常是 Error 对象）</span>
+  <span class="cmt">// 上报到日志服务：</span>
+  <span class="fn">reportError</span>(<span class="var">event</span>.<span class="var">reason</span>);
+});
+
+<span class="cmt">// 3. console.error 的全局代理（高级）</span>
+<span class="kw">const</span> <span class="var">origConsoleError</span> <span class="op">=</span> <span class="var">console</span>.<span class="var">error</span>;
+<span class="var">console</span>.<span class="var">error</span> <span class="op">=</span> <span class="kw">function</span>(<span class="op">...</span><span class="var">args</span>) {
+  <span class="fn">reportError</span>(<span class="var">args</span>.<span class="fn">join</span>(<span class="str">' '</span>));  <span class="cmt">// 上报</span>
+  <span class="fn">origConsoleError</span>.<span class="fn">apply</span>(<span class="var">console</span>, <span class="var">args</span>);  <span class="cmt">// 继续打印</span>
+};
+</code></pre>
+    </div>
+
+    <div class="tip">
+      <span class="icon">&#128161;</span>
+      <div><strong>生产环境的标配：</strong>把上面 3 个监听注册到应用入口，再把错误<strong>上报到日志服务</strong>（如 Sentry、Fundebug、自己的后端）。这样即使用户没反馈，开发者也能看到崩溃现场。</div>
+    </div>
+
+    <div class="warn">
+      <span class="icon">&#9888;&#65039;</span>
+      <div><strong>注意：</strong><code>window.onerror</code> <strong>无法捕获</strong>资源加载失败（图片、script 404）和 Promise 内部错误（要用 <code>unhandledrejection</code>）。要全面兜底，需要结合多个事件。</div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 9: console 调试技巧全家桶                            -->
+  <!-- ============================================================ -->
+  <div class="section" id="s9">
+    <div class="section-header">
+      <div class="section-num">9</div>
+      <h2>console 调试技巧全家桶</h2>
+      <span class="tag">CONSOLE</span>
+    </div>
+
+    <div class="card">
+      <h3>&#127916; 7 个常用方法</h3>
+<pre><code><span class="cmt">// 1. console.log —— 最常用，打印值</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="str">'北京'</span>, { <span class="prp">lat</span>: <span class="num">39.9</span>, <span class="prp">lon</span>: <span class="num">116.4</span> });
+
+<span class="cmt">// 2. console.table —— 数组/对象以表格展示（最爱）</span>
+<span class="fn">console</span>.<span class="fn">table</span>([
+  { <span class="prp">name</span>: <span class="str">'北京'</span>, <span class="prp">lat</span>: <span class="num">39.9</span>, <span class="prp">lon</span>: <span class="num">116.4</span>, <span class="prp">pop</span>: <span class="num">2154</span> },
+  { <span class="prp">name</span>: <span class="str">'上海'</span>, <span class="prp">lat</span>: <span class="num">31.2</span>, <span class="prp">lon</span>: <span class="num">121.5</span>, <span class="prp">pop</span>: <span class="num">2487</span> },
+  { <span class="prp">name</span>: <span class="str">'广州'</span>, <span class="prp">lat</span>: <span class="num">23.1</span>, <span class="prp">lon</span>: <span class="num">113.3</span>, <span class="prp">pop</span>: <span class="num">1867</span> }
+]);
+
+<span class="cmt">// 3. console.group / groupEnd —— 分组折叠（避免刷屏）</span>
+<span class="fn">console</span>.<span class="fn">group</span>(<span class="str">'城市加载流程'</span>);
+  <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">'1. 解析 URL'</span>);
+  <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">'2. 发起请求'</span>);
+  <span class="fn">console</span>.<span class="fn">group</span>(<span class="str">'3. 响应处理'</span>);
+    <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">'3.1 解析 JSON'</span>);
+    <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">'3.2 校验字段'</span>);
+  <span class="fn">console</span>.<span class="fn">groupEnd</span>();
+<span class="fn">console</span>.<span class="fn">groupEnd</span>();
+
+<span class="cmt">// 4. console.time / timeEnd —— 性能计时</span>
+<span class="fn">console</span>.<span class="fn">time</span>(<span class="str">'加载 tiles'</span>);
+<span class="kw">await</span> <span class="fn">loadTileset</span>(<span class="str">'bigCity'</span>);
+<span class="fn">console</span>.<span class="fn">timeEnd</span>(<span class="str">'加载 tiles'</span>);  <span class="cmt">// "加载 tiles: 1234.5ms"</span>
+
+<span class="cmt">// 5. console.assert —— 断言（不通过时打印）</span>
+<span class="fn">console</span>.<span class="fn">assert</span>(<span class="var">data</span>.<span class="var">lat</span> <span class="op">&gt;=</span> <span class="op">-</span><span class="num">90</span> <span class="op">&amp;&amp;</span> <span class="var">data</span>.<span class="var">lat</span> <span class="op">&lt;=</span> <span class="num">90</span>, <span class="str">'纬度越界!'</span>, <span class="var">data</span>);
+
+<span class="cmt">// 6. console.count —— 计数（看代码执行次数）</span>
+<span class="kw">function</span> <span class="fn">render</span>() {
+  <span class="fn">console</span>.<span class="fn">count</span>(<span class="str">'render 调用次数'</span>);
+  <span class="cmt">// ...</span>
+}
+<span class="cmt">// 渲染 60 次后会看到: render 调用次数: 60</span>
+
+<span class="cmt">// 7. console.trace —— 打印当前调用栈</span>
+<span class="fn">console</span>.<span class="fn">trace</span>(<span class="str">'谁调用了我？'</span>);
+</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>&#127912; console 彩色输出</h3>
+<pre><code><span class="cmt">// 用 %c 占位符 + CSS 样式</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="str">'%c 🌍 CesiumJS 应用启动 '</span>, <span class="str">'color: #61dafb; font-size: 18px; font-weight: bold; background: #0a0e1a; padding: 6px 12px; border-radius: 6px;'</span>);
+
+<span class="cmt">// 多个 %c 可以分段着色</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="str">'%c成功%c 加载了 %c15%c 个城市'</span>,
+  <span class="str">'color: #7ee787; font-weight: bold'</span>,
+  <span class="str">'color: white'</span>,
+  <span class="str">'color: #f7c948; font-weight: bold; font-size: 16px'</span>,
+  <span class="str">'color: white'</span>
+);
+</code></pre>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 10: 浏览器 DevTools 调试术                            -->
+  <!-- ============================================================ -->
+  <div class="section" id="s10">
+    <div class="section-header">
+      <div class="section-num">10</div>
+      <h2>浏览器 DevTools 调试术</h2>
+      <span class="tag">DEVTOOLS</span>
+    </div>
+
+    <div class="card">
+      <h3>&#128296; 6 大调试手段</h3>
+      <table>
+        <tr>
+          <th>技巧</th>
+          <th>用法</th>
+          <th>场景</th>
+        </tr>
+        <tr>
+          <td><span class="td-kw">断点 (breakpoint)</span></td>
+          <td>在 Sources 面板点击行号</td>
+          <td>复杂逻辑、单步执行</td>
+        </tr>
+        <tr>
+          <td><span class="td-kw">条件断点</span></td>
+          <td>右键行号 → "Add conditional breakpoint"</td>
+          <td>循环中只在 <code>i===100</code> 时停</td>
+        </tr>
+        <tr>
+          <td><span class="td-kw">debugger 语句</span></td>
+          <td>在代码中写 <code>debugger;</code></td>
+          <td>临时停一下，看上下文</td>
+        </tr>
+        <tr>
+          <td><span class="td-kw">Watch 表达式</span></td>
+          <td>Watch 面板添加变量</td>
+          <td>追踪某个值的变化</td>
+        </tr>
+        <tr>
+          <td><span class="td-kw">Call Stack 栈</span></td>
+          <td>看是谁调用了当前函数</td>
+          <td>追溯异常源头</td>
+        </tr>
+        <tr>
+          <td><span class="td-kw">Network 面板</span></td>
+          <td>看请求/响应详情</td>
+          <td>tileset 加载失败排查</td>
+        </tr>
+      </table>
+<pre><code><span class="cmt">// 实战：在代码中插入 debugger</span>
+<span class="kw">function</span> <span class="fn">load3DTiles</span>(<span class="var">url</span>) {
+  <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">'开始加载:'</span>, <span class="var">url</span>);
+  <span class="kw">debugger</span>;   <span class="cmt">// 浏览器会在此暂停，可以查看所有变量</span>
+
+  <span class="kw">const</span> <span class="var">tileset</span> <span class="op">=</span> <span class="kw">new</span> <span class="typ">Cesium</span>.<span class="typ">Cesium3DTileset</span>({ <span class="prp">url</span>: <span class="var">url</span> });
+  <span class="kw">return</span> <span class="var">viewer</span>.<span class="var">scene</span>.<span class="fn">primitives</span>.<span class="fn">add</span>(<span class="var">tileset</span>);
+}
+</code></pre>
+    </div>
+
+    <div class="tip">
+      <span class="icon">&#128161;</span>
+      <div><strong>Console 面板的小技巧：</strong><ol style="margin-top:6px;"><li>用 <code>$_</code> 引用上一次的返回值</li><li>用 <code>$0 ~ $4</code> 引用 Elements 面板选中的节点</li><li>用 <code>$(selector)</code> 等价 <code>document.querySelector</code></li><li>用 <code>$$(selector)</code> 等价 <code>document.querySelectorAll</code></li><li>用 <code>copy(变量)</code> 把对象复制到剪贴板</li></ol></div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 11: CesiumJS 关联场景                                 -->
+  <!-- ============================================================ -->
+  <div class="section" id="s11">
+    <div class="section-header">
+      <div class="section-num">11</div>
+      <h2>CesiumJS 关联场景</h2>
+      <span class="tag">CESIUMJS</span>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <h3>&#127760; 场景 1：资源加载失败</h3>
+        <p>3D Tiles、地形、影像经常会因为网络或路径问题加载失败：</p>
+<pre><code><span class="kw">async</span> <span class="kw">function</span> <span class="fn">safeLoadTileset</span>(<span class="var">url</span>) {
+  <span class="kw">try</span> {
+    <span class="kw">const</span> <span class="var">tileset</span> <span class="op">=</span> <span class="kw">await</span> <span class="typ">Cesium</span>.<span class="typ">Cesium3DTileset</span>.<span class="fn">fromUrl</span>(<span class="var">url</span>);
+    <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">'tileset 加载成功'</span>, <span class="var">url</span>);
+    <span class="kw">return</span> <span class="var">tileset</span>;
+  } <span class="kw">catch</span> (<span class="var">err</span>) {
+    <span class="fn">console</span>.<span class="fn">error</span>(<span class="str">'tileset 加载失败:'</span>, <span class="var">url</span>);
+    <span class="fn">console</span>.<span class="fn">error</span>(<span class="str">'原因:'</span>, <span class="var">err</span>.<span class="var">message</span>);
+
+    <span class="cmt">// 给用户友好提示</span>
+    <span class="fn">showToast</span>(<span class="str">'3D 模型加载失败，请检查网络或 URL: '</span> <span class="op">+</span> <span class="var">url</span>);
+
+    <span class="cmt">// 降级方案：尝试加载低分辨率版本</span>
+    <span class="kw">if</span> (<span class="op">!</span><span class="var">url</span>.<span class="fn">includes</span>(<span class="str">'_lq/'</span>)) {
+      <span class="kw">const</span> <span class="var">fallbackUrl</span> <span class="op">=</span> <span class="var">url</span>.<span class="fn">replace</span>(<span class="str">'tiles/'</span>, <span class="str">'tiles/_lq/'</span>);
+      <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">'尝试降级版本:'</span>, <span class="var">fallbackUrl</span>);
+      <span class="kw">return</span> <span class="fn">safeLoadTileset</span>(<span class="var">fallbackUrl</span>);
+    }
+    <span class="kw">return</span> <span class="kw">null</span>;
+  }
+}
+</code></pre>
+      </div>
+
+      <div class="card">
+        <h3>&#127757; 场景 2：WebGL 不可用</h3>
+        <p>用户浏览器可能不支持 WebGL，初始化前要检测：</p>
+<pre><code><span class="kw">function</span> <span class="fn">initCesium</span>() {
+  <span class="cmt">// 检测 WebGL 支持</span>
+  <span class="kw">try</span> {
+    <span class="kw">const</span> <span class="var">canvas</span> <span class="op">=</span> <span class="var">document</span>.<span class="fn">createElement</span>(<span class="str">'canvas'</span>);
+    <span class="kw">const</span> <span class="var">gl</span> <span class="op">=</span> <span class="var">canvas</span>.<span class="fn">getContext</span>(<span class="str">'webgl2'</span>) <span class="op">||</span> <span class="var">canvas</span>.<span class="fn">getContext</span>(<span class="str">'webgl'</span>);
+    <span class="kw">if</span> (<span class="op">!</span><span class="var">gl</span>) {
+      <span class="kw">throw</span> <span class="kw">new</span> <span class="typ">Error</span>(<span class="str">'浏览器不支持 WebGL'</span>);
+    }
+  } <span class="kw">catch</span> (<span class="var">e</span>) {
+    <span class="fn">showFallbackUI</span>(<span class="str">'您的浏览器不支持 3D 地球显示，请使用 Chrome / Edge / Firefox 最新版'</span>);
+    <span class="kw">return</span>;
+  }
+
+  <span class="cmt">// 安全创建 Viewer</span>
+  <span class="kw">try</span> {
+    <span class="kw">const</span> <span class="var">viewer</span> <span class="op">=</span> <span class="kw">new</span> <span class="typ">Cesium</span>.<span class="typ">Viewer</span>(<span class="str">'cesiumContainer'</span>, {
+      <span class="prp">terrainProvider</span>: <span class="kw">await</span> <span class="fn">loadTerrain</span>()
+    });
+    <span class="kw">return</span> <span class="var">viewer</span>;
+  } <span class="kw">catch</span> (<span class="var">e</span>) {
+    <span class="fn">console</span>.<span class="fn">error</span>(<span class="str">'Cesium 初始化失败:'</span>, <span class="var">e</span>);
+    <span class="fn">showFallbackUI</span>(<span class="str">'3D 地球初始化失败:'</span> <span class="op">+</span> <span class="var">e</span>.<span class="var">message</span>);
+  }
+}
+</code></pre>
+      </div>
+
+      <div class="card">
+        <h3>&#128202; 场景 3：数据校验与转换</h3>
+        <p>加载 GeoJSON、CSV、KML 时大量数据校验：</p>
+<pre><code><span class="kw">function</span> <span class="fn">validateGeoJSON</span>(<span class="var">data</span>) {
+  <span class="kw">if</span> (<span class="var">data</span>.<span class="var">type</span> <span class="op">!==</span> <span class="str">'FeatureCollection'</span>) {
+    <span class="kw">throw</span> <span class="kw">new</span> <span class="typ">TypeError</span>(<span class="str">'不是有效的 FeatureCollection'</span>);
+  }
+  <span class="kw">if</span> (<span class="op">!</span><span class="typ">Array</span>.<span class="fn">isArray</span>(<span class="var">data</span>.<span class="var">features</span>)) {
+    <span class="kw">throw</span> <span class="kw">new</span> <span class="typ">TypeError</span>(<span class="str">'features 字段缺失或不是数组'</span>);
+  }
+
+  <span class="cmt">// 用 console.warn 报告但不阻断的"软错误"</span>
+  <span class="var">data</span>.<span class="var">features</span>.<span class="fn">forEach</span>((<span class="var">f</span>, <span class="var">i</span>) <span class="op">=&gt;</span> {
+    <span class="kw">if</span> (<span class="op">!</span><span class="var">f</span>.<span class="var">geometry</span>) {
+      <span class="fn">console</span>.<span class="fn">warn</span>(<span class="str">`feature[<span class="op">${</span><span class="var">i</span><span class="op">}</span>] 缺少 geometry，已跳过`</span>);
+    }
+  });
+
+  <span class="cmt">// 用 console.assert 校验关键字段</span>
+  <span class="fn">console</span>.<span class="fn">assert</span>(<span class="var">data</span>.<span class="var">features</span>.<span class="var">length</span> <span class="op">&gt;</span> <span class="num">0</span>, <span class="str">'GeoJSON 中没有任何要素'</span>);
+}
+</code></pre>
+      </div>
+
+      <div class="card">
+        <h3>&#128202; 场景 4：错误上报与监控</h3>
+        <p>生产环境必备——把错误上报到日志服务：</p>
+<pre><code><span class="cmt">// 错误上报服务（模拟）</span>
+<span class="kw">function</span> <span class="fn">reportError</span>(<span class="var">err</span>, <span class="var">extra</span> <span class="op">=</span> {}) {
+  <span class="kw">const</span> <span class="var">payload</span> <span class="op">=</span> {
+    <span class="prp">message</span>: <span class="var">err</span>.<span class="var">message</span>,
+    <span class="prp">stack</span>: <span class="var">err</span>.<span class="var">stack</span>,
+    <span class="prp">name</span>: <span class="var">err</span>.<span class="var">name</span>,
+    <span class="prp">url</span>: <span class="var">location</span>.<span class="var">href</span>,
+    <span class="prp">userAgent</span>: <span class="var">navigator</span>.<span class="var">userAgent</span>,
+    <span class="prp">timestamp</span>: <span class="var">Date</span>.<span class="fn">now</span>(),
+    <span class="op">...</span><span class="var">extra</span>
+  };
+
+  <span class="cmt">// 用 navigator.sendBeacon 保证页面卸载时也能发出去</span>
+  <span class="kw">if</span> (<span class="var">navigator</span>.<span class="var">sendBeacon</span>) {
+    <span class="var">navigator</span>.<span class="fn">sendBeacon</span>(<span class="str">'/api/errors'</span>, <span class="typ">JSON</span>.<span class="fn">stringify</span>(<span class="var">payload</span>));
+  }
+}
+
+<span class="cmt">// 全局监听</span>
+<span class="var">window</span>.<span class="fn">addEventListener</span>(<span class="str">'error'</span>, (<span class="var">e</span>) <span class="op">=&gt;</span> <span class="fn">reportError</span>(<span class="var">e</span>.<span class="var">error</span> <span class="op">||</span> <span class="kw">new</span> <span class="typ">Error</span>(<span class="var">e</span>.<span class="var">message</span>)));
+<span class="var">window</span>.<span class="fn">addEventListener</span>(<span class="str">'unhandledrejection'</span>, (<span class="var">e</span>) <span class="op">=&gt;</span> <span class="fn">reportError</span>(<span class="var">e</span>.<span class="var">reason</span>));
+</code></pre>
+      </div>
+    </div>
+
+    <div class="tip">
+      <span class="icon">&#128161;</span>
+      <div><strong>CesiumJS 错误处理的"潜规则"：</strong>CesiumJS 在出错时通常会调用 <code>throwDeveloperError</code>（开发者错误，会断言）或 <code>throwRuntimeError</code>（运行时错误）。前者说明你用错了 API，后者通常是环境问题。在生产环境，通常把 <code>Cesium.Ion.defaultAccessToken</code> 设好、用 <code>requestRenderMode</code> 减少报错，并用 try/catch 包裹关键调用。</div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 12: 练习题                                            -->
+  <!-- ============================================================ -->
+  <div class="section" id="s12">
+    <div class="section-header">
+      <div class="section-num">12</div>
+      <h2>练习题</h2>
+      <span class="tag">PRACTICE</span>
+    </div>
+
+    <div class="practice">
+      <h2>&#127919; 动手练习</h2>
+      <p>在下方控制台中输入代码并运行（Ctrl+Enter），验证你的答案：</p>
+
+      <div class="exercise">
+        <div class="q">题 1：try/catch/finally 实战</div>
+        <p style="color:var(--text);font-size:14px;">编写一个 <code>safeJSONParse(str)</code> 函数。解析失败时返回 <code>null</code>；无论成功失败，都在 finally 中打印"操作完成"。</p>
+<pre><code><span class="cmt">// 补全代码</span>
+<span class="kw">function</span> <span class="fn">safeJSONParse</span>(<span class="var">str</span>) {
+  <span class="cmt">// ...</span>
+}
+
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="fn">safeJSONParse</span>(<span class="str">'{"x":1}'</span>));    <span class="cmt">// {x: 1}</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="fn">safeJSONParse</span>(<span class="str">'不合法'</span>));     <span class="cmt">// null</span>
+</code></pre>
+      </div>
+
+      <div class="exercise">
+        <div class="q">题 2：自定义错误类（与 CesiumJS 关联）</div>
+        <p style="color:var(--text);font-size:14px;">创建一个 <code>LayerLoadError</code> 继承 <code>Error</code>，要求带 <code>layerName</code> 和 <code>retryable</code> 两个属性。然后写一个 <code>loadLayer(name)</code> 函数，名字以 "_fail" 结尾时抛出此错误，外部能精准捕获并判断是否可重试。</p>
+<pre><code><span class="cmt">// 补全代码</span>
+<span class="kw">class</span> <span class="typ">LayerLoadError</span> <span class="kw">extends</span> <span class="typ">Error</span> {
+  <span class="cmt">// ...</span>
+}
+
+<span class="kw">function</span> <span class="fn">loadLayer</span>(<span class="var">name</span>) {
+  <span class="cmt">// 名字以 _fail 结尾就抛错</span>
+  <span class="cmt">// ...</span>
+}
+
+<span class="cmt">// 测试：</span>
+<span class="cmt">// try { loadLayer('roads_fail'); }</span>
+<span class="cmt">// catch (e) {</span>
+<span class="cmt">//   console.log('错误名:', e.name);</span>
+<span class="cmt">//   console.log('图层:', e.layerName);</span>
+<span class="cmt">//   console.log('可重试?', e.retryable);</span>
+<span class="cmt">// }</span>
+</code></pre>
+      </div>
+
+      <div class="exercise">
+        <div class="q">题 3：async/await 错误处理</div>
+        <p style="color:var(--text);font-size:14px;">编写一个 async 函数 <code>fetchCityInfo(cityId)</code>：<strong>模拟</strong>用 setTimeout 发起请求（30% 概率失败）。要求用 try/catch 处理失败，失败时返回 <code>{error: '...'}</code>，并用 finally 关闭 loading。验证 Promise.allSettled 模式可以并发加载多个城市且不互相影响。</p>
+<pre><code><span class="cmt">// 补全代码</span>
+<span class="kw">async</span> <span class="kw">function</span> <span class="fn">fetchCityInfo</span>(<span class="var">cityId</span>) {
+  <span class="cmt">// 模拟：30% 概率失败</span>
+  <span class="cmt">// ...</span>
+}
+
+<span class="cmt">// 测试：</span>
+<span class="cmt">// const results = await Promise.allSettled([</span>
+<span class="cmt">//   fetchCityInfo('beijing'),</span>
+<span class="cmt">//   fetchCityInfo('shanghai'),</span>
+<span class="cmt">//   fetchCityInfo('guangzhou')</span>
+<span class="cmt">// ]);</span>
+<span class="cmt">// results.forEach(r =&gt; console.log(r.status, r.value || r.reason));</span>
+</code></pre>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 13: 交互控制台                                        -->
+  <!-- ============================================================ -->
+  <div id="s13" style="margin-bottom:52px;">
+    <div class="section-header">
+      <div class="section-num">13</div>
+      <h2>在线练习控制台</h2>
+      <span class="tag">SANDBOX</span>
+    </div>
+
+    <p style="margin-bottom:16px;color:var(--muted);">在这里写 JavaScript，用 Ctrl+Enter 运行查看结果：</p>
+
+    <div class="console-area">
+      <div class="console-header">
+        <div class="console-dots">
+          <div class="dot dot-r"></div>
+          <div class="dot dot-y"></div>
+          <div class="dot dot-g"></div>
+        </div>
+        <span>JS SANDBOX</span>
+        <span style="font-size:11px;color:var(--muted);">Day 10</span>
+      </div>
+      <textarea id="sandbox-code" spellcheck="false">// 1. try/catch/finally 三段式
+function safeJSONParse(str) {
+  try {
+    return JSON.parse(str);
+  } catch (e) {
+    console.error('解析失败:', e.message);
+    return null;
+  } finally {
+    console.log('操作完成');
+  }
+}
+console.log(safeJSONParse('{"lat":39.9}'));  // {lat: 39.9}
+console.log(safeJSONParse('not json'));        // null
+
+// 2. 自定义错误类
+class LayerLoadError extends Error {
+  constructor(layerName, retryable) {
+    super(`图层 ${layerName} 加载失败`);
+    this.name = 'LayerLoadError';
+    this.layerName = layerName;
+    this.retryable = retryable;
+  }
+}
+
+function loadLayer(name) {
+  if (name.endsWith('_fail')) {
+    throw new LayerLoadError(name, true);
+  }
+  return { name, data: 'OK' };
+}
+
+try {
+  loadLayer('roads_fail');
+} catch (e) {
+  console.log('错误名:', e.name);
+  console.log('图层:', e.layerName);
+  console.log('可重试:', e.retryable);
+}
+
+// 3. async/await + Promise.allSettled
+async function fetchCityInfo(cityId) {
+  await new Promise(r => setTimeout(r, 50));
+  if (Math.random() < 0.3) {
+    throw new Error(`城市 ${cityId} 加载失败`);
+  }
+  return { id: cityId, pop: 1000 };
+}
+
+(async () => {
+  const results = await Promise.allSettled([
+    fetchCityInfo('beijing'),
+    fetchCityInfo('shanghai'),
+    fetchCityInfo('guangzhou')
+  ]);
+  results.forEach(r => {
+    if (r.status === 'fulfilled') {
+      console.log(' 加载成功:', r.value);
+    } else {
+      console.warn(' 加载失败:', r.reason.message);
+    }
+  });
+})();
+
+// 4. console 调试全家桶
+console.group('调试流程');
+  console.log('  普通日志');
+  console.table([
+    { name: '北京', pop: 2154 },
+    { name: '上海', pop: 2487 }
+  ]);
+  console.time('耗时');
+  for (let i = 0; i < 1000; i++) { /* 模拟 */ }
+  console.timeEnd('耗时');
+  console.assert(1 === 2, '断言失败演示');
+console.groupEnd();
+
+// 5. 全局错误监听（演示）
+window.addEventListener('unhandledrejection', (e) => {
+  console.warn('[全局兜底] 未处理的 Promise 拒绝:', e.reason?.message);
+});
+</textarea>
+      <div class="console-actions">
+        <button class="btn btn-run" onclick="runCode()">&#9654; 运行</button>
+        <button class="btn btn-clear" onclick="clearOutput()">清空输出</button>
+        <button class="btn btn-clear" onclick="resetCode()">重置代码</button>
+      </div>
+      <div id="output-box">// 点击"运行"查看输出结果...</div>
+    </div>
+  </div>
+
+
+  <!-- 今日总结 -->
+  <div class="card" style="border-color:var(--accent4);border-left-width:4px;">
+    <h3 style="color:var(--accent4)">&#128203; 今日知识点总结</h3>
+    <ul style="margin-top:12px;">
+      <li>&#9989; JavaScript 有 7 种内置错误类型，<code>TypeError</code> / <code>ReferenceError</code> / <code>SyntaxError</code> 最常见</li>
+      <li>&#9989; <code>try/catch/finally</code> 是错误处理的基础，<code>finally</code> 永远执行</li>
+      <li>&#9989; 用 <code>throw new Error(...)</code> 主动抛出，比返回错误对象更彻底</li>
+      <li>&#9989; 自定义错误类可继承 <code>Error</code>，附加业务字段（code、context）</li>
+      <li>&#9989; <code>err.stack</code> 是调试金矿——记录完整调用链</li>
+      <li>&#9989; async/await 可用 try/catch 包裹，<code>Promise.allSettled</code> 适合"宽容并发"</li>
+      <li>&#9989; <code>window.onerror</code> + <code>unhandledrejection</code> 全局兜底</li>
+      <li>&#9989; <code>console.table</code>、<code>console.group</code>、<code>console.time</code> 是调试神器</li>
+      <li>&#9989; <code>debugger</code> 语句 + DevTools 断点是复杂问题必备</li>
+      <li>&#9989; CesiumJS 中：资源加载、WebGL 检测、数据校验、错误上报是 4 大典型场景</li>
+    </ul>
+  </div>
+
+</div><!-- /container -->
+
+<!-- ===== FOOTER ===== -->
+<div class="footer">
+  <p>&#128640; <strong>每日JS</strong> — JavaScript &rarr; CesiumJS 学习路径</p>
+  <p style="margin-top:6px;">Day 10 / 错误处理与调试 &middot; 明天继续：<strong>异步编程 Promise/async/await</strong></p>
+</div>
+
+
+<!-- ===== SCRIPT ===== -->
+<script>
+  const DEFAULT_CODE = document.getElementById('sandbox-code').value;
+
+  function runCode() {
+    const code = document.getElementById('sandbox-code').value;
+    const outputBox = document.getElementById('output-box');
+    const logs = [];
+
+    const origLog = console.log;
+    const origError = console.error;
+    const origWarn = console.warn;
+
+    console.log = (...args) => {
+      logs.push(args.map(a => {
+        if (typeof a === 'object' && a !== null) {
+          try { return JSON.stringify(a, null, 2); } catch { return String(a); }
+        }
+        return String(a);
+      }).join(' '));
+      origLog(...args);
+    };
+    console.error = (...args) => {
+      logs.push('\u274C ' + args.join(' '));
+      origError(...args);
+    };
+    console.warn = (...args) => {
+      logs.push('\u26A0\uFE0F ' + args.join(' '));
+      origWarn(...args);
+    };
+
+    try {
+      eval(code);
+      outputBox.innerHTML = logs.length
+        ? logs.map(l => '<span>' + escHtml(l) + '</span>').join('\n')
+        : '<span style="color:var(--muted)">// 代码运行成功（无输出）</span>';
+    } catch(e) {
+      outputBox.innerHTML = '<span class="err">\u274C ' + escHtml(e.message) + '</span>';
+    } finally {
+      console.log = origLog;
+      console.error = origError;
+      console.warn = origWarn;
+    }
+  }
+
+  function clearOutput() {
+    document.getElementById('output-box').innerHTML = '// 输出已清空...';
+  }
+
+  function resetCode() {
+    document.getElementById('sandbox-code').value = DEFAULT_CODE;
+    clearOutput();
+  }
+
+  function escHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  document.getElementById('sandbox-code').addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      e.preventDefault();
+      runCode();
+    }
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,1500 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>JavaScript 每日学习 — Day 15：材质、贴图与 3D Tiles</title>
+  <style>
+    /* ===== 全局 ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0f1117;
+      --surface:   #1a1d27;
+      --card:      #21253a;
+      --border:    #2e3350;
+      --accent:    #2dd4bf;
+      --accent2:   #f7c948;
+      --accent3:   #7ee787;
+      --accent4:   #818cf8;
+      --text:      #cdd3e0;
+      --muted:     #6e7a96;
+      --tag-bg:    #0d3321;
+      --code-bg:   #161b2e;
+    }
+
+    body {
+      font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.75;
+      font-size: 15px;
+    }
+
+    /* ===== 顶部 Banner ===== */
+    .hero {
+      background: linear-gradient(135deg, #0d3321 0%, #115542 50%, #0d3321 100%);
+      border-bottom: 1px solid #16533e;
+      padding: 52px 24px 40px;
+      text-align: center;
+    }
+    .hero .badge {
+      display: inline-block;
+      background: var(--accent);
+      color: #0f0e1a;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 4px 12px;
+      border-radius: 20px;
+      margin-bottom: 16px;
+    }
+    .hero h1 {
+      font-size: clamp(24px, 5vw, 42px);
+      font-weight: 800;
+      color: #fff;
+      line-height: 1.2;
+      margin-bottom: 12px;
+    }
+    .hero h1 span { color: var(--accent); }
+    .hero p {
+      color: var(--muted);
+      font-size: 15px;
+      max-width: 640px;
+      margin: 0 auto 24px;
+    }
+    .hero .meta {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      flex-wrap: wrap;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .hero .meta span { display: flex; align-items: center; gap: 5px; }
+
+    /* ===== 布局 ===== */
+    .container { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; }
+
+    /* ===== 目录卡片 ===== */
+    .toc {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--accent);
+      border-radius: 12px;
+      padding: 24px 28px;
+      margin-bottom: 40px;
+    }
+    .toc h2 { font-size: 14px; letter-spacing: 1px; text-transform: uppercase; color: var(--accent); margin-bottom: 14px; }
+    .toc ol { padding-left: 20px; }
+    .toc li { margin: 6px 0; }
+    .toc a { color: var(--text); text-decoration: none; }
+    .toc a:hover { color: var(--accent); }
+
+    /* ===== 章节标题 ===== */
+    .section { margin-bottom: 52px; }
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 24px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    .section-num {
+      width: 38px; height: 38px;
+      border-radius: 10px;
+      background: var(--accent);
+      color: #0f0e1a;
+      font-weight: 800;
+      font-size: 16px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .section-header h2 {
+      font-size: 22px;
+      font-weight: 700;
+      color: #fff;
+    }
+    .section-header .tag {
+      font-size: 11px;
+      background: var(--tag-bg);
+      color: var(--accent);
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    /* ===== 卡片 ===== */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+    .card h3 {
+      font-size: 16px;
+      color: var(--accent2);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card p { margin-bottom: 10px; color: var(--text); }
+    .card p:last-child { margin-bottom: 0; }
+
+    /* ===== 代码块 ===== */
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px 22px;
+      overflow-x: auto;
+      margin: 16px 0;
+      font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+      font-size: 13.5px;
+      line-height: 1.7;
+    }
+    code { font-family: inherit; }
+
+    /* 语法着色 */
+    .kw  { color: #c792ea; }
+    .str { color: #c3e88d; }
+    .num { color: #f78c6c; }
+    .cmt { color: #546e7a; font-style: italic; }
+    .fn  { color: #82aaff; }
+    .var { color: #eeffff; }
+    .op  { color: var(--accent); }
+    .typ { color: var(--accent2); }
+    .out { color: var(--accent3); }
+    .prp { color: #ffcb6b; }
+    .ces { color: #2dd4bf; font-weight: 600; }
+
+    /* ===== 提示框 ===== */
+    .tip, .warn, .info {
+      border-radius: 10px;
+      padding: 14px 18px;
+      margin: 16px 0;
+      font-size: 14px;
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+    .tip  { background: #0d3321; border-left: 4px solid var(--accent3); }
+    .warn { background: #3a2500; border-left: 4px solid var(--accent2); }
+    .info { background: #1e1b4b; border-left: 4px solid var(--accent4); }
+
+    /* ===== 对比表格 ===== */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 14px;
+    }
+    th {
+      background: var(--surface);
+      color: var(--accent);
+      padding: 12px 16px;
+      text-align: left;
+      border-bottom: 2px solid var(--border);
+      font-weight: 600;
+    }
+    td {
+      padding: 11px 16px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+      vertical-align: top;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(45, 212, 191, 0.04); }
+    .td-kw { color: #c792ea; font-family: 'Cascadia Code','Fira Code',monospace; font-weight: 600; }
+    .td-type { color: var(--accent2); }
+    .td-good { color: var(--accent3); }
+    .td-bad  { color: #ff7b72; }
+
+    /* ===== 两列网格 ===== */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 600px) { .grid-2 { grid-template-columns: 1fr; } }
+
+    /* ===== 大卡片 ===== */
+    .big-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 28px;
+      margin-bottom: 20px;
+    }
+    .big-card h3 { font-size: 17px; color: var(--accent); margin-bottom: 16px; }
+
+    /* ===== API 速查表 ===== */
+    .api-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+      gap: 12px;
+      margin: 16px 0;
+    }
+    .api-item {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      text-align: center;
+      transition: border-color 0.2s;
+    }
+    .api-item:hover { border-color: var(--accent); }
+    .api-item .icon { font-size: 28px; margin-bottom: 8px; display: block; }
+    .api-item strong { display: block; color: var(--accent); font-size: 14px; }
+    .api-item small { display: block; color: var(--muted); font-size: 12px; margin-top: 4px; }
+
+    /* ===== 练习区 ===== */
+    .practice {
+      background: linear-gradient(135deg, #1e1b3a, #1a1a2d);
+      border: 1px solid #3b3580;
+      border-radius: 12px;
+      padding: 28px;
+      margin-top: 48px;
+    }
+    .practice h2 {
+      font-size: 20px;
+      color: var(--accent3);
+      margin-bottom: 8px;
+    }
+    .practice p { color: var(--muted); margin-bottom: 20px; font-size: 14px; }
+    .exercise {
+      background: var(--code-bg);
+      border: 1px dashed #3b3580;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+    .exercise .q {
+      color: var(--accent2);
+      font-weight: 600;
+      margin-bottom: 12px;
+      font-size: 14px;
+    }
+    .exercise pre { margin: 0; }
+
+    /* ===== 交互控制台 ===== */
+    .console-area {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-top: 48px;
+    }
+    .console-header {
+      background: var(--surface);
+      padding: 12px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+    .console-header span { color: var(--accent); font-size: 13px; font-weight: 600; letter-spacing: 1px; }
+    .console-dots { display: flex; gap: 6px; }
+    .dot { width: 12px; height: 12px; border-radius: 50%; }
+    .dot-r { background: #ff5f57; }
+    .dot-y { background: #febc2e; }
+    .dot-g { background: #28c840; }
+    #sandbox-code {
+      width: 100%;
+      background: var(--code-bg);
+      color: var(--accent3);
+      border: none;
+      padding: 18px 20px;
+      font-family: 'Cascadia Code','Fira Code',monospace;
+      font-size: 13.5px;
+      line-height: 1.7;
+      resize: vertical;
+      min-height: 160px;
+      outline: none;
+    }
+    .console-actions {
+      padding: 12px 18px;
+      display: flex;
+      gap: 10px;
+      border-top: 1px solid var(--border);
+    }
+    .btn {
+      padding: 8px 20px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      transition: opacity .2s;
+    }
+    .btn:hover { opacity: .85; }
+    .btn-run { background: var(--accent); color: #0f0e1a; }
+    .btn-clear { background: var(--surface); color: var(--muted); border: 1px solid var(--border); }
+    #output-box {
+      padding: 16px 20px;
+      min-height: 60px;
+      font-family: 'Cascadia Code','Fira Code',monospace;
+      font-size: 13px;
+      color: var(--accent3);
+      border-top: 1px solid var(--border);
+      white-space: pre-wrap;
+    }
+    #output-box .err { color: #ff7b72; }
+
+    /* ===== 进度条 ===== */
+    .progress-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 22px 26px;
+      margin-bottom: 40px;
+    }
+    .progress-card h3 { font-size: 13px; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); margin-bottom: 16px; }
+    .progress-list { display: flex; flex-wrap: wrap; gap: 8px; }
+    .progress-item {
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+    }
+    .pi-done  { background: #0d3321; color: var(--accent3); border: 1px solid #1a4d2a; }
+    .pi-js    { background: #1e1b4b; color: var(--accent4); border: 1px solid #312e81; }
+    .pi-today { background: #0d3321; color: var(--accent); border: 1px solid var(--accent); }
+    .pi-next  { background: var(--card); color: var(--muted); border: 1px solid var(--border); }
+
+    /* ===== 流程图 ===== */
+    .flow-diagram {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 28px;
+      margin: 16px 0;
+      text-align: center;
+    }
+    .flow-row { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin: 6px 0; }
+    .flow-box {
+      padding: 10px 24px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      min-width: 180px;
+    }
+    .flow-arrow { color: var(--accent); font-size: 20px; }
+    .fb-material { background: #115542; border: 2px solid var(--accent); color: var(--accent); }
+    .fb-tiles    { background: #1e1b4b; border: 2px solid var(--accent4); color: var(--accent4); }
+    .fb-gpu      { background: #161b2e; border: 1px solid var(--border); color: var(--muted); }
+    .fb-app      { background: #3a2500; border: 2px solid var(--accent2); color: var(--accent2); }
+
+    /* ===== inline code ===== */
+    p code, li code, td code {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      padding: 1px 6px;
+      border-radius: 5px;
+      font-family: 'Cascadia Code','Fira Code',monospace;
+      font-size: 12.5px;
+      color: var(--accent);
+    }
+    ul { padding-left: 20px; }
+    li { margin: 5px 0; }
+
+    /* Cesium 关键字高亮 */
+    .ces-kw { color: #2dd4bf; }
+  </style>
+</head>
+<body>
+
+<!-- ===== HERO ===== -->
+<div class="hero">
+  <div class="badge">CesiumJS 学习路径 · 三维地球篇</div>
+  <h1>Day 15 — <span>材质、贴图</span>与 3D Tiles</h1>
+  <p>昨天你学会了在地球上"画"各种图形——点、线、面、体。但那些图形看起来还很"朴素"：纯色填充、简单轮廓。今天要让它们<strong>活起来</strong>：贴上照片、加光效、做渐变，以及加载真实世界的 3D 建筑和地形——这就是 3D Tiles 的舞台。</p>
+  <div class="meta">
+    <span>&#128197; 第 15 天</span>
+    <span>&#9201; 预计 70 分钟</span>
+    <span>&#127758; CesiumJS 阶段 · 第 3 天</span>
+  </div>
+</div>
+
+<!-- ===== CONTAINER ===== -->
+<div class="container">
+
+  <!-- 学习进度 -->
+  <div class="progress-card">
+    <h3>&#128205; 学习路线图</h3>
+    <div class="progress-list">
+      <div class="progress-item pi-js">Day 01-12 · JS 基础完成 &#127881;</div>
+      <div class="progress-item pi-done">Day 13 · CesiumJS 入门</div>
+      <div class="progress-item pi-done">Day 14 · Entity 实体与几何体</div>
+      <div class="progress-item pi-today">Day 15 · 材质、贴图与 3D Tiles &#8592; 今天</div>
+      <div class="progress-item pi-next">Day 16 · 相机控制与视角管理</div>
+      <div class="progress-item pi-next">Day 17+ · 三维地球深入</div>
+    </div>
+  </div>
+
+  <!-- 目录 -->
+  <div class="toc">
+    <h2>&#128218; 本课目录</h2>
+    <ol>
+      <li><a href="#s1">材质系统回顾：从纯色到高级效果</a></li>
+      <li><a href="#s2">ColorMaterialProperty 与颜色进阶</a></li>
+      <li><a href="#s3">ImageMaterialProperty：贴图的艺术</a></li>
+      <li><a href="#s4">Polyline 材质全家桶</a></li>
+      <li><a href="#s5">Checkerboard / Stripe / Grid：特殊材质</a></li>
+      <li><a href="#s6">CompositeMaterialProperty：材质组合</a></li>
+      <li><a href="#s7">MaterialProperty 与 CallbackProperty：动态材质</a></li>
+      <li><a href="#s8">3D Tiles：Cesium 的王牌功能</a></li>
+      <li><a href="#s9">3D Tiles 加载实战：城市建筑、地形、点云</a></li>
+      <li><a href="#s10">3D Tiles 样式与过滤：Cesium3DTileStyle</a></li>
+      <li><a href="#s11">CesiumJS 关联场景：材质+Tiles 的真实应用</a></li>
+      <li><a href="#s12">练习题</a></li>
+      <li><a href="#s13">在线练习控制台</a></li>
+    </ol>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 1: 材质系统回顾                                         -->
+  <!-- ============================================================ -->
+  <div class="section" id="s1">
+    <div class="section-header">
+      <div class="section-num">1</div>
+      <h2>材质系统回顾：从纯色到高级效果</h2>
+      <span class="tag">基础</span>
+    </div>
+
+    <div class="card">
+      <h3>&#127912; 什么是材质（Material）？</h3>
+      <p>在 CesiumJS 中，<strong>Material</strong> 决定了 Entity 图形看起来是什么样子——颜色、纹理、光效、透明度、动画。你可以理解为：<code>Entity 的形状 = Graphics</code>，<code>Entity 的外观 = Material</code>。</p>
+      <p>昨天我们接触了 7 种材质，今天深入每一种的细节，并加入新的高级材质和 3D Tiles。</p>
+    </div>
+
+    <div class="card">
+      <h3>&#128736;&#65039; 材质系统架构</h3>
+      <div class="flow-diagram">
+        <div class="flow-row">
+          <div class="flow-box fb-app">你的代码<br><small>Entity.material = ...</small></div>
+        </div>
+        <div class="flow-arrow">&#8595;</div>
+        <div class="flow-row">
+          <div class="flow-box fb-material">MaterialProperty<br><small>Color / Image / PolylineGlow / Stripe / ...</small></div>
+        </div>
+        <div class="flow-arrow">&#8595;</div>
+        <div class="flow-row">
+          <div class="flow-box fb-gpu">Cesium.Material<br><small>WebGL 着色器 + 纹理</small></div>
+        </div>
+        <div class="flow-arrow">&#8595;</div>
+        <div class="flow-row">
+          <div class="flow-box fb-gpu">GPU 渲染<br><small>Fragment Shader 执行</small></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>&#128202; 材质全景分类</h3>
+      <table>
+        <tr><th>类别</th><th>材质名</th><th>适用图形</th><th>效果描述</th></tr>
+        <tr><td class="td-kw">基础</td><td class="td-type">Color</td><td>所有</td><td>纯色填充，最常用</td></tr>
+        <tr><td class="td-kw">纹理</td><td class="td-type">Image</td><td>polygon/ellipse/rectangle/corridor/wall/box</td><td>贴图片纹理</td></tr>
+        <tr><td class="td-kw">折线</td><td class="td-type">PolylineGlow</td><td>polyline</td><td>光晕发光效果</td></tr>
+        <tr><td class="td-kw">折线</td><td class="td-type">PolylineArrow</td><td>polyline</td><td>带方向箭头</td></tr>
+        <tr><td class="td-kw">折线</td><td class="td-type">PolylineDash</td><td>polyline</td><td>虚线效果</td></tr>
+        <tr><td class="td-kw">图案</td><td class="td-type">Checkerboard</td><td>polygon/ellipse/rectangle</td><td>棋盘格</td></tr>
+        <tr><td class="td-kw">图案</td><td class="td-type">Stripe</td><td>polygon/ellipse/rectangle</td><td>条纹斑马纹</td></tr>
+        <tr><td class="td-kw">图案</td><td class="td-type">Grid</td><td>polygon/ellipse/rectangle</td><td>网格线</td></tr>
+        <tr><td class="td-kw">组合</td><td class="td-type">Composite</td><td>polygon/ellipse</td><td>多材质叠加混合</td></tr>
+      </table>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 2: ColorMaterialProperty                               -->
+  <!-- ============================================================ -->
+  <div class="section" id="s2">
+    <div class="section-header">
+      <div class="section-num">2</div>
+      <h2>ColorMaterialProperty 与颜色进阶</h2>
+      <span class="tag">颜色</span>
+    </div>
+
+    <div class="card">
+      <h3>&#128308; 基用法</h3>
+      <p>Color 材质是最简单的——直接传一个 <code>Cesium.Color</code> 对象即可。但"简单"不代表"弱"，透明度组合是 2D 覆盖区域的杀手锏。</p>
+<pre><code><span class="cmt">// 最简形式</span>
+<span class="var">material</span>: <span class="typ">Cesium</span>.<span class="typ">Color</span>.<span class="var">RED</span>
+
+<span class="cmt">// 带透明度（最常用！）</span>
+<span class="var">material</span>: <span class="typ">Cesium</span>.<span class="typ">Color</span>.<span class="var">RED</span>.<span class="fn">withAlpha</span>(<span class="num">0.3</span>)
+
+<span class="cmt">// 从 CSS 颜色字符串创建</span>
+<span class="var">material</span>: <span class="typ">Cesium</span>.<span class="typ">Color</span>.<span class="fn">fromCssColorString</span>(<span class="str">'#61dafb'</span>)
+<span class="var">material</span>: <span class="typ">Cesium</span>.<span class="typ">Color</span>.<span class="fn">fromCssColorString</span>(<span class="str">'rgba(255, 0, 0, 0.5)'</span>)
+
+<span class="cmt">// 从 HSL 创建（色相、饱和度、亮度）</span>
+<span class="var">material</span>: <span class="typ">Cesium</span>.<span class="typ">Color</span>.<span class="fn">fromHsl</span>(<span class="num">0.0</span>, <span class="num">1.0</span>, <span class="num">0.5</span>, <span class="num">0.3</span>)  <span class="cmt">// 红色半透明</span>
+
+<span class="cmt">// 从 Bytes 创建（0-255 范围）</span>
+<span class="var">material</span>: <span class="kw">new</span> <span class="typ">Cesium</span>.<span class="typ">Color</span>(<span class="num">255</span>/<span class="num">255</span>, <span class="num">0</span>/<span class="num">255</span>, <span class="num">0</span>/<span class="num">255</span>, <span class="num">0.3</span>)
+</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>&#127912; 颜色进阶技巧</h3>
+<pre><code><span class="cmt">// 颜色混合（两个颜色按比例混合）</span>
+<span class="kw">const</span> <span class="var">mixed</span> <span class="op">=</span> <span class="typ">Cesium</span>.<span class="typ">Color</span>.<span class="var">RED</span>.<span class="fn">blend</span>(<span class="typ">Cesium</span>.<span class="typ">Color</span>.<span class="var">BLUE</span>, <span class="num">0.5</span>); <span class="cmt">// 50% 红 + 50% 蓝</span>
+
+<span class="cmt">// 亮度调整</span>
+<span class="kw">const</span> <span class="var">brighter</span> <span class="op">=</span> <span class="typ">Cesium</span>.<span class="typ">Color</span>.<span class="var">RED</span>.<span class="fn">brighten</span>(<span class="num">0.5</span>, <span class="kw">new</span> <span class="typ">Cesium</span>.<span class="typ">Color</span>());
+<span class="kw">const</span> <span class="var">darker</span> <span class="op">=</span> <span class="typ">Cesium</span>.<span class="typ">Color</span>.<span class="var">RED</span>.<span class="fn">darken</span>(<span class="num">0.5</span>, <span class="kw">new</span> <span class="typ">Cesium</span>.<span class="typ">Color</span>());
+
+<span class="cmt">// 预设颜色速查</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="typ">Cesium</span>.<span class="typ">Color</span>.<span class="var">RED</span>);         <span class="cmt">// { red: 1, green: 0, blue: 0, alpha: 1 }</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="typ">Cesium</span>.<span class="typ">Color</span>.<span class="var">CYAN</span>);       <span class="cmt">// { red: 0, green: 1, blue: 1, alpha: 1 }</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="typ">Cesium</span>.<span class="typ">Color</span>.<span class="var">TRANSPARENT</span>); <span class="cmt">// alpha = 0</span>
+</code></pre>
+    </div>
+
+    <div class="tip">
+      <span class="icon">&#128161;</span>
+      <div><strong>withAlpha 是 2D 覆盖的灵魂：</strong>行政区划、雷达范围、灾害区域等需要<strong>半透明叠加</strong>在底图之上。<code>Cesium.Color.RED.withAlpha(0.3)</code> 是你每天都会写的代码。</div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 3: ImageMaterialProperty                               -->
+  <!-- ============================================================ -->
+  <div class="section" id="s3">
+    <div class="section-header">
+      <div class="section-num">3</div>
+      <h2>ImageMaterialProperty：贴图的艺术</h2>
+      <span class="tag">纹理</span>
+    </div>
+
+    <div class="card">
+      <h3>&#128444; 基础用法</h3>
+      <p>Image 材质把一张图片贴到图形表面，就像给一面墙贴壁纸。适用于：雷达覆盖图、热力图、卫星云图、道路纹理、地块标记。</p>
+<pre><code><span class="var">viewer</span>.<span class="var">entities</span>.<span class="fn">add</span>({
+  <span class="var">rectangle</span>: {
+    <span class="var">coordinates</span>: <span class="typ">Cesium</span>.<span class="typ">Rectangle</span>.<span class="fn">fromDegrees</span>(<span class="num">115.0</span>, <span class="num">39.0</span>, <span class="num">118.0</span>, <span class="num">41.0</span>),
+    <span class="var">material</span>: <span class="kw">new</span> <span class="typ">Cesium</span>.<span class="typ">ImageMaterialProperty</span>({
+      <span class="var">image</span>: <span class="str">'radar-coverage.png'</span>,   <span class="cmt">// 图片 URL</span>
+      <span class="var">transparent</span>: <span class="kw">true</span>,          <span class="cmt">// 支持透明像素</span>
+      <span class="var">repeat</span>: <span class="kw">new</span> <span class="typ">Cesium</span>.<span class="typ">Cartesian2</span>(<span class="num">1</span>, <span class="num">1</span>) <span class="cmt">// 重复次数</span>
+    })
+  }
+});
+</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>&#127912; 图片贴图进阶</h3>
+<pre><code><span class="cmt">// 重复平铺（4×4 网格）</span>
+<span class="var">material</span>: <span class="kw">new</span> <span class="typ">Cesium</span>.<span class="typ">ImageMaterialProperty</span>({
+  <span class="var">image</span>: <span class="str">'tile-texture.jpg'</span>,
+  <span class="var">repeat</span>: <span class="kw">new</span> <span class="typ">Cesium</span>.<span class="typ">Cartesian2</span>(<span class="num">4</span>, <span class="num">4</span>), <span class="cmt">// 4 列 × 4 行</span>
+  <span class="var">color</span>: <span class="typ">Cesium</span>.<span class="typ">Color</span>.<span class="var">WHITE</span>,    <span class="cmt">// 白色 = 不染色（原色显示）</span>
+  <span class="var">transparent</span>: <span class="kw">false</span>
+})
+
+<span class="cmt">// 带颜色叠加（图片 × 颜色 = 最终色）</span>
+<span class="var">material</span>: <span class="kw">new</span> <span class="typ">Cesium</span>.<span class="typ">ImageMaterialProperty</span>({
+  <span class="var">image</span>: <span class="str">'cloud.png'</span>,
+  <span class="var">color</span>: <span class="typ">Cesium</span>.<span class="typ">Color</span>.<span class="var">BLUE</span>.<span class="fn">withAlpha</span>(<span class="num">0.6</span>), <span class="cmt">// 蓝色调云图</span>
+  <span class="var">transparent</span>: <span class="kw">true</span>
+})
+
+<span class="cmt">// 用 Canvas 作为纹理源（动态生成！）</span>
+<span class="kw">const</span> <span class="var">canvas</span> <span class="op">=</span> <span class="var">document</span>.<span class="fn">createElement</span>(<span class="str">'canvas'</span>);
+<span class="var">canvas</span>.<span class="var">width</span> <span class="op">=</span> <span class="num">256</span>;
+<span class="var">canvas</span>.<span class="var">height</span> <span class="op">=</span> <span class="num">256</span>;
+<span class="kw">const</span> <span class="var">ctx</span> <span class="op">=</span> <span class="var">canvas</span>.<span class="fn">getContext</span>(<span class="str">'2d'</span>);
+<span class="cmt">// ... 在 canvas 上画热力图</span>
+<span class="var">ctx</span>.<span class="fn">fillRect</span>(<span class="num">0</span>, <span class="num">0</span>, <span class="num">256</span>, <span class="num">256</span>);
+
+<span class="var">material</span>: <span class="kw">new</span> <span class="typ">Cesium</span>.<span class="typ">ImageMaterialProperty</span>({
+  <span class="var">image</span>: <span class="var">canvas</span> <span class="cmt">// 直接传 Canvas 对象！</span>
+})
+</code></pre>
+    </div>
+
+    <div class="info">
+      <span class="icon">&#128161;</span>
+      <div><strong>Canvas 纹理 = 无限可能：</strong>你可以用 Canvas API 实时绘制热力图、渐变、动画，然后把 Canvas 直接传给 ImageMaterialProperty。这是"动态材质"最简单也最强大的方式，不需要 WebGL 着色器知识。</div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 4: Polyline 材质全家桶                                  -->
+  <!-- ============================================================ -->
+  <div class="section" id="s4">
+    <div class="section-header">
+      <div class="section-num">4</div>
+      <h2>Polyline 材质全家桶</h2>
+      <span class="tag">折线</span>
+    </div>
+
+    <div class="card">
+      <h3>&#127759; 三种专属折线材质</h3>
+      <table>
+        <tr><th>材质</th><th>视觉效果</th><th>典型应用</th></tr>
+        <tr><td class="td-kw">PolylineGlow</td><td class="td-good">光晕 + 中心亮线</td><td>航线、轨迹、能量流</td></tr>
+        <tr><td class="td-kw">PolylineArrow</td><td class="td-good">带方向箭头</td><td>物流路线、风向</td></tr>
+        <tr><td class="td-kw">PolylineDash</td><td class="td-good">虚线（可自定义间隔）</td><td>规划路线、临时路径</td></tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3>&#10132; PolylineGlow — 发光折线</h3>
+<pre><code><span class="var">viewer</span>.<span class="var">entities</span>.<span class="fn">add</span>({
+  <span class="var">polyline</span>: {
+    <span class="var">positions</span>: <span class="typ">Cesium</span>.<span class="typ">Cartesian3</span>.<span class="fn">fromDegreesArray</span>([
+      <span class="num">116.39</span>, <span class="num">39.91</span>,
+      <span class="num">121.47</span>, <span class="num">31.23</span>
+    ]),
+    <span class="var">width</span>: <span class="num">10</span>,
+    <span class="var">material</span>: <span class="kw">new</span> <span class="typ">Cesium</span>.<span class="typ">PolylineGlowMaterialProperty</span>({
+      <span class="var">glowPower</span>: <span class="num">0.25</span>,     <span class="cmt">// 光晕范围 0-1，越大越弥散</span>
+      <span class="var">taperPower</span>: <span class="num">1.0</span>,    <span class="cmt">// 1.0=不缩窄；0=细到消失</span>
+      <span class="var">color</span>: <span class="typ">Cesium</span>.<span class="typ">Color</span>.<span class="var">CYAN</span>
+    })
+  }
+});
+</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>&#10132; PolylineArrow — 箭头折线</h3>
+<pre><code><span class="var">viewer</span>.<span class="var">entities</span>.<span class="fn">add</span>({
+  <span class="var">polyline</span>: {
+    <span class="var">positions</span>: <span class="typ">Cesium</span>.<span class="fn">fromDegreesArrayHeights</span>([
+      <span class="num">116.39</span>, <span class="num">39.91</span>, <span class="num">0</span>,
+      <span class="num">121.47</span>, <span class="num">31.23</span>, <span class="num">0</span>
+    ]),
+    <span class="var">width</span>: <span class="num">8</span>,
+    <span class="var">material</span>: <span class="kw">new</span> <span class="typ">Cesium</span>.<span class="typ">PolylineArrowMaterialProperty</span>(
+      <span class="typ">Cesium</span>.<span class="typ">Color</span>.<span class="var">ORANGE</span>
+    )
+  }
+});
+</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>&#10132; PolylineDash — 虚线折线</h3>
+<pre><code><span class="var">viewer</span>.<span class="var">entities</span>.<span class="fn">add</span>({
+  <span class="var">polyline</span>: {
+    <span class="var">positions</span>: <span class="typ">Cesium</span>.<span class="typ">Cartesian3</span>.<span class="fn">fromDegreesArray</span>([
+      <span class="num">116.39</span>, <span class="num">39.91</span>,
+      <span class="num">113.26</span>, <span class="num">23.13</span>
+    ]),
+    <span class="var">width</span>: <span class="num">4</span>,
+    <span class="var">material</span>: <span class="kw">new</span> <span class="typ">Cesium</span>.<span class="typ">PolylineDashMaterialProperty</span>({
+      <span class="var">color</span>: <span class="typ">Cesium</span>.<span class="typ">Color</span>.<span class="var">YELLOW</span>,
+      <span class="var">gapColor</span>: <span class="typ">Cesium</span>.<span class="typ">Color</span>.<span class="var">TRANSPARENT</span>,  <span class="cmt">// 间隔颜色</span>
+      <span class="var">dashLength</span>: <span class="num">16.0</span>,              <span class="cmt">// 实线长度</span>
+      <span class="var">dashPattern</span>: <span class="num">255.0</span>             <span class="cmt">// 255=全实；可调间隔模式</span>
+    })
+  }
+});
+</code></pre>
+    </div>
+
+    <div class="tip">
+      <span class="icon">&#128161;</span>
+      <div><strong>折线材质的 JS 基础：</strong>这些材质本质上是在 WebGL Fragment Shader 中用数学公式计算每像素的颜色。你不需要写 Shader，CesiumJS 帮你封装好了。但理解"材质 = 函数(位置, 时间) → 颜色"这个概念很重要。</div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 5: 特殊材质                                            -->
+  <!-- ============================================================ -->
+  <div class="section" id="s5">
+    <div class="section-header">
+      <div class="section-num">5</div>
+      <h2>Checkerboard / Stripe / Grid：特殊材质</h2>
+      <span class="tag">图案</span>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <h3>&#127912; Checkerboard — 棋盘格</h3>
+<pre><code><span class="var">material</span>: <span class="kw">new</span> <span class="typ">Cesium</span>.<span class="typ">CheckerboardMaterialProperty</span>({
+  <span class="var">evenColor</span>: <span class="typ">Cesium</span>.<span class="typ">Color</span>.<span class="var">WHITE</span>,
+  <span class="var">oddColor</span>:  <span class="typ">Cesium</span>.<span class="typ">Color</span>.<span class="var">BLUE</span>,
+  <span class="var">repeat</span>: <span class="kw">new</span> <span class="typ">Cesium</span>.<span class="typ">Cartesian2</span>(<span class="num">8</span>, <span class="num">8</span>)
+})
+</code></pre>
+        <p style="color:var(--muted);font-size:13px;">测试、调试用，也适合做"分区标记"。</p>
+      </div>
+
+      <div class="card">
+        <h3>&#128295; Stripe — 条纹</h3>
+<pre><code><span class="var">material</span>: <span class="kw">new</span> <span class="typ">Cesium</span>.<span class="typ">StripeMaterialProperty</span>({
+  <span class="var">evenColor</span>: <span class="typ">Cesium</span>.<span class="typ">Color</span>.<span class="var">WHITE</span>,
+  <span class="var">oddColor</span>:  <span class="typ">Cesium</span>.<span class="typ">Color</span>.<span class="var">BLACK</span>,
+  <span class="var">repeat</span>: <span class="num">10</span>,
+  <span class="var">offset</span>: <span class="num">0</span>,
+  <span class="var">orientation</span>: <span class="typ">Cesium</span>.<span class="typ">StripeOrientation</span>.<span class="var">HORIZONTAL</span>
+})
+</code></pre>
+        <p style="color:var(--muted);font-size:13px;">斑马纹，方向可设水平/垂直。</p>
+      </div>
+
+      <div class="card">
+        <h3>&#128300; Grid — 网格</h3>
+<pre><code><span class="var">material</span>: <span class="kw">new</span> <span class="typ">Cesium</span>.<span class="typ">GridMaterialProperty</span>({
+  <span class="var">color</span>: <span class="typ">Cesium</span>.<span class="typ">Color</span>.<span class="var">YELLOW</span>,
+  <span class="var">cellAlpha</span>: <span class="num">0.2</span>,    <span class="cmt">// 单元格透明度</span>
+  <span class="var">lineCount</span>: <span class="kw">new</span> <span class="typ">Cesium</span>.<span class="typ">Cartesian2</span>(<span class="num">8</span>, <span class="num">8</span>),
+  <span class="var">lineThickness</span>: <span class="kw">new</span> <span class="typ">Cesium</span>.<span class="typ">Cartesian2</span>(<span class="num">2.0</span>, <span class="num">2.0</span>),
+  <span class="var">lineOffset</span>: <span class="kw">new</span> <span class="typ">Cesium</span>.<span class="typ">Cartesian2</span>(<span class="num">0.0</span>, <span class="num">0.0</span>)
+})
+</code></pre>
+        <p style="color:var(--muted);font-size:13px;">网格线+半透明单元格，适合做分区/经纬网。</p>
+      </div>
+
+      <div class="card">
+        <h3>&#128444; 所有图案材质共同参数</h3>
+        <table>
+          <tr><th>参数</th><th>含义</th></tr>
+          <tr><td class="td-kw">evenColor</td><td>主色（棋盘白格/条纹主条）</td></tr>
+          <tr><td class="td-kw">oddColor</td><td>交替色</td></tr>
+          <tr><td class="td-kw">repeat</td><td>重复次数（Cartesian2 或 Number）</td></tr>
+          <tr><td class="td-kw">offset</td><td>偏移量（Stripe 专属）</td></tr>
+          <tr><td class="td-kw">cellAlpha</td><td>单元格透明度（Grid 专属）</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 6: CompositeMaterialProperty                           -->
+  <!-- ============================================================ -->
+  <div class="section" id="s6">
+    <div class="section-header">
+      <div class="section-num">6</div>
+      <h2>CompositeMaterialProperty：材质组合</h2>
+      <span class="tag">高级</span>
+    </div>
+
+    <div class="card">
+      <h3>&#127912; 组合材质 = 多层叠加</h3>
+      <p>Composite 材质允许你把多个材质叠在一起，像 Photoshop 的图层混合。最常见的是：<strong>图片 + 颜色叠加</strong>。</p>
+<pre><code><span class="cmt">// 方式一：ImageMaterialProperty 自带的 color 参数</span>
+<span class="var">material</span>: <span class="kw">new</span> <span class="typ">Cesium</span>.<span class="typ">ImageMaterialProperty</span>({
+  <span class="var">image</span>: <span class="str">'heatmap.png'</span>,
+  <span class="var">color</span>: <span class="typ">Cesium</span>.<span class="typ">Color</span>.<span class="var">RED</span>.<span class="fn">withAlpha</span>(<span class="num">0.7</span>), <span class="cmt">// 图片 × 红色 70%</span>
+  <span class="var">transparent</span>: <span class="kw">true</span>
+})
+
+<span class="cmt">// 方式二：Fabric JSON 自定义材质（更灵活）</span>
+<span class="var">material</span>: <span class="kw">new</span> <span class="typ">Cesium</span>.<span class="typ">Material</span>({
+  <span class="var">fabric</span>: {
+    <span class="var">type</span>: <span class="str">'Image'</span>,
+    <span class="var">uniforms</span>: {
+      <span class="var">image</span>: <span class="str">'radar.png'</span>,
+      <span class="var">color</span>: <span class="kw">new</span> <span class="typ">Cesium</span>.<span class="typ">Color</span>(<span class="num">1</span>, <span class="num">0</span>, <span class="num">0</span>, <span class="num">0.5</span>)
+    }
+  }
+})
+</code></pre>
+    </div>
+
+    <div class="warn">
+      <span class="icon">&#9888;&#65039;</span>
+      <div><strong>Fabric JSON 是底层 API：</strong>CesiumJS 内部用 Fabric 描述材质（类似 WebGL Shader 的配置化版本）。日常开发用 MaterialProperty 就够了，只有需要自定义着色器时才用 Fabric。初学者不建议直接用 Fabric。</div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 7: 动态材质                                            -->
+  <!-- ============================================================ -->
+  <div class="section" id="s7">
+    <div class="section-header">
+      <div class="section-num">7</div>
+      <h2>MaterialProperty 与 CallbackProperty：动态材质</h2>
+      <span class="tag">动态</span>
+    </div>
+
+    <div class="card">
+      <h3>&#9200; 用 CallbackProperty 让材质每帧变化</h3>
+      <p>就像 Day 14 中让 Entity position 每帧变化一样，<code>material</code> 也可以用 CallbackProperty 动态更新。</p>
+<pre><code><span class="cmt">// 动态颜色：红 → 绿交替闪烁</span>
+<span class="kw">let</span> <span class="var">flashColor</span> <span class="op">=</span> <span class="kw">false</span>;
+
+<span class="var">viewer</span>.<span class="var">entities</span>.<span class="fn">add</span>({
+  <span class="var">position</span>: <span class="typ">Cesium</span>.<span class="typ">Cartesian3</span>.<span class="fn">fromDegrees</span>(<span class="num">116.40</span>, <span class="num">39.90</span>),
+  <span class="var">ellipse</span>: {
+    <span class="var">semiMajorAxis</span>: <span class="num">30000</span>,
+    <span class="var">semiMinorAxis</span>: <span class="num">30000</span>,
+    <span class="var">material</span>: <span class="kw">new</span> <span class="typ">Cesium</span>.<span class="typ">ColorMaterialProperty</span>(
+      <span class="kw">new</span> <span class="typ">Cesium</span>.<span class="typ">CallbackProperty</span>(() <span class="op">=&gt;</span> {
+        <span class="var">flashColor</span> <span class="op">=</span> <span class="op">!</span><span class="var">flashColor</span>;
+        <span class="kw">return</span> <span class="var">flashColor</span>
+          ? <span class="typ">Cesium</span>.<span class="typ">Color</span>.<span class="var">RED</span>.<span class="fn">withAlpha</span>(<span class="num">0.8</span>)
+          : <span class="typ">Cesium</span>.<span class="typ">Color</span>.<span class="var">GREEN</span>.<span class="fn">withAlpha</span>(<span class="num">0.4</span>);
+      }, <span class="kw">false</span>)
+    )
+  }
+});
+</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>&#128336; 用 Canvas 实现动态热力图材质</h3>
+<pre><code><span class="cmt">// 创建动态 Canvas 纹理</span>
+<span class="kw">const</span> <span class="var">heatCanvas</span> <span class="op">=</span> <span class="var">document</span>.<span class="fn">createElement</span>(<span class="str">'canvas'</span>);
+<span class="var">heatCanvas</span>.<span class="var">width</span> <span class="op">=</span> <span class="num">512</span>;
+<span class="var">heatCanvas</span>.<span class="var">height</span> <span class="op">=</span> <span class="num">512</span>;
+<span class="kw">const</span> <span class="var">heatCtx</span> <span class="op">=</span> <span class="var">heatCanvas</span>.<span class="fn">getContext</span>(<span class="str">'2d'</span>);
+
+<span class="kw">function</span> <span class="fn">drawHeatFrame</span>(<span class="var">time</span>) {
+  <span class="cmt">// 清空画布</span>
+  <span class="var">heatCtx</span>.<span class="fn">clearRect</span>(<span class="num">0</span>, <span class="num">0</span>, <span class="num">512</span>, <span class="num">512</span>);
+  <span class="cmt">// 根据时间绘制不同热力分布</span>
+  <span class="kw">const</span> <span class="var">radius</span> <span class="op">=</span> <span class="num">50</span> <span class="op">+</span> <span class="var">time</span> <span class="op">*</span> <span class="num">20</span>;
+  <span class="kw">const</span> <span class="var">gradient</span> <span class="op">=</span> <span class="var">heatCtx</span>.<span class="fn">createRadialGradient</span>(<span class="num">256</span>, <span class="num">256</span>, <span class="num">0</span>, <span class="num">256</span>, <span class="num">256</span>, <span class="var">radius</span>);
+  <span class="var">gradient</span>.<span class="fn">addColorStop</span>(<span class="num">0</span>, <span class="str">'rgba(255,0,0,0.8)'</span>);
+  <span class="var">gradient</span>.<span class="fn">addColorStop</span>(<span class="num">0.5</span>, <span class="str">'rgba(255,165,0,0.4)'</span>);
+  <span class="var">gradient</span>.<span class="fn">addColorStop</span>(<span class="num">1</span>, <span class="str">'rgba(0,0,255,0.1)'</span>);
+  <span class="var">heatCtx</span>.<span class="var">fillStyle</span> <span class="op">=</span> <span class="var">gradient</span>;
+  <span class="var">heatCtx</span>.<span class="fn">fillRect</span>(<span class="num">0</span>, <span class="num">0</span>, <span class="num">512</span>, <span class="num">512</span>);
+}
+
+<span class="cmt">// 每秒更新一次 Canvas 内容</span>
+<span class="var">viewer</span>.<span class="var">clock</span>.<span class="var">onTick</span>.<span class="fn">addEventListener</span>((<span class="var">clock</span>) <span class="op">=&gt;</span> {
+  <span class="kw">const</span> <span class="var">t</span> <span class="op">=</span> <span class="typ">Cesium</span>.<span class="typ">JulianDate</span>.<span class="fn">secondsDifference</span>(<span class="var">clock</span>.<span class="var">currentTime</span>, <span class="var">startTime</span>);
+  <span class="fn">drawHeatFrame</span>(<span class="var">t</span>);
+});
+
+<span class="var">viewer</span>.<span class="var">entities</span>.<span class="fn">add</span>({
+  <span class="var">rectangle</span>: {
+    <span class="var">coordinates</span>: <span class="typ">Cesium</span>.<span class="typ">Rectangle</span>.<span class="fn">fromDegrees</span>(<span class="num">115.0</span>, <span class="num">39.0</span>, <span class="num">118.0</span>, <span class="num">41.0</span>),
+    <span class="var">material</span>: <span class="kw">new</span> <span class="typ">Cesium</span>.<span class="typ">ImageMaterialProperty</span>({
+      <span class="var">image</span>: <span class="var">heatCanvas</span>,   <span class="cmt">// 传 Canvas 对象，自动同步更新</span>
+      <span class="var">transparent</span>: <span class="kw">true</span>
+    })
+  }
+});
+</code></pre>
+    </div>
+
+    <div class="info">
+      <span class="icon">&#128161;</span>
+      <div><strong>Canvas 动态材质 = 低门槛高收益：</strong>不需要学习 GLSL 着色器语言，用熟悉的 Canvas 2D API 就能做出"动态热力图"、"渐变扩散"等高级效果。这是 JS 基础学习中 Canvas API（Day 12）的直接回报。</div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 8: 3D Tiles                                            -->
+  <!-- ============================================================ -->
+  <div class="section" id="s8">
+    <div class="section-header">
+      <div class="section-num">8</div>
+      <h2>3D Tiles：Cesium 的王牌功能</h2>
+      <span class="tag">核心</span>
+    </div>
+
+    <div class="card">
+      <h3>&#127759; 什么是 3D Tiles？</h3>
+      <p><strong>3D Tiles</strong> 是 OGC（开放地理空间联盟）制定的国际标准，用于在 Web 上流式传输和渲染海量三维地理数据。它是 CesiumJS 最强大的功能——让你加载包含<strong>数百万个建筑、数百 GB 的倾斜摄影、几十亿个点云点</strong>的数据集，而浏览器还能流畅运行。</p>
+      <p>一句话：3D Tiles = 海量 3D 地理数据的"视频流"——先看粗略版，再逐步加载精细版。</p>
+    </div>
+
+    <div class="card">
+      <h3>&#128736;&#65039; 3D Tiles 数据格式</h3>
+      <div class="api-grid">
+        <div class="api-item"><span class="icon">&#127968;</span><strong>Batched 3D Model<br>(b3dm)</strong><small>建筑/设施模型</small></div>
+        <div class="api-item"><span class="icon">&#128247;</span><strong>Instanced 3D Model<br>(i3dm)</strong><small>树木/路灯等重复模型</small></div>
+        <div class="api-item"><span class="icon">&#128168;</span><strong>Point Cloud<br>(pnts)</strong><small>激光雷达点云</small></div>
+        <div class="api-item"><span class="icon">&#128444;</span><strong>Composite<br>(cmpt)</strong><small>多种格式组合</small></div>
+        <div class="api-item"><span class="icon">&#128202;</span><strong>Vector Data<br>(vctr)</strong><small>矢量数据</small></div>
+        <div class="api-item"><span class="icon">&#128293;</span><strong>glTF/glb</strong><small>现代 3D 模型标准</small></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>&#128202; 3D Tiles LOD（层次细节）机制</h3>
+      <div class="flow-diagram">
+        <div class="flow-row">
+          <div class="flow-box fb-app">远处 → 低精度 Tile<br><small>几百个三角形</small></div>
+        </div>
+        <div class="flow-arrow">&#8595; 镜头靠近</div>
+        <div class="flow-row">
+          <div class="flow-box fb-material">中等 → 中精度 Tile<br><small>几千个三角形</small></div>
+        </div>
+        <div class="flow-arrow">&#8595; 继续靠近</div>
+        <div class="flow-row">
+          <div class="flow-box fb-tiles">近处 → 高精度 Tile<br><small>数万个三角形，纹理完整</small></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>&#128230; tileset.json — 3D Tiles 的入口</h3>
+      <p>每个 3D Tiles 数据集都有一个 <code>tileset.json</code> 文件作为入口，描述了 Tile 树结构、边界范围、LOD 策略。</p>
+<pre><code><span class="cmt">// tileset.json 结构示意</span>
+{
+  <span class="str">"asset"</span>: { <span class="str">"version"</span>: <span class="str">"1.0"</span> },
+  <span class="str">"geometricError"</span>: <span class="num">500</span>,       <span class="cmt">// 根节点几何误差（LOD 阈值）</span>
+  <span class="str">"root"</span>: {
+    <span class="str">"boundingVolume"</span>: {           <span class="cmt">// 范围（球/盒子/区域）</span>
+      <span class="str">"region"</span>: [<span class="num">2.0</span>, <span class="num">0.69</span>, <span class="num">2.01</span>, <span class="num">0.70</span>, <span class="num">0</span>, <span class="num">100</span>]
+    },
+    <span class="str">"content"</span>: { <span class="str">"uri"</span>: <span class="str">"0.b3dm"</span> },
+    <span class="str">"children"</span>: [                  <span class="cmt">// 子 Tile</span>
+      { <span class="str">"geometricError"</span>: <span class="num">100</span>, <span class="str">"content"</span>: { <span class="str">"uri"</span>: <span class="str">"1.b3dm"</span> } },
+      { <span class="str">"geometricError"</span>: <span class="num">50</span>, <span class="str">"content"</span>: { <span class="str">"uri"</span>: <span class="str">"2.b3dm"</span> } }
+    ]
+  }
+}
+</code></pre>
+    </div>
+
+    <div class="tip">
+      <span class="icon">&#128161;</span>
+      <div><strong>3D Tiles 与 Entity 的关系：</strong>Entity 是"手动创建单个对象"；3D Tiles 是"自动加载海量对象"。当你需要显示 100 个标注 → 用 Entity；当你需要显示 10 万栋建筑 → 用 3D Tiles。</div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 9: 3D Tiles 加载实战                                   -->
+  <!-- ============================================================ -->
+  <div class="section" id="s9">
+    <div class="section-header">
+      <div class="section-num">9</div>
+      <h2>3D Tiles 加载实战：城市建筑、地形、点云</h2>
+      <span class="tag">实战</span>
+    </div>
+
+    <div class="card">
+      <h3>&#127968; 加载 Cesium Ion 上的 OSM Buildings</h3>
+      <p>Cesium Ion 提供了免费的 OpenStreetMap 全球建筑数据，是最容易上手的 3D Tiles 数据集。</p>
+<pre><code><span class="kw">const</span> <span class="var">osmBuildings</span> <span class="op">=</span> <span class="var">viewer</span>.<span class="var">scene</span>.<span class="var">primitives</span>.<span class="fn">add</span>(
+  <span class="kw">new</span> <span class="typ">Cesium</span>.<span class="typ">Cesium3DTileset</span>({
+    <span class="var">url</span>: <span class="typ">Cesium</span>.<span class="typ">IonResource</span>.<span class="fn">fromAssetId</span>(<span class="num">96188</span>) <span class="cmt">// OSM Buildings 资产 ID</span>
+  })
+);
+
+<span class="cmt">// 飞到建筑区域</span>
+<span class="var">viewer</span>.<span class="var">zoomTo</span>(<span class="var">osmBuildings</span>);
+</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>&#127756; 加载 Cesium World Terrain（全球地形）</h3>
+<pre><code><span class="cmt">// 方式一：通过 viewer 配置（推荐）</span>
+<span class="kw">const</span> <span class="var">viewer</span> <span class="op">=</span> <span class="kw">new</span> <span class="typ">Cesium</span>.<span class="typ">Viewer</span>(<span class="str">'cesiumContainer'</span>, {
+  <span class="var">terrain</span>: <span class="typ">Cesium</span>.<span class="typ">Terrain</span>.<span class="fn">fromWorldTerrain</span>()  <span class="cmt">// 自动加载全球地形</span>
+});
+
+<span class="cmt">// 方式二：手动添加 Terrain Provider</span>
+<span class="var">viewer</span>.<span class="var">scene</span>.<span class="var">setTerrain</span>(
+  <span class="typ">Cesium</span>.<span class="typ">Terrain</span>.<span class="fn">fromWorldTerrain</span>({
+    <span class="var">requestVertexNormals</span>: <span class="kw">true</span>,  <span class="cmt">// 请求光照 normals</span>
+    <span class="var">requestWaterMask</span>: <span class="kw">true</span>       <span class="cmt">// 请求水面效果</span>
+  })
+);
+</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>&#128247; 加载自定义 3D Tiles 数据</h3>
+<pre><code><span class="cmt">// 从 URL 加载</span>
+<span class="kw">const</span> <span class="var">tileset</span> <span class="op">=</span> <span class="var">viewer</span>.<span class="var">scene</span>.<span class="var">primitives</span>.<span class="fn">add</span>(
+  <span class="kw">new</span> <span class="typ">Cesium</span>.<span class="typ">Cesium3DTileset</span>({
+    <span class="var">url</span>: <span class="str">'./data/tileset.json'</span>  <span class="cmt">// 本地或远程 tileset.json</span>
+  })
+);
+
+<span class="cmt">// 加载完成后飞到数据范围</span>
+<span class="var">tileset</span>.<span class="var">readyPromise</span>.<span class="fn">then</span>((<span class="var">t</span>) <span class="op">=&gt;</span> {
+  <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">'Tileset 加载成功！'</span>);
+  <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">'总 Tile 数量:'</span>, <span class="var">t</span>.<span class="var">statistics</span>.<span class="var">numberOfTilesTotal</span>);
+  <span class="var">viewer</span>.<span class="var">zoomTo</span>(<span class="var">t</span>);
+}).<span class="fn">catch</span>((<span class="var">err</span>) <span class="op">=&gt;</span> {
+  <span class="fn">console</span>.<span class="fn">error</span>(<span class="str">'加载失败:'</span>, <span class="var">err</span>);
+});
+</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>&#128736;&#65039; Tileset 常用配置参数</h3>
+      <table>
+        <tr><th>参数</th><th>类型</th><th>含义</th></tr>
+        <tr><td class="td-kw">url</td><td class="td-type">String | Resource</td><td>tileset.json 地址</td></tr>
+        <tr><td class="td-kw">maximumScreenSpaceError</td><td class="td-type">Number</td><td>LOD 精度阈值（默认16），越小越精细</td></tr>
+        <tr><td class="td-kw">maximumMemoryUsage</td><td class="td-type">Number</td><td>内存上限 MB（默认512）</td></tr>
+        <tr><td class="td-kw">dynamicScreenSpaceError</td><td class="td-type">Boolean</td><td>动态 LOD 调整（移动时降低精度）</td></tr>
+        <tr><td class="td-kw">show</td><td class="td-type">Boolean</td><td>是否显示</td></tr>
+        <tr><td class="td-kw">modelMatrix</td><td class="td-type">Matrix4</td><td>变换矩阵（平移/旋转/缩放）</td></tr>
+        <tr><td class="td-kw">skipLevelOfDetail</td><td class="td-type">Boolean</td><td>跳级加载（更快但有跳跃）</td></tr>
+        <tr><td class="td-kw">baseScreenSpaceError</td><td class="td-type">Number</td><td>基础 LOD 阈值</td></tr>
+      </table>
+    </div>
+
+    <div class="warn">
+      <span class="icon">&#9888;&#65039;</span>
+      <div><strong>maximumScreenSpaceError 是性能关键：</strong>默认值 16 表示"屏幕上误差超过 16 像素就加载更精细的 Tile"。调低（如 2）= 更精细但更慢；调高（如 32）= 更粗略但更快。生产环境建议 4-8。</div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 10: 3D Tiles 样式                                      -->
+  <!-- ============================================================ -->
+  <div class="section" id="s10">
+    <div class="section-header">
+      <div class="section-num">10</div>
+      <h2>3D Tiles 样式与过滤：Cesium3DTileStyle</h2>
+      <span class="tag">样式</span>
+    </div>
+
+    <div class="card">
+      <h3>&#127912; Cesium3DTileStyle — 批量设置外观</h3>
+      <p>3D Tiles 中的每个 Tile 可以包含成千上万个建筑/对象，每个对象有自己的属性（高度、名称、类型等）。<code>Cesium3DTileStyle</code> 让你基于这些属性<strong>批量设置颜色、显示/隐藏</strong>。</p>
+<pre><code><span class="cmt">// 简单样式：所有建筑统一颜色</span>
+<span class="var">osmBuildings</span>.<span class="var">style</span> <span class="op">=</span> <span class="kw">new</span> <span class="typ">Cesium</span>.<span class="typ">Cesium3DTileStyle</span>({
+  <span class="var">color</span>: <span class="str">'color("white")'</span>,
+  <span class="var">show</span>: <span class="kw">true</span>
+});
+
+<span class="cmt">// 条件样式：根据建筑高度着色</span>
+<span class="var">osmBuildings</span>.<span class="var">style</span> <span class="op">=</span> <span class="kw">new</span> <span class="typ">Cesium</span>.<span class="typ">Cesium3DTileStyle</span>({
+  <span class="var">color</span>: {
+    <span class="var">conditions</span>: [
+      [<span class="str">'${Height} >= 100'</span>, <span class="str">'color("red")'</span>],       <span class="cmt">// 高层：红色</span>
+      [<span class="str">'${Height} >= 50'</span>,  <span class="str">'color("orange")'</span>],    <span class="cmt">// 中层：橙色</span>
+      [<span class="str">'${Height} >= 20'</span>,  <span class="str">'color("yellow")'</span>],    <span class="cmt">// 低层：黄色</span>
+      [<span class="str">'true'</span>,              <span class="str">'color("white")'</span>]      <span class="cmt">// 默认：白色</span>
+    ]
+  },
+  <span class="var">show</span>: {
+    <span class="var">conditions</span>: [
+      [<span class="str">'${Height} >= 5'</span>, <span class="kw">true</span>],   <span class="cmt">// 只显示高度 ≥ 5 的建筑</span>
+      [<span class="str">'true'</span>, <span class="kw">false</span>]                <span class="cmt">// 其他隐藏</span>
+    ]
+  }
+});
+</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>&#128300; 样式表达式语法</h3>
+      <table>
+        <tr><th>表达式</th><th>含义</th></tr>
+        <tr><td class="td-kw">${Height}</td><td>读取 Tile 的 Height 属性</td></tr>
+        <tr><td class="td-kw">${name}</td><td>读取 name 属性</td></tr>
+        <tr><td class="td-kw">color("red")</td><td>纯色</td></tr>
+        <tr><td class="td-kw">color("#ff0000", 0.5)</td><td>带透明度</td></tr>
+        <tr><td class="td-kw">rgb(255, 0, 0)</td><td>RGB 颜色</td></tr>
+        <tr><td class="td-kw">rgba(255, 0, 0, 0.5)</td><td>RGBA 颜色</td></tr>
+        <tr><td class="td-kw">${Height} * 2</td><td>数学运算</td></tr>
+        <tr><td class="td-kw">${Height} >= 100</td><td>条件判断</td></tr>
+        <tr><td class="td-kw">regExp(${name}, "医院|学校")</td><td>正则匹配</td></tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3>&#128736;&#65039; 实战：只显示医院和学校</h3>
+<pre><code><span class="var">osmBuildings</span>.<span class="var">style</span> <span class="op">=</span> <span class="kw">new</span> <span class="typ">Cesium</span>.<span class="typ">Cesium3DTileStyle</span>({
+  <span class="var">color</span>: {
+    <span class="var">conditions</span>: [
+      [<span class="str">'regExp(${name}, "医院")'</span>, <span class="str">'color("#ff0000")'</span>],    <span class="cmt">// 红色</span>
+      [<span class="str">'regExp(${name}, "学校")'</span>, <span class="str">'color("#0000ff")'</span>],    <span class="cmt">// 蓝色</span>
+      [<span class="str">'true'</span>, <span class="str">'color("white")'</span>]
+    ]
+  },
+  <span class="var">show</span>: {
+    <span class="var">conditions</span>: [
+      [<span class="str">'regExp(${name}, "医院|学校")'</span>, <span class="kw">true</span>],
+      [<span class="str">'true'</span>, <span class="kw">false</span>]
+    ]
+  }
+});
+</code></pre>
+    </div>
+
+    <div class="info">
+      <span class="icon">&#128161;</span>
+      <div><strong>样式 = JS 条件逻辑的地图版：</strong>你写的 <code>${Height} >= 100</code> 条件表达式，本质上就是 JavaScript 的 if/else，只是用声明式语法写在了 3D Tiles 上。这和 CSS 选择器、SQL WHERE 是同一思想——声明式过滤。</div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 11: CesiumJS 关联场景                                   -->
+  <!-- ============================================================ -->
+  <div class="section" id="s11">
+    <div class="section-header">
+      <div class="section-num">11</div>
+      <h2>CesiumJS 关联场景：材质+Tiles 的真实应用</h2>
+      <span class="tag">实战</span>
+    </div>
+
+    <div class="card">
+      <h3>&#127759; 真实场景映射</h3>
+      <table>
+        <tr><th>应用场景</th><th>技术组合</th></tr>
+        <tr><td class="td-kw">城市规划可视化</td><td>3D Tiles 建筑模型 + Style 按高度着色 + Image 贴地块</td></tr>
+        <tr><td class="td-kw">热力图/温度场</td><td>Canvas 动态材质 + Rectangle + 每10秒更新数据</td></tr>
+        <tr><td class="td-kw">雷达覆盖分析</td><td>Ellipse + Image 材质贴雷达图 + Cylinder 显示塔</td></tr>
+        <tr><td class="td-kw">物流/交通路线</td><td>PolylineGlow 航线 + PolylineArrow 方向 + Corridor 缓冲带</td></tr>
+        <tr><td class="td-kw">倾斜摄影/实景三维</td><td>3D Tiles (b3dm) + Terrain + 优化参数</td></tr>
+        <tr><td class="td-kw">激光扫描点云</td><td>3D Tiles (pnts) + Style 按分类着色</td></tr>
+        <tr><td class="td-kw">灾害预警扩散</td><td>Ellipse + CallbackProperty 动态半径 + Canvas 渐变材质</td></tr>
+        <tr><td class="td-kw">建筑筛选/分类</td><td>3D Tiles Style conditions + regExp + 动态切换</td></tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3>&#128736;&#65039; 综合示例：城市热力图 + 建筑高度着色</h3>
+<pre><code><span class="cmt">// 1. 加载 OSM Buildings 并按高度着色</span>
+<span class="kw">const</span> <span class="var">buildings</span> <span class="op">=</span> <span class="var">viewer</span>.<span class="var">scene</span>.<span class="var">primitives</span>.<span class="fn">add</span>(
+  <span class="kw">new</span> <span class="typ">Cesium</span>.<span class="typ">Cesium3DTileset</span>({
+    <span class="var">url</span>: <span class="typ">Cesium</span>.<span class="typ">IonResource</span>.<span class="fn">fromAssetId</span>(<span class="num">96188</span>),
+    <span class="var">maximumScreenSpaceError</span>: <span class="num">8</span>
+  })
+);
+
+<span class="var">buildings</span>.<span class="var">style</span> <span class="op">=</span> <span class="kw">new</span> <span class="typ">Cesium</span>.<span class="typ">Cesium3DTileStyle</span>({
+  <span class="var">color</span>: {
+    <span class="var">conditions</span>: [
+      [<span class="str">'${Height} >= 200'</span>, <span class="str">'rgba(255, 50, 50, 0.9)'</span>],  <span class="cmt">// 超高层 红色</span>
+      [<span class="str">'${Height} >= 100'</span>, <span class="str">'rgba(255, 165, 0, 0.7)'</span>],  <span class="cmt">// 高层 橙色</span>
+      [<span class="str">'${Height} >= 30'</span>,  <span class="str">'rgba(0, 200, 0, 0.5)'</span>],    <span class="cmt">// 低层 绿色</span>
+      [<span class="str">'true'</span>, <span class="str">'rgba(200, 200, 200, 0.3)'</span>]        <span class="cmt">// 默认 灰色半透明</span>
+    ]
+  }
+});
+
+<span class="cmt">// 2. 叠加动态热力图</span>
+<span class="kw">const</span> <span class="var">heatCanvas</span> <span class="op">=</span> <span class="var">document</span>.<span class="fn">createElement</span>(<span class="str">'canvas'</span>);
+<span class="cmt">// ... 绘制热力图（见 Section 7）</span>
+
+<span class="var">viewer</span>.<span class="var">entities</span>.<span class="fn">add</span>({
+  <span class="var">rectangle</span>: {
+    <span class="var">coordinates</span>: <span class="typ">Cesium</span>.<span class="typ">Rectangle</span>.<span class="fn">fromDegrees</span>(<span class="num">115.5</span>, <span class="num">39.5</span>, <span class="num">117.5</span>, <span class="num">41.0</span>),
+    <span class="var">material</span>: <span class="kw">new</span> <span class="typ">Cesium</span>.<span class="typ">ImageMaterialProperty</span>({
+      <span class="var">image</span>: <span class="var">heatCanvas</span>,
+      <span class="var">transparent</span>: <span class="kw">true</span>
+    })
+  }
+});
+</code></pre>
+    </div>
+
+    <div class="info">
+      <span class="icon">&#128161;</span>
+      <div><strong>材质 + 3D Tiles = 可视化的"左右手"：</strong>Entity 材质处理你自己创建的标注/区域/轨迹；3D Tiles 处理外部海量数据。两者叠加在同一场景中，就是典型的 GIS 可视化应用架构。</div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 12: 练习题                                             -->
+  <!-- ============================================================ -->
+  <div class="section" id="s12">
+    <div class="section-header">
+      <div class="section-num">12</div>
+      <h2>练习题</h2>
+      <span class="tag">练习</span>
+    </div>
+
+    <div class="practice">
+      <h2>&#9997;&#65039; 今日练习（3 道）</h2>
+      <p>这些题目侧重材质系统与 3D Tiles 的综合运用。</p>
+
+      <div class="exercise">
+        <div class="q">&#9312; 绘制一个"动态热力图覆盖区"</div>
+        <p style="color:var(--muted); margin-bottom:12px;">创建一个 Canvas（256×256），在上面绘制一个随时间扩散的径向渐变（中心红色 → 边缘蓝色 → 外围透明）。用 ImageMaterialProperty 把 Canvas 贴到 Rectangle 上（经纬度范围 115-118, 39-41）。使用 <code>viewer.clock.onTick</code> 让渐变半径每秒增长 10px。</p>
+<pre><code><span class="cmt">// TODO: 实现 Canvas 动态热力图</span>
+<span class="kw">const</span> <span class="var">canvas</span> <span class="op">=</span> <span class="var">document</span>.<span class="fn">createElement</span>(<span class="str">'canvas'</span>);
+<span class="var">canvas</span>.<span class="var">width</span> <span class="op">=</span> <span class="num">256</span>;
+<span class="var">canvas</span>.<span class="var">height</span> <span class="op">=</span> <span class="num">256</span>;
+<span class="kw">const</span> <span class="var">ctx</span> <span class="op">=</span> <span class="var">canvas</span>.<span class="fn">getContext</span>(<span class="str">'2d'</span>);
+<span class="cmt">// ... drawRadialGradient(radius)</span>
+</code></pre>
+      </div>
+
+      <div class="exercise">
+        <div class="q">&#9313; 为 OSM Buildings 设置"建筑高度阶梯着色"</div>
+        <p style="color:var(--muted); margin-bottom:12px;">加载 OSM Buildings Tileset（assetId=96188），创建一个 Cesium3DTileStyle，按建筑高度分 5 级着色：≥300m 深红、≥200m 红、≥100m 橙、≥30m 黄绿、其他白色半透明。同时设置 show 条件：只显示高度 ≥ 5m 的建筑。</p>
+<pre><code><span class="cmt">// TODO: 加载 Tileset 并设置 Style</span>
+<span class="kw">const</span> <span class="var">style</span> <span class="op">=</span> <span class="kw">new</span> <span class="typ">Cesium</span>.<span class="typ">Cesium3DTileStyle</span>({
+  <span class="var">color</span>: {
+    <span class="var">conditions</span>: [
+      <span class="cmt">// ... 填写 5 级条件</span>
+    ]
+  },
+  <span class="var">show</span>: {
+    <span class="var">conditions</span>: [
+      <span class="cmt">// ... 只显示 Height >= 5</span>
+    ]
+  }
+});
+</code></pre>
+      </div>
+
+      <div class="exercise">
+        <div class="q">&#9314; 封装一个"航线材质工厂"函数</div>
+        <p style="color:var(--muted); margin-bottom:12px;">写一个函数 <code>createRouteMaterial(type, color, options)</code>，根据 type 返回不同的 Polyline 材质：<code>'glow'</code> → PolylineGlowMaterialProperty、<code>'arrow'</code> → PolylineArrowMaterialProperty、<code>'dash'</code> → PolylineDashMaterialProperty。options 包含 glowPower、dashLength 等可选参数。然后用这个工厂创建 3 条不同类型的航线。</p>
+<pre><code><span class="cmt">// TODO: 实现航线材质工厂</span>
+<span class="kw">function</span> <span class="fn">createRouteMaterial</span>(<span class="var">type</span>, <span class="var">color</span>, <span class="var">options</span> <span class="op">=</span> {}) {
+  <span class="kw">switch</span>(<span class="var">type</span>) {
+    <span class="kw">case</span> <span class="str">'glow'</span>:
+      <span class="cmt">// ... 返回 PolylineGlowMaterialProperty</span>
+      <span class="kw">break</span>;
+    <span class="kw">case</span> <span class="str">'arrow'</span>:
+      <span class="cmt">// ... 返回 PolylineArrowMaterialProperty</span>
+      <span class="kw">break</span>;
+    <span class="kw">case</span> <span class="str">'dash'</span>:
+      <span class="cmt">// ... 返回 PolylineDashMaterialProperty</span>
+      <span class="kw">break</span>;
+  }
+}
+</code></pre>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 13: 交互沙盒                                           -->
+  <!-- ============================================================ -->
+  <div class="section" id="s13">
+    <div class="section-header">
+      <div class="section-num">13</div>
+      <h2>在线练习控制台</h2>
+      <span class="tag">动手</span>
+    </div>
+
+    <div class="console-area">
+      <div class="console-header">
+        <div class="console-dots">
+          <div class="dot dot-r"></div>
+          <div class="dot dot-y"></div>
+          <div class="dot dot-g"></div>
+        </div>
+        <span>&#128187; JavaScript 交互沙盒 (Ctrl+Enter 运行)</span>
+      </div>
+      <textarea id="sandbox-code" spellcheck="false">// ===== 材质配置 + 3D Tiles 样式实验沙盒 =====
+// 用纯 JS 模拟 Cesium 材质配置和 Style 表达式，不用加载 Cesium 库。
+
+// 1. 颜色工具：模拟 Cesium.Color 的常用方法
+function cesColor(name, alpha = 1.0) {
+  const colors = {
+    RED:   [255, 0, 0],
+    BLUE:  [0, 0, 255],
+    GREEN: [0, 200, 0],
+    CYAN:  [0, 255, 255],
+    ORANGE:[255, 165, 0],
+    WHITE: [255, 255, 255],
+    YELLOW:[255, 255, 0]
+  };
+  const [r, g, b] = colors[name] || [0, 0, 0];
+  return { r, g, b, alpha, css: `rgba(${r},${g},${b},${alpha})` };
+}
+
+console.log('红色半透明:', cesColor('RED', 0.3).css);
+console.log('青色全透明:', cesColor('CYAN', 0.8).css);
+
+// 2. 材质工厂：根据类型生成材质配置
+function createMaterialConfig(type, color, options = {}) {
+  const base = { type, color };
+  switch (type) {
+    case 'color':
+      return { type: 'ColorMaterialProperty', color: color };
+    case 'image':
+      return { type: 'ImageMaterialProperty', image: options.image || '', repeat: options.repeat || [1,1], transparent: options.transparent || true };
+    case 'glow':
+      return { type: 'PolylineGlowMaterialProperty', color: color, glowPower: options.glowPower || 0.2, taperPower: options.taperPower || 1.0 };
+    case 'arrow':
+      return { type: 'PolylineArrowMaterialProperty', color: color };
+    case 'dash':
+      return { type: 'PolylineDashMaterialProperty', color: color, dashLength: options.dashLength || 16, gapColor: options.gapColor || 'TRANSPARENT' };
+    case 'checkerboard':
+      return { type: 'CheckerboardMaterialProperty', evenColor: options.evenColor || 'WHITE', oddColor: options.oddColor || 'BLUE', repeat: options.repeat || [4,4] };
+    default:
+      return { type: 'Unknown', color };
+  }
+}
+
+console.log('发光材质:', JSON.stringify(createMaterialConfig('glow', 'CYAN', { glowPower: 0.25 }), null, 2));
+console.log('虚线材质:', JSON.stringify(createMaterialConfig('dash', 'YELLOW', { dashLength: 20 }), null, 2));
+console.log('棋盘格材质:', JSON.stringify(createMaterialConfig('checkerboard', '', { evenColor: 'WHITE', oddColor: 'RED' }), null, 2));
+
+// 3. 3D Tiles Style 表达式解析器
+function parseStyleConditions(conditions) {
+  // conditions = [['${Height} >= 100', 'color("red")'], ['true', 'color("white")']]
+  return conditions.map(([expr, action]) => {
+    const isDefault = expr === 'true';
+    const propMatch = expr.match(/\$\{(\w+)\}/);
+    const prop = propMatch ? propMatch[1] : null;
+    const opMatch = expr.match(/(>=|<=|>|<|==|!=)/);
+    const op = opMatch ? opMatch[1] : null;
+    const valMatch = expr.match(/(\d+)/);
+    const val = valMatch ? Number(valMatch[1]) : null;
+    return { expr, action, isDefault, prop, op, val };
+  });
+}
+
+const heightStyle = [
+  ['${Height} >= 200', 'rgba(255,50,50,0.9)'],
+  ['${Height} >= 100', 'rgba(255,165,0,0.7)'],
+  ['${Height} >= 30',  'rgba(0,200,0,0.5)'],
+  ['true', 'rgba(200,200,200,0.3)']
+];
+
+console.log('Style 条件解析:', parseStyleConditions(heightStyle));
+
+// 4. Canvas 热力图模拟（纯 JS 数学版）
+function simulateHeatMap(centerX, centerY, radius, samples = 100) {
+  const points = [];
+  for (let i = 0; i < samples; i++) {
+    const angle = (i / samples) * 2 * Math.PI;
+    const r = radius * (0.3 + 0.7 * Math.random());  // 随机距离
+    const x = centerX + r * Math.cos(angle);
+    const y = centerY + r * Math.sin(angle);
+    const intensity = Math.max(0, 1 - (r / radius));  // 距中心越近越热
+    points.push({ x, y, intensity });
+  }
+  return points;
+}
+
+const heatPoints = simulateHeatMap(256, 256, 200, 50);
+console.log('热力图采样点数:', heatPoints.length);
+console.log('最高强度:', Math.max(...heatPoints.map(p => p.intensity)).toFixed(2));
+console.log('平均强度:', (heatPoints.reduce((s,p) => s+p.intensity, 0) / heatPoints.length).toFixed(2));
+
+// ===== 自己动手 =====
+// 练 1：扩展 cesColor 支持 CSS 颜色字符串输入（如 '#61dafb'）
+// 练 2：给 createMaterialConfig 增加 'grid' 类型
+// 练 3：写一个函数，根据 Height 值自动匹配 Style 条件并返回颜色</textarea>
+      <div class="console-actions">
+        <button class="btn btn-run" onclick="runCode()">&#9654; 运行</button>
+        <button class="btn btn-clear" onclick="clearOutput()">清空输出</button>
+        <button class="btn btn-clear" onclick="resetCode()">重置代码</button>
+      </div>
+      <div id="output-box">// 点击"运行"查看输出结果...</div>
+    </div>
+  </div>
+
+
+  <!-- 今日总结 -->
+  <div class="card" style="border-color:var(--accent);border-left-width:4px;">
+    <h3 style="color:var(--accent)">&#128203; 今日知识点总结</h3>
+    <ul style="margin-top:12px;">
+      <li>&#127912; <strong>Material</strong> 决定图形外观：Color（纯色）、Image（贴图）、PolylineGlow/Arrow/Dash（折线专用）、Checkerboard/Stripe/Grid（图案）、Composite（组合）</li>
+      <li>&#127912; <strong>Color 进阶</strong>：fromCssColorString、withAlpha、blend、brighten/darken，半透明叠加是 2D 覆盖的灵魂</li>
+      <li>&#127912; <strong>Image 材质</strong>：可贴图片 URL、Canvas 对象；Canvas 是动态材质的最低门槛方式</li>
+      <li>&#127912; <strong>动态材质</strong>：CallbackProperty 让颜色每帧变化；Canvas + clock.onTick 让纹理实时更新</li>
+      <li>&#127912; <strong>3D Tiles</strong> 是 OGC 标准，用于海量 3D 地理数据流式加载；LOD 机制保证性能</li>
+      <li>&#127912; <strong>Cesium3DTileset</strong>：url / maximumScreenSpaceError / maximumMemoryUsage 是核心参数</li>
+      <li>&#127912; <strong>Cesium3DTileStyle</strong>：用 ${property} 表达式批量着色和过滤，conditions 语法 = 声明式 if/else</li>
+      <li>&#127912; <strong>材质 + 3D Tiles = 可视化左右手</strong>：Entity 材质处理自建标注，3D Tiles 处理外部海量数据</li>
+    </ul>
+  </div>
+
+  <!-- 明天预告 -->
+  <div class="card" style="border-color:var(--accent); border-left-width:4px; background:linear-gradient(135deg,#0d3321,#1a1d27);">
+    <h3 style="color:var(--accent)">&#127758; 明天继续：相机控制与视角管理</h3>
+    <p style="margin-top:8px;">今天学会了让图形"好看"和加载海量真实数据。明天我们将深入相机（Camera）——flyTo、setView、lookAt、视角锁定、跟随实体，以及事件驱动的视角切换。相机控制是让用户"看到他想看的东西"的关键。</p>
+  </div>
+
+</div><!-- /container -->
+
+<!-- ===== FOOTER ===== -->
+<div class="footer">
+  <p>&#127758; <strong>每日JS</strong> — JavaScript &rarr; CesiumJS 学习路径</p>
+  <p style="margin-top:6px;">Day 15 / 材质、贴图与 3D Tiles &middot; 明天继续：<strong>相机控制与视角管理</strong></p>
+</div>
+
+
+<!-- ===== SCRIPT ===== -->
+<script>
+  const DEFAULT_CODE = document.getElementById('sandbox-code').value;
+
+  function runCode() {
+    const code = document.getElementById('sandbox-code').value;
+    const outputBox = document.getElementById('output-box');
+    const logs = [];
+
+    const origLog = console.log;
+    const origError = console.error;
+    const origWarn = console.warn;
+
+    console.log = (...args) => {
+      logs.push(args.map(a => {
+        if (typeof a === 'object' && a !== null) {
+          try { return JSON.stringify(a, null, 2); } catch { return String(a); }
+        }
+        return String(a);
+      }).join(' '));
+      origLog(...args);
+    };
+    console.error = (...args) => {
+      logs.push('❌ ' + args.join(' '));
+      origError(...args);
+    };
+    console.warn = (...args) => {
+      logs.push('⚠️ ' + args.join(' '));
+      origWarn(...args);
+    };
+
+    try {
+      eval(code);
+      setTimeout(() => {
+        outputBox.innerHTML = logs.length
+          ? logs.map(l => '<span>' + escHtml(l) + '</span>').join('\n')
+          : '<span style="color:var(--muted)">// 代码执行完毕，无输出</span>';
+
+        console.log = origLog;
+        console.error = origError;
+        console.warn = origWarn;
+      }, 150);
+    } catch(e) {
+      outputBox.innerHTML = '<span class="err">❌ ' + escHtml(e.message) + '</span>';
+      console.log = origLog;
+      console.error = origError;
+      console.warn = origWarn;
+    }
+
+    setTimeout(() => {
+      if (logs.length > 0) {
+        outputBox.innerHTML = logs.map(l => '<span>' + escHtml(l) + '</span>').join('\n');
+      }
+    }, 3000);
+  }
+
+  function clearOutput() {
+    document.getElementById('output-box').innerHTML = '// 输出已清空...';
+  }
+
+  function resetCode() {
+    document.getElementById('sandbox-code').value = DEFAULT_CODE;
+    clearOutput();
+  }
+
+  function escHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  document.getElementById('sandbox-code').addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      e.preventDefault();
+      runCode();
+    }
+  });
+</script>
+</body>
+</html>

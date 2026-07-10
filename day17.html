@@ -1,0 +1,1390 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>JavaScript 每日学习 — Day 17：地形与影像图层</title>
+  <style>
+    /* ===== 全局 ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0f1117;
+      --surface:   #1a1d27;
+      --card:      #21253a;
+      --border:    #2e3350;
+      --accent:    #2dd4bf;
+      --accent2:   #f7c948;
+      --accent3:   #7ee787;
+      --accent4:   #818cf8;
+      --text:      #cdd3e0;
+      --muted:     #6e7a96;
+      --tag-bg:    #0d3321;
+      --code-bg:   #161b2e;
+    }
+
+    body {
+      font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.75;
+      font-size: 15px;
+    }
+
+    /* ===== 顶部 Banner ===== */
+    .hero {
+      background: linear-gradient(135deg, #0d3321 0%, #115542 50%, #0d3321 100%);
+      border-bottom: 1px solid #16533e;
+      padding: 52px 24px 40px;
+      text-align: center;
+    }
+    .hero .badge {
+      display: inline-block;
+      background: var(--accent);
+      color: #0f0e1a;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 4px 12px;
+      border-radius: 20px;
+      margin-bottom: 16px;
+    }
+    .hero h1 {
+      font-size: clamp(24px, 5vw, 42px);
+      font-weight: 800;
+      color: #fff;
+      line-height: 1.2;
+      margin-bottom: 12px;
+    }
+    .hero h1 span { color: var(--accent); }
+    .hero p {
+      color: var(--muted);
+      font-size: 15px;
+      max-width: 640px;
+      margin: 0 auto 24px;
+    }
+    .hero .meta {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      flex-wrap: wrap;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .hero .meta span { display: flex; align-items: center; gap: 5px; }
+
+    /* ===== 布局 ===== */
+    .container { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; }
+
+    /* ===== 目录卡片 ===== */
+    .toc {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--accent);
+      border-radius: 12px;
+      padding: 24px 28px;
+      margin-bottom: 40px;
+    }
+    .toc h2 { font-size: 14px; letter-spacing: 1px; text-transform: uppercase; color: var(--accent); margin-bottom: 14px; }
+    .toc ol { padding-left: 20px; }
+    .toc li { margin: 6px 0; }
+    .toc a { color: var(--text); text-decoration: none; }
+    .toc a:hover { color: var(--accent); }
+
+    /* ===== 章节标题 ===== */
+    .section { margin-bottom: 52px; }
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 24px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    .section-num {
+      width: 38px; height: 38px;
+      border-radius: 10px;
+      background: var(--accent);
+      color: #0f0e1a;
+      font-weight: 800;
+      font-size: 16px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .section-header h2 {
+      font-size: 22px;
+      font-weight: 700;
+      color: #fff;
+    }
+    .section-header .tag {
+      font-size: 11px;
+      background: var(--tag-bg);
+      color: var(--accent);
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    /* ===== 卡片 ===== */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+    .card h3 {
+      font-size: 16px;
+      color: var(--accent2);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card p { margin-bottom: 10px; color: var(--text); }
+    .card p:last-child { margin-bottom: 0; }
+
+    /* ===== 代码块 ===== */
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px 22px;
+      overflow-x: auto;
+      margin: 16px 0;
+      font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+      font-size: 13.5px;
+      line-height: 1.7;
+    }
+    code { font-family: inherit; }
+
+    /* 语法着色 */
+    .kw  { color: #c792ea; }
+    .str { color: #c3e88d; }
+    .num { color: #f78c6c; }
+    .cmt { color: #546e7a; font-style: italic; }
+    .fn  { color: #82aaff; }
+    .var { color: #eeffff; }
+    .op  { color: var(--accent); }
+    .typ { color: var(--accent2); }
+    .out { color: var(--accent3); }
+    .prp { color: #ffcb6b; }
+    .ces { color: #2dd4bf; font-weight: 600; }
+
+    /* ===== 提示框 ===== */
+    .tip, .warn, .info {
+      border-radius: 10px;
+      padding: 14px 18px;
+      margin: 16px 0;
+      font-size: 14px;
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+    .tip  { background: #0d3321; border-left: 4px solid var(--accent3); }
+    .warn { background: #3a2500; border-left: 4px solid var(--accent2); }
+    .info { background: #1e1b4b; border-left: 4px solid var(--accent4); }
+
+    /* ===== 对比表格 ===== */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 14px;
+    }
+    th {
+      background: var(--surface);
+      color: var(--accent);
+      padding: 12px 16px;
+      text-align: left;
+      border-bottom: 2px solid var(--border);
+      font-weight: 600;
+    }
+    td {
+      padding: 11px 16px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+      vertical-align: top;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(45, 212, 191, 0.04); }
+    .td-kw { color: #c792ea; font-family: 'Cascadia Code','Fira Code',monospace; font-weight: 600; }
+    .td-type { color: var(--accent2); }
+    .td-good { color: var(--accent3); }
+    .td-bad  { color: #ff7b72; }
+
+    /* ===== 两列网格 ===== */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 600px) { .grid-2 { grid-template-columns: 1fr; } }
+
+    /* ===== 大卡片 ===== */
+    .big-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 28px;
+      margin-bottom: 20px;
+    }
+    .big-card h3 { font-size: 17px; color: var(--accent); margin-bottom: 16px; }
+
+    /* ===== 流程图 ===== */
+    .flow-diagram {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 28px;
+      margin: 16px 0;
+      text-align: center;
+    }
+    .flow-row { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin: 6px 0; }
+    .flow-box {
+      padding: 10px 24px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      min-width: 180px;
+    }
+    .flow-arrow { color: var(--accent); font-size: 20px; }
+    .fb-material { background: #115542; border: 2px solid var(--accent); color: var(--accent); }
+    .fb-tiles    { background: #1e1b4b; border: 2px solid var(--accent4); color: var(--accent4); }
+    .fb-gpu      { background: #161b2e; border: 1px solid var(--border); color: var(--muted); }
+    .fb-app      { background: #3a2500; border: 2px solid var(--accent2); color: var(--accent2); }
+
+    /* ===== inline code ===== */
+    p code, li code, td code {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      padding: 1px 6px;
+      border-radius: 5px;
+      font-family: 'Cascadia Code','Fira Code',monospace;
+      font-size: 12.5px;
+      color: var(--accent);
+    }
+    ul { padding-left: 20px; }
+    li { margin: 5px 0; }
+
+    /* ===== 练习区 ===== */
+    .practice {
+      background: linear-gradient(135deg, #1e1b3a, #1a1a2d);
+      border: 1px solid #3b3580;
+      border-radius: 12px;
+      padding: 28px;
+      margin-top: 48px;
+    }
+    .practice h2 {
+      font-size: 20px;
+      color: var(--accent3);
+      margin-bottom: 8px;
+    }
+    .practice p { color: var(--muted); margin-bottom: 20px; font-size: 14px; }
+    .exercise {
+      background: var(--code-bg);
+      border: 1px dashed #3b3580;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+    .exercise .q {
+      color: var(--accent2);
+      font-weight: 600;
+      margin-bottom: 12px;
+      font-size: 14px;
+    }
+    .exercise pre { margin: 0; }
+
+    /* ===== 交互控制台 ===== */
+    .console-area {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-top: 48px;
+    }
+    .console-header {
+      background: var(--surface);
+      padding: 12px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+    .console-header span { color: var(--accent); font-size: 13px; font-weight: 600; letter-spacing: 1px; }
+    .console-dots { display: flex; gap: 6px; }
+    .dot { width: 12px; height: 12px; border-radius: 50%; }
+    .dot-r { background: #ff5f57; }
+    .dot-y { background: #febc2e; }
+    .dot-g { background: #28c840; }
+    #sandbox-code {
+      width: 100%;
+      background: var(--code-bg);
+      color: var(--accent3);
+      border: none;
+      padding: 18px 20px;
+      font-family: 'Cascadia Code','Fira Code',monospace;
+      font-size: 13.5px;
+      line-height: 1.7;
+      resize: vertical;
+      min-height: 160px;
+      outline: none;
+    }
+    .console-actions {
+      padding: 12px 18px;
+      display: flex;
+      gap: 10px;
+      border-top: 1px solid var(--border);
+    }
+    .btn {
+      padding: 8px 20px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      transition: opacity .2s;
+    }
+    .btn:hover { opacity: .85; }
+    .btn-run { background: var(--accent); color: #0f0e1a; }
+    .btn-clear { background: var(--surface); color: var(--muted); border: 1px solid var(--border); }
+    #output-box {
+      padding: 16px 20px;
+      min-height: 60px;
+      font-family: 'Cascadia Code','Fira Code',monospace;
+      font-size: 13px;
+      color: var(--accent3);
+      border-top: 1px solid var(--border);
+      white-space: pre-wrap;
+    }
+    #output-box .err { color: #ff7b72; }
+
+    /* ===== 进度条 ===== */
+    .progress-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 22px 26px;
+      margin-bottom: 40px;
+    }
+    .progress-card h3 { font-size: 13px; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); margin-bottom: 16px; }
+    .progress-list { display: flex; flex-wrap: wrap; gap: 8px; }
+    .progress-item {
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+    }
+    .pi-done  { background: #0d3321; color: var(--accent3); border: 1px solid #1a4d2a; }
+    .pi-js    { background: #1e1b4b; color: var(--accent4); border: 1px solid #312e81; }
+    .pi-today { background: #0d3321; color: var(--accent); border: 1px solid var(--accent); }
+    .pi-next  { background: var(--card); color: var(--muted); border: 1px solid var(--border); }
+
+    /* Cesium 关键字高亮 */
+    .ces-kw { color: #2dd4bf; }
+
+    /* ===== footer ===== */
+    .footer {
+      text-align: center;
+      padding: 40px 24px 60px;
+      color: var(--muted);
+      font-size: 13px;
+      border-top: 1px solid var(--border);
+    }
+  </style>
+</head>
+<body>
+
+<!-- ===== HERO ===== -->
+<div class="hero">
+  <div class="badge">CesiumJS 学习路径 · 三维地球篇</div>
+  <h1>Day 17 — <span>地形与影像图层</span></h1>
+  <p>前四天你学会了创建地球、摆放实体、美化外观和控制相机。但地球本身<strong>长什么样</strong>——是光滑的椭圆体还是崇山峻岭？表面贴的是什么地图？今天深入 CesiumJS 的地形（Terrain）与影像（Imagery）图层系统——这是 GIS 可视化的根基。</p>
+  <div class="meta">
+    <span>&#128197; 第 17 天</span>
+    <span>&#9201; 预计 65 分钟</span>
+    <span>&#127758; CesiumJS 阶段 · 第 5 天</span>
+  </div>
+</div>
+
+<!-- ===== CONTAINER ===== -->
+<div class="container">
+
+  <!-- 学习进度 -->
+  <div class="progress-card">
+    <h3>&#128205; 学习路线图</h3>
+    <div class="progress-list">
+      <div class="progress-item pi-js">Day 01-12 · JS 基础完成 &#127881;</div>
+      <div class="progress-item pi-done">Day 13 · CesiumJS 入门</div>
+      <div class="progress-item pi-done">Day 14 · Entity 实体与几何体</div>
+      <div class="progress-item pi-done">Day 15 · 材质、贴图与 3D Tiles</div>
+      <div class="progress-item pi-done">Day 16 · 相机控制与视角管理</div>
+      <div class="progress-item pi-today">Day 17 · 地形与影像图层 &#8592; 今天</div>
+      <div class="progress-item pi-next">Day 18+ · 数据 sources 与交互</div>
+    </div>
+  </div>
+
+  <!-- 目录 -->
+  <div class="toc">
+    <h2>&#128218; 本课目录</h2>
+    <ol>
+      <li><a href="#s1">为什么地形与影像如此重要</a></li>
+      <li><a href="#s2">Globe 对象：地球的"皮肤"与"骨架"</a></li>
+      <li><a href="#s3">TerrainProvider：地形提供者体系</a></li>
+      <li><a href="#s4">EllipsoidTerrainProvider：无地形模式</a></li>
+      <li><a href="#s5">CesiumTerrainProvider：Cesium ion 全球地形</a></li>
+      <li><a href="#s6">ArcGISTiledElevationTerrainProvider</a></li>
+      <li><a href="#s7">ImageryLayer：影像图层基础</a></li>
+      <li><a href="#s8">ImageryProvider：影像提供者大全</a></li>
+      <li><a href="#s9">图层叠加、排序与透明度控制</a></li>
+      <li><a href="#s10">高程采样 sampleTerrain / sampleTerrainMostDetailed</a></li>
+      <li><a href="#s11">CesiumJS 关联场景</a></li>
+      <li><a href="#s12">练习题</a></li>
+      <li><a href="#s13">在线练习控制台</a></li>
+    </ol>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 1: 为什么地形与影像如此重要 -->
+  <!-- ============================================================ -->
+  <div class="section" id="s1">
+    <div class="section-header">
+      <div class="section-num">1</div>
+      <h2>为什么地形与影像如此重要</h2>
+      <span class="tag">动机</span>
+    </div>
+
+    <div class="card">
+      <h3>&#127755; 无地形 vs 有地形</h3>
+      <p>默认情况下，CesiumJS 的 Globe 是一个<strong>光滑的数学椭球体</strong>——没有山峰、没有峡谷、没有海底起伏。这就像把一个地球仪涂上地图照片：表面是平的。</p>
+      <p>当你加载真实地形数据后，地球就有了<strong>高低起伏</strong>：珠穆朗玛峰真的会凸起来，马里亚纳海沟真的会凹下去。相机贴地飞行时，你会看到山脉、河谷——这才是真正的三维地球。</p>
+    </div>
+
+    <div class="card">
+      <h3>&#128444; 影像层：地球的"皮肤"</h3>
+      <p>影像（Imagery）就是贴在地球表面的<strong>地图图片</strong>。没有影像，地球就是一个灰色的素模。有了影像，你能看到卫星图、街道图、行政区划、实时天气图——任何栅格地图数据都可以作为影像图层。</p>
+      <p>而且可以<strong>叠多层</strong>：底层放卫星图，上面叠加半透明行政区划，最上面标注道路。这就是 GIS 里的"图层叠加"概念。</p>
+    </div>
+
+    <div class="info">
+      <span>&#128161;</span>
+      <span><strong>核心概念：</strong>Globe 对象有两个关键属性——<code>terrainProvider</code>（决定"有多高"）和 <code>imageryLayers</code>（决定"长什么样"）。地形是3D几何体，影像是2D贴图。两者独立管理，互不干扰。</span>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 2: Globe 对象 -->
+  <!-- ============================================================ -->
+  <div class="section" id="s2">
+    <div class="section-header">
+      <div class="section-num">2</div>
+      <h2>Globe 对象：地球的"皮肤"与"骨架"</h2>
+      <span class="tag">架构</span>
+    </div>
+
+    <div class="card">
+      <h3>&#127760; Globe = TerrainProvider + ImageryLayers</h3>
+      <p><code>Viewer.scene.globe</code> 是 CesiumJS 中表示地球的核心对象。它内部管理两个子系统：</p>
+      <div class="flow-diagram">
+        <div class="flow-row">
+          <div class="flow-box fb-app">Viewer.scene.globe<br><small>地球对象</small></div>
+        </div>
+        <div class="flow-row">
+          <div class="flow-arrow" style="font-size:14px;">&#8600;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#8601;</div>
+        </div>
+        <div class="flow-row">
+          <div class="flow-box fb-material">terrainProvider<br><small>地形数据源（骨架）</small></div>
+          <div class="flow-box fb-tiles">imageryLayers<br><small>影像图层集合（皮肤）</small></div>
+        </div>
+        <div class="flow-row">
+          <div class="flow-arrow" style="font-size:14px;">&#8595;</div>
+          <div class="flow-arrow" style="font-size:14px;">&#8595;</div>
+        </div>
+        <div class="flow-row">
+          <div class="flow-box fb-gpu">地形瓦片 (QuantizedMesh)<br><small>每个瓦片携带高程数据</small></div>
+          <div class="flow-box fb-gpu">影像瓦片 (JPEG/PNG/WebP)<br><small>每层叠加不同地图</small></div>
+        </div>
+      </div>
+      <p style="margin-top:14px;">两者的共同目标：<strong>按需加载瓦片</strong>（Tiled），只加载当前视野范围内的数据，用金字塔结构实现 LOD（远近不同精度）。</p>
+    </div>
+
+    <div class="card">
+      <h3>&#128269; globe 的核心配置属性</h3>
+      <table>
+        <tr><th>属性</th><th>类型</th><th>说明</th></tr>
+        <tr>
+          <td class="td-kw">terrainProvider</td>
+          <td class="td-type">TerrainProvider</td>
+          <td>地形数据源。默认 <code>EllipsoidTerrainProvider</code>（光滑椭球）</td>
+        </tr>
+        <tr>
+          <td class="td-kw">imageryLayers</td>
+          <td class="td-type">ImageryLayerCollection</td>
+          <td>影像图层集合，支持增删、排序、透明度</td>
+        </tr>
+        <tr>
+          <td class="td-kw">baseColor</td>
+          <td class="td-type">Color</td>
+          <td>无影像覆盖区域的底色（默认深蓝）</td>
+        </tr>
+        <tr>
+          <td class="td-kw">show</td>
+          <td class="td-type">Boolean</td>
+          <td>是否显示地球</td>
+        </tr>
+        <tr>
+          <td class="td-kw">depthTestAgainstTerrain</td>
+          <td class="td-type">Boolean</td>
+          <td>实体是否做地形深度测试（<code>false</code> 则浮在地形上方）</td>
+        </tr>
+        <tr>
+          <td class="td-kw">enableLighting</td>
+          <td class="td-type">Boolean</td>
+          <td>地形是否受光照影响（阴影）</td>
+        </tr>
+        <tr>
+          <td class="td-kw">showWaterEffect</td>
+          <td class="td-type">Boolean</td>
+          <td>是否显示水面效果</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 3: TerrainProvider -->
+  <!-- ============================================================ -->
+  <div class="section" id="s3">
+    <div class="section-header">
+      <div class="section-num">3</div>
+      <h2>TerrainProvider：地形提供者体系</h2>
+      <span class="tag">核心</span>
+    </div>
+
+    <div class="card">
+      <h3>&#128506; TerrainProvider 是什么？</h3>
+      <p>TerrainProvider 是一个<strong>抽象接口</strong>，负责按需向 Globe 提供地形高程数据。CesiumJS 内置了多种实现：</p>
+      <table>
+        <tr><th>类名</th><th>数据源</th><th>精度</th><th>需要 Token</th></tr>
+        <tr>
+          <td class="td-kw">EllipsoidTerrainProvider</td>
+          <td>数学椭球体</td>
+          <td>无真实高程</td>
+          <td class="td-bad">否（默认）</td>
+        </tr>
+        <tr>
+          <td class="td-kw">CesiumTerrainProvider</td>
+          <td>Cesium ion 全球地形</td>
+          <td>~30m (全球) / ~1m (部分地区)</td>
+          <td class="td-good">需要</td>
+        </tr>
+        <tr>
+          <td class="td-kw">ArcGISTiledElevationTerrainProvider</td>
+          <td>ArcGIS 高程服务</td>
+          <td>取决于服务配置</td>
+          <td class="td-good">视情况</td>
+        </tr>
+        <tr>
+          <td class="td-kw">VRTheWorldTerrainProvider</td>
+          <td>VRTheWorld</td>
+          <td>中等</td>
+          <td class="td-bad">否</td>
+        </tr>
+        <tr>
+          <td class="td-kw">GoogleEarthEnterpriseTerrainProvider</td>
+          <td>Google Earth Enterprise</td>
+          <td>高</td>
+          <td class="td-good">需要</td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3>&#128296; 地形数据格式：QuantizedMesh</h3>
+      <p>CesiumJS 使用 <strong>QuantizedMesh</strong> 格式来编码地形瓦片。每个瓦片不仅包含高程值，还包含：</p>
+      <ul>
+        <li><strong>顶点法线</strong>：用于光照计算，让山脊有明暗面</li>
+        <li><strong>水面遮罩</strong>：标记哪些区域是水体</li>
+        <li><strong>元数据</strong>：最小/最大高程、边界范围</li>
+        <li><strong>索引数据</strong>：用于高效查询高程</li>
+      </ul>
+      <p>这是一种<strong>二进制格式</strong>，比传统 DEM（数字高程模型）更紧凑，专为 Web 传输优化。</p>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 4: EllipsoidTerrainProvider -->
+  <!-- ============================================================ -->
+  <div class="section" id="s4">
+    <div class="section-header">
+      <div class="section-num">4</div>
+      <h2>EllipsoidTerrainProvider：无地形模式</h2>
+      <span class="tag">默认</span>
+    </div>
+
+    <div class="card">
+      <h3>&#128309; 光滑椭球体</h3>
+      <p>这是 CesiumJS 的<strong>默认地形提供者</strong>。它不加载任何真实高程数据，地球表面就是一个完美的数学椭球体（WGS84）。</p>
+      <pre><span class="cmt">// 默认情况下，就等于这样：</span>
+<span class="kw">const</span> <span class="var">viewer</span> = <span class="kw">new</span> <span class="typ">Cesium.Viewer</span>(<span class="str">'cesiumContainer'</span>, {
+  <span class="prp">terrainProvider</span>: <span class="kw">new</span> <span class="typ">Cesium.EllipsoidTerrainProvider</span>()
+});
+
+<span class="cmt">// 等价于不传 terrainProvider，CesiumJS 自动创建</span></pre>
+    </div>
+
+    <div class="card">
+      <h3>&#129300; 什么时候用？</h3>
+      <ul>
+        <li><span class="td-good">&#9989;</span> 不需要地形起伏的场景（如只看全球数据分布）</li>
+        <li><span class="td-good">&#9989;</span> 性能敏感场景——椭球体零开销</li>
+        <li><span class="td-good">&#9989;</span> 快速原型开发阶段</li>
+        <li><span class="td-bad">&#10060;</span> 需要相机贴地飞行、分析地形剖面</li>
+        <li><span class="td-bad">&#10060;</span> 需要遮挡分析（山体会挡住后面的东西）</li>
+      </ul>
+    </div>
+
+    <div class="warn">
+      <span>&#9888;&#65039;</span>
+      <span><strong>注意：</strong>使用 EllipsoidTerrainProvider 时，<code>sampleTerrain()</code> 返回的高程值始终为 0。所有实体都"浮"在椭球面上，即使它们应该在海底。</span>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 5: CesiumTerrainProvider -->
+  <!-- ============================================================ -->
+  <div class="section" id="s5">
+    <div class="section-header">
+      <div class="section-num">5</div>
+      <h2>CesiumTerrainProvider：Cesium ion 全球地形</h2>
+      <span class="tag">推荐</span>
+    </div>
+
+    <div class="card">
+      <h3>&#127755; 最常用的真实地形方案</h3>
+      <p>Cesium ion 提供的全球地形服务，底层整合了多种数据源：</p>
+      <ul>
+        <li><strong>Cesium World Terrain</strong>：融合了 SRTM、ASTER GDEM、NASADEM 等多种全球 DEM 数据，默认精度约 30m</li>
+        <li><strong>Cesium World Terrain + 高精度区域</strong>：部分地区（如美国、欧洲）可达 1m 精度</li>
+        <li><strong>海底地形</strong>：包含海洋测深数据，海底也有起伏</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3>&#128295; 基本用法</h3>
+      <pre><span class="cmt">// 方式 1：创建 Viewer 时指定（推荐）</span>
+<span class="kw">const</span> <span class="var">viewer</span> = <span class="kw">new</span> <span class="typ">Cesium.Viewer</span>(<span class="str">'cesiumContainer'</span>, {
+  <span class="prp">terrainProvider</span>: <span class="kw">new</span> <span class="typ">Cesium.CesiumTerrainProvider</span>({
+    <span class="prp">url</span>: <span class="typ">Cesium.IonResource</span>.<span class="fn">fromAssetId</span>(<span class="num">1</span>),  <span class="cmt">// Asset ID 1 = Cesium World Terrain</span>
+    <span class="prp">requestVertexNormals</span>: <span class="kw">true</span>,  <span class="cmt">// 请求法线，用于光照</span>
+    <span class="prp">requestWaterMask</span>: <span class="kw">true</span>      <span class="cmt">// 请求水面遮罩，显示水面效果</span>
+  })
+});
+
+<span class="cmt">// 方式 2：使用 createWorldTerrain 快捷函数（v1.60+）</span>
+<span class="kw">const</span> <span class="var">viewer</span> = <span class="kw">new</span> <span class="typ">Cesium.Viewer</span>(<span class="str">'cesiumContainer'</span>, {
+  <span class="prp">terrainProvider</span>: <span class="kw">await</span> <span class="typ">Cesium</span>.<span class="fn">createWorldTerrain</span>({
+    <span class="prp">requestVertexNormals</span>: <span class="kw">true</span>,
+    <span class="prp">requestWaterMask</span>: <span class="kw">true</span>
+  })
+});</pre>
+    </div>
+
+    <div class="card">
+      <h3>&#9881;&#65039; 关键配置选项</h3>
+      <table>
+        <tr><th>选项</th><th>默认值</th><th>说明</th></tr>
+        <tr>
+          <td class="td-kw">requestVertexNormals</td>
+          <td class="td-type">false</td>
+          <td>是否请求法线数据。开启后地形有<strong>光照阴影</strong>，立体感更强</td>
+        </tr>
+        <tr>
+          <td class="td-kw">requestWaterMask</td>
+          <td class="td-type">false</td>
+          <td>是否请求水面遮罩。开启后海洋区域显示<strong>水面波光效果</strong></td>
+        </tr>
+        <tr>
+          <td class="td-kw">ellipsoid</td>
+          <td class="td-type">Ellipsoid.WGS84</td>
+          <td>参考椭球体。月球/火星需改为对应的椭球体</td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="tip">
+      <span>&#128161;</span>
+      <span><strong>最佳实践：</strong>生产环境建议同时开启 <code>requestVertexNormals</code> 和 <code>requestWaterMask</code>。视觉效果提升显著，性能影响很小——法线是瓦片自带的，不需要额外请求。</span>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 6: ArcGISTiledElevationTerrainProvider -->
+  <!-- ============================================================ -->
+  <div class="section" id="s6">
+    <div class="section-header">
+      <div class="section-num">6</div>
+      <h2>ArcGISTiledElevationTerrainProvider</h2>
+      <span class="tag">ArcGIS</span>
+    </div>
+
+    <div class="card">
+      <h3>&#127760; 对接 ArcGIS 高程服务</h3>
+      <p>如果你的企业使用 ArcGIS 生态，可以直接连接 ArcGIS 发布的高程服务：</p>
+      <pre><span class="kw">const</span> <span class="var">viewer</span> = <span class="kw">new</span> <span class="typ">Cesium.Viewer</span>(<span class="str">'cesiumContainer'</span>, {
+  <span class="prp">terrainProvider</span>: <span class="kw">new</span> <span class="typ">Cesium.ArcGISTiledElevationTerrainProvider</span>({
+    <span class="prp">url</span>: <span class="str">'https://elevation3d.arcgis.com/arcgis/rest/services/WorldElevation3D/Terrain3D/ImageServer'</span>,
+    <span class="prp">token</span>: <span class="str">'YOUR_ARCGIS_TOKEN'</span>  <span class="cmt">// 如果需要</span>
+  })
+});</pre>
+      <p>ArcGIS 高程服务使用<strong>LERC 压缩格式</strong>，压缩率极高，适合企业内网部署。</p>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 7: ImageryLayer 基础 -->
+  <!-- ============================================================ -->
+  <div class="section" id="s7">
+    <div class="section-header">
+      <div class="section-num">7</div>
+      <h2>ImageryLayer：影像图层基础</h2>
+      <span class="tag">核心</span>
+    </div>
+
+    <div class="card">
+      <h3>&#127912; 什么是 ImageryLayer？</h3>
+      <p>ImageryLayer 是 CesiumJS 中的<strong>单个影像图层</strong>。每个图层包装一个 ImageryProvider（数据源），并额外控制：</p>
+      <ul>
+        <li><strong>透明度</strong>（alpha）</li>
+        <li><strong>亮度/对比度/色相/饱和度/伽马</strong></li>
+        <li><strong>显示范围</strong>（按矩形裁剪）</li>
+        <li><strong>层级顺序</strong>（在多图层中的叠放位置）</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3>&#128295; 创建和添加图层</h3>
+      <pre><span class="cmt">// 方式 1：创建 Viewer 时指定默认底图</span>
+<span class="kw">const</span> <span class="var">viewer</span> = <span class="kw">new</span> <span class="typ">Cesium.Viewer</span>(<span class="str">'cesiumContainer'</span>, {
+  <span class="prp">imageryProvider</span>: <span class="kw">new</span> <span class="typ">Cesium.ArcGisMapServerImageryProvider</span>({
+    <span class="prp">url</span>: <span class="str">'https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer'</span>
+  })
+});
+
+<span class="cmt">// 方式 2：通过 imageryLayers.add() 添加</span>
+<span class="kw">const</span> <span class="var">layer</span> = <span class="var">viewer</span>.<span class="var">imageryLayers</span>.<span class="fn">addImageryProvider</span>(
+  <span class="kw">new</span> <span class="typ">Cesium.IonImageryProvider</span>({ <span class="prp">assetId</span>: <span class="num">3</span> })  <span class="cmt">// Bing Maps Aerial</span>
+);
+
+<span class="cmt">// 方式 3：使用 addImageryProvider 快捷方法</span>
+<span class="kw">const</span> <span class="var">layer</span> = <span class="var">viewer</span>.<span class="var">imageryLayers</span>.<span class="fn">addImageryProvider</span>(
+  <span class="kw">new</span> <span class="typ">Cesium.OpenStreetMapImageryProvider</span>({
+    <span class="prp">url</span>: <span class="str">'https://tile.openstreetmap.org/'</span>
+  })
+);</pre>
+    </div>
+
+    <div class="card">
+      <h3>&#127912; ImageryLayer 的属性控制</h3>
+      <pre><span class="cmt">// 获取图层引用后，可以动态调整样式</span>
+<span class="var">layer</span>.<span class="prp">alpha</span> = <span class="num">0.5</span>;              <span class="cmt">// 透明度 0~1</span>
+<span class="var">layer</span>.<span class="prp">brightness</span> = <span class="num">1.2</span>;        <span class="cmt">// 亮度，默认 1.0</span>
+<span class="var">layer</span>.<span class="prp">contrast</span> = <span class="num">1.1</span>;         <span class="cmt">// 对比度</span>
+<span class="var">layer</span>.<span class="prp">hue</span> = <span class="num">0.1</span>;              <span class="cmt">// 色相偏移</span>
+<span class="var">layer</span>.<span class="prp">saturation</span> = <span class="num">1.5</span>;      <span class="cmt">// 饱和度</span>
+<span class="var">layer</span>.<span class="prp">gamma</span> = <span class="num">1.2</span>;            <span class="cmt">// 伽马校正</span>
+<span class="var">layer</span>.<span class="prp">show</span> = <span class="kw">true</span>;            <span class="cmt">// 是否显示</span>
+<span class="var">layer</span>.<span class="prp">splitDirection</span> = <span class="typ">Cesium.SplitDirection</span>.<span class="prp">LEFT</span>;  <span class="cmt">// 分屏方向（用于卷帘对比）</span></pre>
+    </div>
+
+    <div class="tip">
+      <span>&#128161;</span>
+      <span><strong>实用技巧：</strong><code>alpha</code> 属性非常适合做"图层对比"。让上层半透明，就能同时看到上下两层地图。配合 <code>splitDirection</code> 还能做左右分屏对比（卷帘效果）。</span>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 8: ImageryProvider 大全 -->
+  <!-- ============================================================ -->
+  <div class="section" id="s8">
+    <div class="section-header">
+      <div class="section-num">8</div>
+      <h2>ImageryProvider：影像提供者大全</h2>
+      <span class="tag">参考</span>
+    </div>
+
+    <div class="card">
+      <h3>&#128451; 内置 ImageryProvider 一览</h3>
+      <table>
+        <tr><th>类名</th><th>数据源</th><th>类型</th><th>需要 Key</th></tr>
+        <tr>
+          <td class="td-kw">ArcGisMapServerImageryProvider</td>
+          <td>ArcGIS MapServer / ImageServer</td>
+          <td class="td-type">卫星 / 街道 / 地形</td>
+          <td class="td-bad">否（公用服务）</td>
+        </tr>
+        <tr>
+          <td class="td-kw">BingMapsImageryProvider</td>
+          <td>Bing Maps</td>
+          <td class="td-type">卫星 / 街道 / 混合</td>
+          <td class="td-good">需要 Bing Key</td>
+        </tr>
+        <tr>
+          <td class="td-kw">IonImageryProvider</td>
+          <td>Cesium ion 托管</td>
+          <td class="td-type">多种（Bing/Mapbox等）</td>
+          <td class="td-good">需要 ion Token</td>
+        </tr>
+        <tr>
+          <td class="td-kw">OpenStreetMapImageryProvider</td>
+          <td>OpenStreetMap</td>
+          <td class="td-type">街道地图</td>
+          <td class="td-bad">否</td>
+        </tr>
+        <tr>
+          <td class="td-kw">TileMapServiceImageryProvider</td>
+          <td>标准 TMS 服务</td>
+          <td class="td-type">任意</td>
+          <td class="td-bad">否</td>
+        </tr>
+        <tr>
+          <td class="td-kw">UrlTemplateImageryProvider</td>
+          <td>自定义 URL 模板</td>
+          <td class="td-type">任意 XYZ/TMS</td>
+          <td class="td-bad">否</td>
+        </tr>
+        <tr>
+          <td class="td-kw">WebMapServiceImageryProvider</td>
+          <td>WMS 标准服务</td>
+          <td class="td-type">任意</td>
+          <td class="td-bad">否</td>
+        </tr>
+        <tr>
+          <td class="td-kw">WebMapTileServiceImageryProvider</td>
+          <td>WMTS 标准服务</td>
+          <td class="td-type">任意</td>
+          <td class="td-bad">否</td>
+        </tr>
+        <tr>
+          <td class="td-kw">GoogleEarthEnterpriseImageryProvider</td>
+          <td>Google Earth Enterprise</td>
+          <td class="td-type">卫星</td>
+          <td class="td-good">需要</td>
+        </tr>
+        <tr>
+          <td class="td-kw">GridImageryProvider</td>
+          <td>内置（程序生成）</td>
+          <td class="td-type">网格线</td>
+          <td class="td-bad">否</td>
+        </tr>
+        <tr>
+          <td class="td-kw">SingleTileImageryProvider</td>
+          <td>单张图片</td>
+          <td class="td-type">任意图片</td>
+          <td class="td-bad">否</td>
+        </tr>
+        <tr>
+          <td class="td-kw">TileCoordinatesImageryProvider</td>
+          <td>内置（程序生成）</td>
+          <td class="td-type">瓦片坐标标签</td>
+          <td class="td-bad">否</td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3>&#128736; 最常用的几个</h3>
+      <pre><span class="cmt">// 1. Bing Maps 卫星图（通过 Cesium ion）</span>
+<span class="kw">new</span> <span class="typ">Cesium.IonImageryProvider</span>({ <span class="prp">assetId</span>: <span class="num">2</span> })  <span class="cmt">// Bing Maps Aerial</span>
+
+<span class="cmt">// 2. Bing Maps 街道图（通过 Cesium ion）</span>
+<span class="kw">new</span> <span class="typ">Cesium.IonImageryProvider</span>({ <span class="prp">assetId</span>: <span class="num">4</span> })  <span class="cmt">// Bing Maps Road</span>
+
+<span class="cmt">// 3. ArcGIS 全球影像（免费，无需 key）</span>
+<span class="kw">new</span> <span class="typ">Cesium.ArcGisMapServerImageryProvider</span>({
+  <span class="prp">url</span>: <span class="str">'https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer'</span>
+})
+
+<span class="cmt">// 4. OpenStreetMap（免费，无需 key）</span>
+<span class="kw">new</span> <span class="typ">Cesium.OpenStreetMapImageryProvider</span>({
+  <span class="prp">url</span>: <span class="str">'https://tile.openstreetmap.org/'</span>
+})
+
+<span class="cmt">// 5. 自定义 XYZ 瓦片（如天地图、高德、Google 等）</span>
+<span class="kw">new</span> <span class="typ">Cesium.UrlTemplateImageryProvider</span>({
+  <span class="prp">url</span>: <span class="str">'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'</span>,
+  <span class="prp">subdomains</span>: [<span class="str">'a'</span>, <span class="str">'b'</span>, <span class="str">'c'</span>]
+})</pre>
+    </div>
+
+    <div class="info">
+      <span>&#128161;</span>
+      <span><strong>UrlTemplateImageryProvider 是万能钥匙：</strong>只要你知道 XYZ 瓦片 URL 模板（{z}/{x}/{y}），几乎任何在线地图都能接入 CesiumJS。天地图、高德、谷歌地图、Mapbox——都支持这种标准格式。</span>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 9: 图层叠加、排序与透明度 -->
+  <!-- ============================================================ -->
+  <div class="section" id="s9">
+    <div class="section-header">
+      <div class="section-num">9</div>
+      <h2>图层叠加、排序与透明度控制</h2>
+      <span class="tag">实战</span>
+    </div>
+
+    <div class="card">
+      <h3>&#128202; ImageryLayerCollection 操作</h3>
+      <p><code>viewer.imageryLayers</code> 是一个 <code>ImageryLayerCollection</code>，管理所有影像图层。核心操作：</p>
+      <table>
+        <tr><th>方法</th><th>说明</th></tr>
+        <tr><td class="td-kw">add(layer, index)</td><td>添加图层，可指定插入位置（index 越大越上层）</td></tr>
+        <tr><td class="td-kw">addImageryProvider(provider, index)</td><td>快捷方式：从 provider 创建图层并添加</td></tr>
+        <tr><td class="td-kw">remove(layer, destroy)</td><td>移除图层</td></tr>
+        <tr><td class="td-kw">removeAll(destroy)</td><td>移除所有图层</td></tr>
+        <tr><td class="td-kw">contains(layer)</td><td>是否包含某图层</td></tr>
+        <tr><td class="td-kw">indexOf(layer)</td><td>获取图层索引</td></tr>
+        <tr><td class="td-kw">lower/lowerToBottom</td><td>下移一层 / 移到底层</td></tr>
+        <tr><td class="td-kw">raise/raiseToTop</td><td>上移一层 / 移到顶层</td></tr>
+        <tr><td class="td-kw">pickImageryLayerFeatures</td><td>拾取某位置的图层要素（WMS 支持）</td></tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3>&#127760; 实战：多图层叠加</h3>
+      <pre><span class="cmt">// 构建一个完整的图层栈：底图卫星 + 中间行政区划 + 顶部标注</span>
+
+<span class="kw">const</span> <span class="var">viewer</span> = <span class="kw">new</span> <span class="typ">Cesium.Viewer</span>(<span class="str">'cesiumContainer'</span>, {
+  <span class="prp">baseLayerPicker</span>: <span class="kw">false</span>  <span class="cmt">// 关闭默认底图选择器</span>
+});
+
+<span class="cmt">// 第 0 层（最底层）：卫星底图</span>
+<span class="kw">const</span> <span class="var">satellite</span> = <span class="var">viewer</span>.<span class="var">imageryLayers</span>.<span class="fn">addImageryProvider</span>(
+  <span class="kw">new</span> <span class="typ">Cesium.ArcGisMapServerImageryProvider</span>({
+    <span class="prp">url</span>: <span class="str">'https://services.arcgisonline.com/.../World_Imagery/MapServer'</span>
+  }),
+  <span class="num">0</span>  <span class="cmt">// index = 0，最底层</span>
+);
+
+<span class="cmt">// 第 1 层：行政区划（半透明叠加）</span>
+<span class="kw">const</span> <span class="var">admin</span> = <span class="var">viewer</span>.<span class="var">imageryLayers</span>.<span class="fn">addImageryProvider</span>(
+  <span class="kw">new</span> <span class="typ">Cesium.ArcGisMapServerImageryProvider</span>({
+    <span class="prp">url</span>: <span class="str">'https://.../Reference/World_Boundaries/MapServer'</span>
+  }),
+  <span class="num">1</span>
+);
+<span class="var">admin</span>.<span class="prp">alpha</span> = <span class="num">0.6</span>;  <span class="cmt">// 60% 透明度，能看到底下的卫星图</span>
+
+<span class="cmt">// 第 2 层（最顶层）：道路标注</span>
+<span class="kw">const</span> <span class="var">labels</span> = <span class="var">viewer</span>.<span class="var">imageryLayers</span>.<span class="fn">addImageryProvider</span>(
+  <span class="kw">new</span> <span class="typ">Cesium.ArcGisMapServerImageryProvider</span>({
+    <span class="prp">url</span>: <span class="str">'https://.../Reference/World_Transportation/MapServer'</span>
+  }),
+  <span class="num">2</span>
+);</pre>
+    </div>
+
+    <div class="card">
+      <h3>&#128269; 动态控制图层</h3>
+      <pre><span class="cmt">// 切换图层可见性</span>
+<span class="var">satellite</span>.<span class="prp">show</span> = <span class="kw">false</span>;  <span class="cmt">// 隐藏卫星图</span>
+
+<span class="cmt">// 调整图层顺序</span>
+<span class="var">viewer</span>.<span class="var">imageryLayers</span>.<span class="fn">raise</span>(<span class="var">admin</span>);      <span class="cmt">// 上移一层</span>
+<span class="var">viewer</span>.<span class="var">imageryLayers</span>.<span class="fn">raiseToTop</span>(<span class="var">admin</span>);  <span class="cmt">// 移到最顶层</span>
+<span class="var">viewer</span>.<span class="var">imageryLayers</span>.<span class="fn">lowerToBottom</span>(<span class="var">satellite</span>); <span class="cmt">// 移到底层</span>
+
+<span class="cmt">// 动态调整透明度（实现淡入淡出）</span>
+<span class="kw">let</span> <span class="var">alpha</span> = <span class="num">1.0</span>;
+<span class="kw">const</span> <span class="var">fadeOut</span> = <span class="fn">setInterval</span>(() => {
+  <span class="var">alpha</span> -= <span class="num">0.01</span>;
+  <span class="var">admin</span>.<span class="prp">alpha</span> = <span class="var">alpha</span>;
+  <span class="kw">if</span> (<span class="var">alpha</span> <= <span class="num">0</span>) <span class="fn">clearInterval</span>(<span class="var">fadeOut</span>);
+}, <span class="num">50</span>);
+
+<span class="cmt">// 移除图层</span>
+<span class="var">viewer</span>.<span class="var">imageryLayers</span>.<span class="fn">remove</span>(<span class="var">admin</span>);  <span class="cmt">// 不移除 provider</span>
+<span class="var">viewer</span>.<span class="var">imageryLayers</span>.<span class="fn">remove</span>(<span class="var">admin</span>, <span class="kw">true</span>); <span class="cmt">// 同时销毁 provider</span></pre>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 10: sampleTerrain -->
+  <!-- ============================================================ -->
+  <div class="section" id="s10">
+    <div class="section-header">
+      <div class="section-num">10</div>
+      <h2>高程采样：sampleTerrain / sampleTerrainMostDetailed</h2>
+      <span class="tag">高级</span>
+    </div>
+
+    <div class="card">
+      <h3>&#128207; 为什么要采样高程？</h3>
+      <p>在地理信息系统中，经常需要知道某个经纬度位置的<strong>实际海拔高度</strong>：</p>
+      <ul>
+        <li>放置实体时贴地（clamp to ground）</li>
+        <li>计算飞行路径的最低安全高度</li>
+        <li>地形剖面分析</li>
+        <li>洪水淹没模拟</li>
+        <li>视域分析（通视计算）</li>
+      </ul>
+      <p>CesiumJS 提供了 <code>sampleTerrain()</code> 和 <code>sampleTerrainMostDetailed()</code> 两个异步方法。</p>
+    </div>
+
+    <div class="card">
+      <h3>&#128295; sampleTerrain() 用法</h3>
+      <pre><span class="cmt">// sampleTerrain(terrainProvider, level, positions)</span>
+<span class="cmt">// - terrainProvider: 地形提供者</span>
+<span class="cmt">// - level: 采样精度级别（数字越大越精确，但越慢）</span>
+<span class="cmt">// - positions: Cartographic[] 要采样的位置数组</span>
+<span class="cmt">// 返回 Promise&lt;Cartographic[]&gt;，每个 Cartographic 的 height 被填充</span>
+
+<span class="kw">const</span> <span class="var">positions</span> = [
+  <span class="typ">Cesium.Cartographic</span>.<span class="fn">fromDegrees</span>(<span class="num">86.9250</span>, <span class="num">27.9881</span>),   <span class="cmt">// 珠穆朗玛峰</span>
+  <span class="typ">Cesium.Cartographic</span>.<span class="fn">fromDegrees</span>(<span class="num">116.3972</span>, <span class="num">39.9075</span>),  <span class="cmt">// 北京</span>
+  <span class="typ">Cesium.Cartographic</span>.<span class="fn">fromDegrees</span>(<span class="num">-155.5319</span>, <span class="num">19.5981</span>), <span class="cmt">// 夏威夷（海平面附近）</span>
+];
+
+<span class="typ">Cesium</span>.<span class="fn">sampleTerrainMostDetailed</span>(<span class="var">viewer</span>.<span class="var">terrainProvider</span>, <span class="var">positions</span>)
+  .<span class="fn">then</span>(<span class="var">sampledPositions</span> => {
+    <span class="var">sampledPositions</span>.<span class="fn">forEach</span>((<span class="var">pos</span>, <span class="var">i</span>) => {
+      <span class="var">console</span>.<span class="fn">log</span>(<span class="str">`位置 ${i}: 高程 = ${pos.height.toFixed(2)} 米`</span>);
+    });
+    <span class="cmt">// 输出类似：</span>
+    <span class="cmt">// 位置 0: 高程 = 8848.86 米（珠峰）</span>
+    <span class="cmt">// 位置 1: 高程 = 43.50 米（北京）</span>
+    <span class="cmt">// 位置 2: 高程 = 0.00 米（海面）</span>
+  });</pre>
+    </div>
+
+    <div class="card">
+      <h3>&#9881; sampleTerrain vs sampleTerrainMostDetailed</h3>
+      <table>
+        <tr><th>方法</th><th>精度</th><th>速度</th><th>适用场景</th></tr>
+        <tr>
+          <td class="td-kw">sampleTerrain(provider, level, positions)</td>
+          <td>取决于 level 参数</td>
+          <td>可控</td>
+          <td>需要控制精度/性能的场景</td>
+        </tr>
+        <tr>
+          <td class="td-kw">sampleTerrainMostDetailed(provider, positions)</td>
+          <td>最高可用精度</td>
+          <td>较慢</td>
+          <td>需要最精确高程的场景（如贴地放置）</td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="warn">
+      <span>&#9888;&#65039;</span>
+      <span><strong>重要：</strong>如果使用 <code>EllipsoidTerrainProvider</code>，所有位置的高程返回值都是 0。必须使用真实地形提供者（如 CesiumTerrainProvider）才能获取真实高程。另外，采样是异步操作——需要等待瓦片加载完成。</span>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 11: CesiumJS 关联场景 -->
+  <!-- ============================================================ -->
+  <div class="section" id="s11">
+    <div class="section-header">
+      <div class="section-num">11</div>
+      <h2>CesiumJS 关联场景</h2>
+      <span class="tag">应用</span>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <h3>&#127755; 场景 1：飞行仿真地形回避</h3>
+        <p>无人机/飞行仿真中，需要根据<strong>前方地形高度</strong>动态调整飞行路径。使用 <code>sampleTerrainMostDetailed()</code> 批量查询航线沿路高程，确保飞机始终高于地形。</p>
+        <pre><span class="cmt">// 航线沿路高程检测</span>
+<span class="kw">const</span> <span class="var">waypoints</span> = [
+  [<span class="num">116</span>, <span class="num">39</span>], [<span class="num">117</span>, <span class="num">38</span>], [<span class="num">118</span>, <span class="num">37</span>]
+].<span class="fn">map</span>(([<span class="var">lon</span>, <span class="var">lat</span>]) => 
+  <span class="typ">Cesium.Cartographic</span>.<span class="fn">fromDegrees</span>(<span class="var">lon</span>, <span class="var">lat</span>)
+);
+
+<span class="kw">const</span> <span class="var">sampled</span> = <span class="kw">await</span> <span class="typ">Cesium</span>.<span class="fn">sampleTerrainMostDetailed</span>(
+  <span class="var">viewer</span>.<span class="var">terrainProvider</span>, <span class="var">waypoints</span>
+);
+<span class="kw">const</span> <span class="var">safeAltitudes</span> = <span class="var">sampled</span>.<span class="fn">map</span>(<span class="var">p</span> => <span class="var">p</span>.<span class="prp">height</span> + <span class="num">500</span>); <span class="cmt">// 地形上方 500m</span></pre>
+      </div>
+
+      <div class="card">
+        <h3>&#127912; 场景 2：图层卷帘对比</h3>
+        <p>对比不同时期的卫星影像（如灾害前后对比），使用 <code>splitDirection</code> 实现左右分屏：</p>
+        <pre><span class="cmt">// 左半边：灾害前影像</span>
+<span class="var">beforeLayer</span>.<span class="prp">splitDirection</span> = <span class="typ">Cesium.SplitDirection</span>.<span class="prp">LEFT</span>;
+<span class="cmt">// 右半边：灾害后影像</span>
+<span class="var">afterLayer</span>.<span class="prp">splitDirection</span> = <span class="typ">Cesium.SplitDirection</span>.<span class="prp">RIGHT</span>;
+<span class="cmt">// 然后拖动中间的分隔条实时对比</span></pre>
+      </div>
+
+      <div class="card">
+        <h3>&#127754; 场景 3：洪水淹没分析</h3>
+        <p>给定一个水位高度，使用地形高程数据计算淹没范围。结合 <code>sampleTerrain</code> 批量查询和可视化。</p>
+        <pre><span class="cmt">// 伪代码：淹没分析</span>
+<span class="kw">const</span> <span class="var">waterLevel</span> = <span class="num">10</span>; <span class="cmt">// 水位 10m</span>
+<span class="kw">const</span> <span class="var">grid</span> = <span class="fn">generateGrid</span>(<span class="var">area</span>, <span class="num">100</span>); <span class="cmt">// 区域 100x100 网格</span>
+<span class="kw">const</span> <span class="var">heights</span> = <span class="kw">await</span> <span class="typ">Cesium</span>.<span class="fn">sampleTerrainMostDetailed</span>(
+  <span class="var">viewer</span>.<span class="var">terrainProvider</span>, <span class="var">grid</span>
+);
+<span class="kw">const</span> <span class="var">flooded</span> = <span class="var">heights</span>.<span class="fn">filter</span>(<span class="var">p</span> => <span class="var">p</span>.<span class="prp">height</span> < <span class="var">waterLevel</span>);
+<span class="cmt">// 将 flooded 区域用半透明蓝色 polygon 渲染</span></pre>
+      </div>
+
+      <div class="card">
+        <h3>&#128301; 场景 4：多源数据融合显示</h3>
+        <p>同一场景同时显示多种数据源：底层 Bing 卫星图 + 中层气象雷达图（WMS，半透明）+ 顶层交通流量热力图（自定义瓦片）：</p>
+        <pre><span class="cmt">// 三层数据融合</span>
+<span class="var">viewer</span>.<span class="var">imageryLayers</span>.<span class="fn">addImageryProvider</span>(<span class="var">bingSatellite</span>, <span class="num">0</span>); <span class="cmt">// 底层</span>
+<span class="kw">const</span> <span class="var">radar</span> = <span class="var">viewer</span>.<span class="var">imageryLayers</span>.<span class="fn">addImageryProvider</span>(<span class="var">weatherRadarWMS</span>, <span class="num">1</span>);
+<span class="var">radar</span>.<span class="prp">alpha</span> = <span class="num">0.5</span>;
+<span class="kw">const</span> <span class="var">traffic</span> = <span class="var">viewer</span>.<span class="var">imageryLayers</span>.<span class="fn">addImageryProvider</span>(<span class="var">trafficHeatmap</span>, <span class="num">2</span>);
+<span class="var">traffic</span>.<span class="prp">alpha</span> = <span class="num">0.7</span>;</pre>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 12: 练习题 -->
+  <!-- ============================================================ -->
+  <div class="practice" id="s12">
+    <h2>&#9997;&#65039; 练习题</h2>
+    <p>用今天的知识完成以下练习，答案不唯一，重点理解概念。</p>
+
+    <div class="exercise">
+      <div class="q">练习 1：地形提供者切换</div>
+      <p>编写代码，在 CesiumJS Viewer 中创建两个按钮：一个切换到 <code>EllipsoidTerrainProvider</code>（无地形），一个切换到 <code>CesiumTerrainProvider</code>（Cesium ion 全球地形）。提示：动态修改 <code>viewer.scene.globe.terrainProvider</code>。</p>
+    </div>
+
+    <div class="exercise">
+      <div class="q">练习 2：图层管理器</div>
+      <p>创建一个 <code>LayerManager</code> 类，管理多个影像图层：</p>
+      <pre><span class="cmt">// 期望 API：</span>
+<span class="kw">const</span> <span class="var">mgr</span> = <span class="kw">new</span> <span class="typ">LayerManager</span>(<span class="var">viewer</span>);
+<span class="var">mgr</span>.<span class="fn">addLayer</span>(<span class="str">'satellite'</span>, <span class="var">arcgisProvider</span>);   <span class="cmt">// 按名称添加</span>
+<span class="var">mgr</span>.<span class="fn">addLayer</span>(<span class="str">'labels'</span>, <span class="var">osmProvider</span>);
+<span class="var">mgr</span>.<span class="fn">setAlpha</span>(<span class="str">'labels'</span>, <span class="num">0.5</span>);                <span class="cmt">// 按名称设置透明度</span>
+<span class="var">mgr</span>.<span class="fn">toggleLayer</span>(<span class="str">'labels'</span>);                     <span class="cmt">// 按名称切换显隐</span>
+<span class="var">mgr</span>.<span class="fn">removeLayer</span>(<span class="str">'labels'</span>);                    <span class="cmt">// 按名称移除</span></pre>
+      <p>提示：内部用 <code>Map</code> 存储名称到图层引用（复习 Day 07 的 Map），用 <code>ImageryLayerCollection</code> 的 API 操作。</p>
+    </div>
+
+    <div class="exercise">
+      <div class="q">练习 3：高程查询工具</div>
+      <p>编写一个函数 <code>async function getElevation(viewer, lon, lat)</code>，输入经纬度，返回该位置的地形高程（米）。要求：</p>
+      <ul>
+        <li>使用 <code>sampleTerrainMostDetailed</code></li>
+        <li>如果地形提供者没有加载完成，返回 <code>null</code> 并给出提示</li>
+        <li>如果使用 EllipsoidTerrainProvider，给出警告"当前无真实地形数据"</li>
+      </ul>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 13: 在线练习控制台 -->
+  <!-- ============================================================ -->
+  <div class="console-area" id="s13">
+    <div class="console-header">
+      <div class="console-dots">
+        <div class="dot dot-r"></div>
+        <div class="dot dot-y"></div>
+        <div class="dot dot-g"></div>
+      </div>
+      <span>JavaScript 沙盒 — 练习地形与图层概念</span>
+      <span style="font-size:11px;color:var(--muted);">Ctrl + Enter 运行</span>
+    </div>
+    <textarea id="sandbox-code" spellcheck="false">// ========================================
+// 地形与影像图层 — 概念练习沙盒
+// 这里用纯 JS 模拟图层管理和高程采样逻辑
+// ========================================
+
+// --- 模拟图层管理器 ---
+class LayerManager {
+  constructor() {
+    this._layers = new Map(); // 名称 → { alpha, show, index }
+    this._nextIndex = 0;
+  }
+
+  addLayer(name, config = {}) {
+    if (this._layers.has(name)) {
+      console.log(`⚠️ 图层 "${name}" 已存在`);
+      return;
+    }
+    this._layers.set(name, {
+      alpha: config.alpha ?? 1.0,
+      show: config.show ?? true,
+      index: this._nextIndex++
+    });
+    console.log(`✅ 图层 "${name}" 已添加（索引 ${this._layers.get(name).index}）`);
+  }
+
+  setAlpha(name, alpha) {
+    const layer = this._layers.get(name);
+    if (!layer) { console.log(`❌ 未找到图层 "${name}"`); return; }
+    layer.alpha = Math.max(0, Math.min(1, alpha));
+    console.log(`🎨 "${name}" 透明度设为 ${layer.alpha}`);
+  }
+
+  toggleLayer(name) {
+    const layer = this._layers.get(name);
+    if (!layer) { console.log(`❌ 未找到图层 "${name}"`); return; }
+    layer.show = !layer.show;
+    console.log(`👁 "${name}" ${layer.show ? '显示' : '隐藏'}`);
+  }
+
+  removeLayer(name) {
+    if (!this._layers.delete(name)) {
+      console.log(`❌ 未找到图层 "${name}"`);
+      return;
+    }
+    console.log(`🗑 图层 "${name}" 已移除`);
+  }
+
+  listLayers() {
+    console.log('--- 当前图层栈（从底到顶）---');
+    const sorted = [...this._layers.entries()]
+      .sort((a, b) => a[1].index - b[1].index);
+    sorted.forEach(([name, l]) => {
+      const visible = l.show ? '👁' : '🚫';
+      console.log(`  ${visible} [${l.index}] ${name} | alpha=${l.alpha}`);
+    });
+  }
+}
+
+// --- 模拟高程采样 ---
+async function sampleElevation(lon, lat, terrainType = 'cesium') {
+  console.log(`📍 采样位置: (${lon}, ${lat})`);
+
+  // 模拟异步加载
+  await new Promise(resolve => setTimeout(resolve, 500));
+
+  if (terrainType === 'ellipsoid') {
+    console.log('⚠️ 当前使用 EllipsoidTerrainProvider，高程恒为 0');
+    return 0;
+  }
+
+  // 模拟：根据经纬度生成伪高程（基于实际地形的粗略近似）
+  const baseHeight = Math.abs(lat) * 30;  // 纬度越高越可能有高地
+  const noise = Math.sin(lon * 0.5) * Math.cos(lat * 0.7) * 2000;
+  const height = Math.max(0, baseHeight + noise);
+
+  if (lon > 86 && lon < 88 && lat > 27 && lat < 29) {
+    // 珠峰附近
+    console.log(`🏔 珠穆朗玛峰区域！高程: 8848.86 米`);
+    return 8848.86;
+  }
+
+  console.log(`📏 高程: ${height.toFixed(2)} 米`);
+  return height;
+}
+
+// --- 运行演示 ---
+async function demo() {
+  console.log('=== 地形与影像图层演示 ===\n');
+
+  // 测试图层管理器
+  const mgr = new LayerManager();
+  mgr.addLayer('卫星底图');
+  mgr.addLayer('行政区划', { alpha: 0.6 });
+  mgr.addLayer('道路标注', { alpha: 0.8 });
+  mgr.listLayers();
+
+  console.log('');
+  mgr.setAlpha('行政区划', 0.3);
+  mgr.toggleLayer('道路标注');
+  mgr.listLayers();
+
+  console.log('\n--- 高程采样测试 ---');
+  await sampleElevation(86.925, 27.988, 'cesium');   // 珠峰
+  await sampleElevation(116.397, 39.907, 'cesium');   // 北京
+  await sampleElevation(121.473, 31.230, 'ellipsoid'); // 上海（无地形）
+
+  console.log('\n=== 演示完毕 ===');
+}
+
+demo();</textarea>
+    <div class="console-actions">
+      <button class="btn btn-run" onclick="runCode()">&#9654; 运行 (Ctrl+Enter)</button>
+      <button class="btn btn-clear" onclick="clearOutput()">&#128465; 清空输出</button>
+    </div>
+    <div id="output-box"></div>
+  </div>
+
+</div><!-- /container -->
+
+<!-- ===== FOOTER ===== -->
+<div class="footer">
+  <p>&#128170; 明天继续：Day 18 — 数据源（DataSource）与交互</p>
+  <p style="margin-top:8px;">CesiumJS 学习路径 · 第 17 天 · 地形与影像图层</p>
+</div>
+
+<!-- ===== SANDBOX ENGINE ===== -->
+<script>
+const outputBox = document.getElementById('output-box');
+const sandboxCode = document.getElementById('sandbox-code');
+
+// 拦截 console.log
+const sandboxConsole = [];
+const originalLog = console.log;
+console.log = function(...args) {
+  sandboxConsole.push(args.map(a => {
+    if (typeof a === 'object') {
+      try { return JSON.stringify(a, null, 2); } catch(e) { return String(a); }
+    }
+    return String(a);
+  }).join(' '));
+  originalLog.apply(console, args);
+};
+
+function runCode() {
+  sandboxConsole.length = 0;
+  outputBox.innerHTML = '';
+
+  const code = sandboxCode.value;
+  try {
+    const result = eval(code);
+    let output = sandboxConsole.join('\n');
+    if (result !== undefined && typeof result.then !== 'function') {
+      output += '\n// => ' + (typeof result === 'object' ? JSON.stringify(result) : String(result));
+    }
+    outputBox.innerHTML = output || '(无输出)';
+    if (result && typeof result.then === 'function') {
+      outputBox.innerHTML += '\n⏳ 异步操作进行中...';
+    }
+  } catch (e) {
+    outputBox.innerHTML = '<span class="err">❌ 错误: ' + e.message + '</span>';
+  }
+}
+
+function clearOutput() {
+  sandboxConsole.length = 0;
+  outputBox.innerHTML = '';
+}
+
+// Ctrl+Enter 快捷键
+document.addEventListener('keydown', function(e) {
+  if (e.ctrlKey && e.key === 'Enter') {
+    e.preventDefault();
+    runCode();
+  }
+});
+
+// 初始自动运行
+setTimeout(runCode, 300);
+</script>
+
+</body>
+</html>

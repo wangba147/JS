@@ -1,0 +1,1434 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>JavaScript 每日学习 — Day 09：原型与继承</title>
+  <style>
+    /* ===== 全局 ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0f1117;
+      --surface:   #1a1d27;
+      --card:      #21253a;
+      --border:    #2e3350;
+      --accent:    #61dafb;
+      --accent2:   #f7c948;
+      --accent3:   #7ee787;
+      --accent4:   #ff7b72;
+      --text:      #cdd3e0;
+      --muted:     #6e7a96;
+      --tag-bg:    #1e3a5f;
+      --code-bg:   #161b2e;
+    }
+
+    body {
+      font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.75;
+      font-size: 15px;
+    }
+
+    /* ===== 顶部 Banner ===== */
+    .hero {
+      background: linear-gradient(135deg, #0d1b3e 0%, #1a2d5a 50%, #0f2040 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 52px 24px 40px;
+      text-align: center;
+    }
+    .hero .badge {
+      display: inline-block;
+      background: var(--accent);
+      color: #0a0e1a;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 4px 12px;
+      border-radius: 20px;
+      margin-bottom: 16px;
+    }
+    .hero h1 {
+      font-size: clamp(24px, 5vw, 42px);
+      font-weight: 800;
+      color: #fff;
+      line-height: 1.2;
+      margin-bottom: 12px;
+    }
+    .hero h1 span { color: var(--accent); }
+    .hero p {
+      color: var(--muted);
+      font-size: 15px;
+      max-width: 580px;
+      margin: 0 auto 24px;
+    }
+    .hero .meta {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      flex-wrap: wrap;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .hero .meta span { display: flex; align-items: center; gap: 5px; }
+
+    /* ===== 布局 ===== */
+    .container { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; }
+
+    /* ===== 目录卡片 ===== */
+    .toc {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--accent);
+      border-radius: 12px;
+      padding: 24px 28px;
+      margin-bottom: 40px;
+    }
+    .toc h2 { font-size: 14px; letter-spacing: 1px; text-transform: uppercase; color: var(--accent); margin-bottom: 14px; }
+    .toc ol { padding-left: 20px; }
+    .toc li { margin: 6px 0; }
+    .toc a { color: var(--text); text-decoration: none; }
+    .toc a:hover { color: var(--accent); }
+
+    /* ===== 章节标题 ===== */
+    .section { margin-bottom: 52px; }
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 24px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    .section-num {
+      width: 38px; height: 38px;
+      border-radius: 10px;
+      background: var(--accent);
+      color: #0a0e1a;
+      font-weight: 800;
+      font-size: 16px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .section-header h2 {
+      font-size: 22px;
+      font-weight: 700;
+      color: #fff;
+    }
+    .section-header .tag {
+      font-size: 11px;
+      background: var(--tag-bg);
+      color: var(--accent);
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    /* ===== 卡片 ===== */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+    .card h3 {
+      font-size: 16px;
+      color: var(--accent2);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card p { margin-bottom: 10px; color: var(--text); }
+    .card p:last-child { margin-bottom: 0; }
+
+    /* ===== 代码块 ===== */
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px 22px;
+      overflow-x: auto;
+      margin: 16px 0;
+      font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+      font-size: 13.5px;
+      line-height: 1.7;
+    }
+    code { font-family: inherit; }
+
+    /* 语法着色 */
+    .kw  { color: #c792ea; }
+    .str { color: #c3e88d; }
+    .num { color: #f78c6c; }
+    .cmt { color: #546e7a; font-style: italic; }
+    .fn  { color: #82aaff; }
+    .var { color: #eeffff; }
+    .op  { color: var(--accent); }
+    .typ { color: var(--accent2); }
+    .out { color: var(--accent3); }
+    .prp { color: #ffcb6b; }
+
+    /* ===== 提示框 ===== */
+    .tip, .warn, .info {
+      border-radius: 10px;
+      padding: 14px 18px;
+      margin: 16px 0;
+      font-size: 14px;
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+    .tip  { background: #0d3321; border-left: 4px solid var(--accent3); }
+    .warn { background: #3a2500; border-left: 4px solid var(--accent2); }
+    .info { background: #0d1e3a; border-left: 4px solid var(--accent); }
+    .tip .icon, .warn .icon, .info .icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+
+    /* ===== 对比表格 ===== */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 14px;
+    }
+    th {
+      background: var(--surface);
+      color: var(--accent);
+      padding: 12px 16px;
+      text-align: left;
+      border-bottom: 2px solid var(--border);
+      font-weight: 600;
+    }
+    td {
+      padding: 11px 16px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+      vertical-align: top;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(97, 218, 251, 0.04); }
+    .td-kw { color: #c792ea; font-family: 'Cascadia Code','Fira Code',monospace; font-weight: 600; }
+    .td-type { color: var(--accent2); }
+    .td-good { color: var(--accent3); }
+    .td-bad  { color: var(--accent4); }
+
+    /* ===== 两列网格 ===== */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 600px) { .grid-2 { grid-template-columns: 1fr; } }
+
+    /* ===== 练习区 ===== */
+    .practice {
+      background: linear-gradient(135deg, #0d2238, #1a2d1a);
+      border: 1px solid #2a4a2a;
+      border-radius: 12px;
+      padding: 28px;
+      margin-top: 48px;
+    }
+    .practice h2 {
+      font-size: 20px;
+      color: var(--accent3);
+      margin-bottom: 8px;
+    }
+    .practice p { color: var(--muted); margin-bottom: 20px; font-size: 14px; }
+    .exercise {
+      background: var(--code-bg);
+      border: 1px dashed #2a4a2a;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+    .exercise .q {
+      color: var(--accent2);
+      font-weight: 600;
+      margin-bottom: 12px;
+      font-size: 14px;
+    }
+    .exercise pre { margin: 0; }
+
+    /* ===== 交互控制台 ===== */
+    .console-area {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-top: 48px;
+    }
+    .console-header {
+      background: var(--surface);
+      padding: 12px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+    .console-header span { color: var(--accent); font-size: 13px; font-weight: 600; letter-spacing: 1px; }
+    .console-dots { display: flex; gap: 6px; }
+    .dot { width: 12px; height: 12px; border-radius: 50%; }
+    .dot-r { background: #ff5f57; }
+    .dot-y { background: #febc2e; }
+    .dot-g { background: #28c840; }
+    #sandbox-code {
+      width: 100%;
+      background: var(--code-bg);
+      color: var(--accent3);
+      border: none;
+      padding: 18px 20px;
+      font-family: 'Cascadia Code','Fira Code',monospace;
+      font-size: 13.5px;
+      line-height: 1.7;
+      resize: vertical;
+      min-height: 160px;
+      outline: none;
+    }
+    .console-actions {
+      padding: 12px 18px;
+      display: flex;
+      gap: 10px;
+      border-top: 1px solid var(--border);
+    }
+    .btn {
+      padding: 8px 20px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      transition: opacity .2s;
+    }
+    .btn:hover { opacity: .85; }
+    .btn-run { background: var(--accent); color: #0a0e1a; }
+    .btn-clear { background: var(--surface); color: var(--muted); border: 1px solid var(--border); }
+    #output-box {
+      padding: 16px 20px;
+      min-height: 60px;
+      font-family: 'Cascadia Code','Fira Code',monospace;
+      font-size: 13px;
+      color: var(--accent3);
+      border-top: 1px solid var(--border);
+      white-space: pre-wrap;
+    }
+    #output-box .err { color: var(--accent4); }
+
+    /* ===== 进度条 ===== */
+    .progress-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 22px 26px;
+      margin-bottom: 40px;
+    }
+    .progress-card h3 { font-size: 13px; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); margin-bottom: 16px; }
+    .progress-list { display: flex; flex-wrap: wrap; gap: 8px; }
+    .progress-item {
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+    }
+    .pi-done  { background: #0d3321; color: var(--accent3); border: 1px solid #1a4d2a; }
+    .pi-today { background: #1e3a5f; color: var(--accent); border: 1px solid #2a5a8f; }
+    .pi-next  { background: var(--card); color: var(--muted); border: 1px solid var(--border); }
+
+    /* ===== 底部 ===== */
+    .footer {
+      text-align: center;
+      padding: 40px 24px 20px;
+      color: var(--muted);
+      font-size: 13px;
+      border-top: 1px solid var(--border);
+    }
+    .footer strong { color: var(--accent); }
+
+    /* ===== inline code ===== */
+    p code, li code, td code {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      padding: 1px 6px;
+      border-radius: 5px;
+      font-family: 'Cascadia Code','Fira Code',monospace;
+      font-size: 12.5px;
+      color: var(--accent);
+    }
+    ul { padding-left: 20px; }
+    li { margin: 5px 0; }
+  </style>
+</head>
+<body>
+
+<!-- ===== HERO ===== -->
+<div class="hero">
+  <div class="badge">JavaScript 学习路径</div>
+  <h1>Day 09 — <span>原型</span>与继承</h1>
+  <p>揭开 <code>class</code> 背后的真实机制——原型链。理解它，你才能真正掌握 JavaScript 的灵魂。</p>
+  <div class="meta">
+    <span>&#128197; 第 9 天</span>
+    <span>&#9201; 预计 55 分钟</span>
+    <span>&#127919; 目标：CesiumJS 地球开发</span>
+    <span>&#128202; 基础阶段 · 接近尾声</span>
+  </div>
+</div>
+
+<!-- ===== CONTAINER ===== -->
+<div class="container">
+
+  <!-- 学习进度 -->
+  <div class="progress-card">
+    <h3>&#128205; 学习路线图</h3>
+    <div class="progress-list">
+      <div class="progress-item pi-done">Day 01 · 变量与数据类型</div>
+      <div class="progress-item pi-done">Day 02 · 函数与作用域</div>
+      <div class="progress-item pi-done">Day 03 · 数组与对象</div>
+      <div class="progress-item pi-done">Day 04 · 控制流</div>
+      <div class="progress-item pi-done">Day 05 · DOM 操作</div>
+      <div class="progress-item pi-done">Day 06 · 事件与异步</div>
+      <div class="progress-item pi-done">Day 07 · ES6+ 语法</div>
+      <div class="progress-item pi-done">Day 08 · 模块与类</div>
+      <div class="progress-item pi-today">Day 09 · 原型与继承 &#8592; 今天</div>
+      <div class="progress-item pi-next">Day 10 · 错误处理与调试</div>
+      <div class="progress-item pi-next">Day 11 · 异步编程</div>
+      <div class="progress-item pi-next">Day 12 · 浏览器API</div>
+      <div class="progress-item pi-next">CesiumJS 阶段 &#127758;</div>
+    </div>
+  </div>
+
+  <!-- 目录 -->
+  <div class="toc">
+    <h2>&#128218; 本课目录</h2>
+    <ol>
+      <li><a href="#s1">为什么需要理解原型</a></li>
+      <li><a href="#s2">原型对象：每个函数都有 prototype</a></li>
+      <li><a href="#s3">__proto__ 与 Object.getPrototypeOf</a></li>
+      <li><a href="#s4">原型链：属性查找的路径</a></li>
+      <li><a href="#s5">方法的"复用"机制</a></li>
+      <li><a href="#s6">六种继承方式对比</a></li>
+      <li><a href="#s7">寄生组合继承（最优解）</a></li>
+      <li><a href="#s8">class 语法背后的原型真相</a></li>
+      <li><a href="#s9">对象操作：hasOwnProperty / in / instanceof</a></li>
+      <li><a href="#s10">CesiumJS 关联场景</a></li>
+      <li><a href="#s11">练习题</a></li>
+      <li><a href="#s12">在线练习控制台</a></li>
+    </ol>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 1: 为什么需要理解原型                                 -->
+  <!-- ============================================================ -->
+  <div class="section" id="s1">
+    <div class="section-header">
+      <div class="section-num">1</div>
+      <h2>为什么需要理解原型</h2>
+      <span class="tag">MOTIVATION</span>
+    </div>
+
+    <div class="card">
+      <h3>&#129300; class 不是"真正的"继承</h3>
+      <p>昨天我们学了 <code>class</code> 和 <code>extends</code>，但 JavaScript 其实<strong>没有传统意义的"类"</strong>。所有面向对象的能力，都是靠<strong>原型（Prototype）</strong>实现的。</p>
+      <p><code>class</code> 只是<strong>语法糖</strong>——它让写法更优雅，但底层仍然是原型机制。不理解原型，会遇到这些坑：</p>
+      <ul>
+        <li>&#128308; 继承时引用类型属性被"共享"（多个实例互相影响）</li>
+        <li>&#128308; <code>this</code> 在原型方法中丢失指向</li>
+        <li>&#128308; 无法判断属性是"自己的"还是"继承的"</li>
+        <li>&#128308; 看不懂 CesiumJS 源码中的原型操作</li>
+      </ul>
+    </div>
+
+    <div class="info">
+      <span class="icon">&#8505;&#65039;</span>
+      <div><strong>关键理念：</strong>JavaScript 是<strong>基于原型的语言（Prototype-Based Language）</strong>。每个对象都有一个隐藏的"原型对象"，方法实际上是从原型对象"借"来的。这和 Java/C++ 的"基于类的语言（Class-Based）"是根本性的区别。</div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 2: 原型对象 prototype                                -->
+  <!-- ============================================================ -->
+  <div class="section" id="s2">
+    <div class="section-header">
+      <div class="section-num">2</div>
+      <h2>原型对象：每个函数都有 prototype</h2>
+      <span class="tag">PROTOTYPE</span>
+    </div>
+
+    <div class="card">
+      <h3>&#128193; 函数自带一个 prototype 属性</h3>
+      <p>在 JavaScript 中，<strong>每个函数（包括普通函数、构造函数、箭头函数例外）都会自动拥有一个 <code>prototype</code> 属性</strong>，它指向一个对象——这个对象就是"原型对象"。</p>
+<pre><code><span class="cmt">// 任何普通函数都有 prototype</span>
+<span class="kw">function</span> <span class="fn">sayHello</span>() {}
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="kw">typeof</span> <span class="var">sayHello</span>.<span class="prp">prototype</span>);  <span class="cmt">// "object"</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">sayHello</span>.<span class="prp">prototype</span>);            <span class="cmt">// { constructor: sayHello }</span>
+
+<span class="cmt">// 构造函数也一样</span>
+<span class="kw">function</span> <span class="typ">Marker</span>(<span class="var">name</span>, <span class="var">lat</span>, <span class="var">lon</span>) {
+  <span class="kw">this</span>.<span class="prp">name</span> <span class="op">=</span> <span class="var">name</span>;
+  <span class="kw">this</span>.<span class="prp">lat</span>  <span class="op">=</span> <span class="var">lat</span>;
+  <span class="kw">this</span>.<span class="prp">lon</span>  <span class="op">=</span> <span class="var">lon</span>;
+}
+
+<span class="cmt">// 往 prototype 上添加方法</span>
+<span class="typ">Marker</span>.<span class="prp">prototype</span>.<span class="prp">describe</span> <span class="op">=</span> <span class="kw">function</span>() {
+  <span class="kw">return</span> <span class="str">`<span class="op">${</span><span class="kw">this</span>.<span class="prp">name</span><span class="op">}</span> 位于 (<span class="op">${</span><span class="kw">this</span>.<span class="prp">lat</span><span class="op">}</span>, <span class="op">${</span><span class="kw">this</span>.<span class="prp">lon</span><span class="op">}</span>)`</span>;
+};
+
+<span class="cmt">// 创建实例</span>
+<span class="kw">const</span> <span class="var">m1</span> <span class="op">=</span> <span class="kw">new</span> <span class="typ">Marker</span>(<span class="str">'北京'</span>, <span class="num">39.9</span>, <span class="num">116.4</span>);
+<span class="kw">const</span> <span class="var">m2</span> <span class="op">=</span> <span class="kw">new</span> <span class="typ">Marker</span>(<span class="str">'上海'</span>, <span class="num">31.2</span>, <span class="num">121.5</span>);
+
+<span class="cmt">// 实例上并没有 describe 方法，但能调用（从原型上找到的）</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">m1</span>.<span class="fn">describe</span>());  <span class="cmt">// "北京 位于 (39.9, 116.4)"</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">m2</span>.<span class="fn">describe</span>());  <span class="cmt">// "上海 位于 (31.2, 121.5)"</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">m1</span>.<span class="var">describe</span> <span class="op">===</span> <span class="var">m2</span>.<span class="var">describe</span>);  <span class="cmt">// true（共享同一个函数）</span>
+</code></pre>
+    </div>
+
+    <div class="tip">
+      <span class="icon">&#128161;</span>
+      <div><strong>共享方法的威力：</strong>把方法放在 <code>prototype</code> 上，所有实例<strong>共享同一个函数引用</strong>，节省内存。如果把方法写在构造函数里，每个实例都会创建一份独立的函数副本。</div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 3: __proto__ 与 Object.getPrototypeOf                -->
+  <!-- ============================================================ -->
+  <div class="section" id="s3">
+    <div class="section-header">
+      <div class="section-num">3</div>
+      <h2>__proto__ 与 Object.getPrototypeOf</h2>
+      <span class="tag">LINK</span>
+    </div>
+
+    <div class="card">
+      <h3>&#128279; 两条线：prototype 与 __proto__</h3>
+      <p>很多人搞混这两个属性。理解它们的关系是掌握原型的关键：</p>
+<pre><code><span class="kw">function</span> <span class="typ">Marker</span>(<span class="var">name</span>) { <span class="kw">this</span>.<span class="prp">name</span> <span class="op">=</span> <span class="var">name</span>; }
+<span class="typ">Marker</span>.<span class="prp">prototype</span>.<span class="prp">describe</span> <span class="op">=</span> <span class="kw">function</span>() {
+  <span class="kw">return</span> <span class="kw">this</span>.<span class="prp">name</span>;
+};
+
+<span class="kw">const</span> <span class="var">m</span> <span class="op">=</span> <span class="kw">new</span> <span class="typ">Marker</span>(<span class="str">'北京'</span>);
+
+<span class="cmt">// 1. 函数（类）这一边：prototype 属性</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="typ">Marker</span>.<span class="prp">prototype</span>);     <span class="cmt">// { describe: [Function], constructor: Marker }</span>
+
+<span class="cmt">// 2. 实例这一边：__proto__ 属性（指向构造函数的 prototype）</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">m</span>.<span class="prp">__proto__</span>);           <span class="cmt">// { describe: [Function], constructor: Marker }</span>
+
+<span class="cmt">// 3. 它们是同一个对象！</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">m</span>.<span class="prp">__proto__</span> <span class="op">===</span> <span class="typ">Marker</span>.<span class="prp">prototype</span>);  <span class="cmt">// true</span>
+
+<span class="cmt">// 4. 推荐的现代写法（__proto__ 已不推荐使用）</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="fn">Object</span>.<span class="fn">getPrototypeOf</span>(<span class="var">m</span>) <span class="op">===</span> <span class="typ">Marker</span>.<span class="prp">prototype</span>);  <span class="cmt">// true</span>
+</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>&#128202; 图示：prototype 与 __proto__ 的关系</h3>
+<pre><code>    ┌─────────────────────┐
+    │   Marker (函数)      │
+    │                     │
+    │   prototype  ───────┼──────┐
+    └─────────────────────┘      │ 指向
+                                 ▼
+    ┌─────────────────────┐    ┌─────────────────────┐
+    │  m (实例对象)        │    │  prototype 对象      │
+    │                     │    │                     │
+    │  name: '北京'        │    │  describe: [Function]│
+    │  __proto__  ────────┼───▶│  constructor: Marker│
+    └─────────────────────┘    └─────────────────────┘
+</code></pre>
+      <p style="margin-top:12px;">简单记忆：<strong>函数有 <code>prototype</code>（指向原型对象），实例有 <code>__proto__</code>（指向构造函数的 prototype）</strong>。两者指向同一个对象。</p>
+    </div>
+
+    <div class="warn">
+      <span class="icon">&#9888;&#65039;</span>
+      <div><strong>不要在生产代码中使用 <code>__proto__</code>！</strong>它是浏览器厂商私自加的特性，虽然 ES6 标准化了，但性能较差且语义模糊。永远用 <code>Object.getPrototypeOf(obj)</code> 和 <code>Object.setPrototypeOf(obj, proto)</code> 替代。</div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 4: 原型链                                              -->
+  <!-- ============================================================ -->
+  <div class="section" id="s4">
+    <div class="section-header">
+      <div class="section-num">4</div>
+      <h2>原型链：属性查找的路径</h2>
+      <span class="tag">CHAIN</span>
+    </div>
+
+    <div class="card">
+      <h3>&#128270; 查找规则：自己没有，就找原型</h3>
+      <p>当访问一个对象的属性时，JavaScript 引擎会按以下顺序查找：</p>
+      <ol style="margin-left:20px;color:var(--text);">
+        <li>先在<strong>对象自身</strong>查找，找到就用</li>
+        <li>找不到就去 <code>__proto__</code>（即构造函数的 prototype）查找</li>
+        <li>还找不到就继续沿着 <code>__proto__</code> 向上找</li>
+        <li>直到 <code>Object.prototype</code>，再往上就是 <code>null</code></li>
+        <li>到了 <code>null</code> 还没找到，返回 <code>undefined</code></li>
+      </ol>
+      <p>这条<strong>链式结构</strong>就是<strong>原型链（Prototype Chain）</strong>。它是 JavaScript 实现继承的核心机制。</p>
+<pre><code><span class="cmt">// 任何对象的原型链终点都是 Object.prototype</span>
+<span class="kw">const</span> <span class="var">obj</span> <span class="op">=</span> { <span class="prp">a</span>: <span class="num">1</span> };
+
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">obj</span>.<span class="prp">a</span>);        <span class="cmt">// 1（自己的属性）</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">obj</span>.<span class="fn">toString</span>); <span class="cmt">// [Function] ← Object.prototype 上的方法！</span>
+
+<span class="cmt">// 验证原型链</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">obj</span>.<span class="prp">__proto__</span> <span class="op">===</span> <span class="fn">Object</span>.<span class="prp">prototype</span>);  <span class="cmt">// true</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="fn">Object</span>.<span class="prp">prototype</span>.<span class="prp">__proto__</span>);   <span class="cmt">// null ← 原型链终点</span>
+
+<span class="cmt">// 数组的原型链</span>
+<span class="kw">const</span> <span class="var">arr</span> <span class="op">=</span> [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>];
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">arr</span>.<span class="fn">map</span>);    <span class="cmt">// [Function] ← Array.prototype 上的方法</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">arr</span>.<span class="fn">toString</span>); <span class="cmt">// [Function] ← 继承自 Object.prototype</span>
+</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>&#128202; 完整原型链图示</h3>
+<pre><code>    m (Marker实例)
+    │
+    │  __proto__
+    ▼
+    Marker.prototype      { describe, constructor: Marker }
+    │
+    │  __proto__
+    ▼
+    Object.prototype      { toString, hasOwnProperty, ... }
+    │
+    │  __proto__
+    ▼
+    null                  ← 链的终点
+</code></pre>
+    </div>
+
+    <div class="info">
+      <span class="icon">&#8505;&#65039;</span>
+      <div><strong>性能提示：</strong>原型链越长，属性查找越慢。理想情况下不超过 3 层。Vue、React 内部都刻意保持原型链扁平化以优化性能。</div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 5: 方法的"复用"机制                                  -->
+  <!-- ============================================================ -->
+  <div class="section" id="s5">
+    <div class="section-header">
+      <div class="section-num">5</div>
+      <h2>方法的"复用"机制</h2>
+      <span class="tag">REUSE</span>
+    </div>
+
+    <div class="card">
+      <h3>&#128257; 两种方法定义方式的区别</h3>
+<pre><code><span class="cmt">// ========== 方式1：方法定义在构造函数里（不推荐）==========</span>
+<span class="kw">function</span> <span class="typ">MarkerV1</span>(<span class="var">name</span>) {
+  <span class="kw">this</span>.<span class="prp">name</span> <span class="op">=</span> <span class="var">name</span>;
+  <span class="kw">this</span>.<span class="prp">describe</span> <span class="op">=</span> <span class="kw">function</span>() {  <span class="cmt">// 每个实例都创建一份！</span>
+    <span class="kw">return</span> <span class="kw">this</span>.<span class="prp">name</span>;
+  };
+}
+
+<span class="cmt">// ========== 方式2：方法定义在 prototype 上（推荐）==========</span>
+<span class="kw">function</span> <span class="typ">MarkerV2</span>(<span class="var">name</span>) {
+  <span class="kw">this</span>.<span class="prp">name</span> <span class="op">=</span> <span class="var">name</span>;
+}
+<span class="typ">MarkerV2</span>.<span class="prp">prototype</span>.<span class="prp">describe</span> <span class="op">=</span> <span class="kw">function</span>() {  <span class="cmt">// 所有实例共享一份</span>
+  <span class="kw">return</span> <span class="kw">this</span>.<span class="prp">name</span>;
+};
+
+<span class="cmt">// 验证差异</span>
+<span class="kw">const</span> <span class="var">a1</span> <span class="op">=</span> <span class="kw">new</span> <span class="typ">MarkerV1</span>(<span class="str">'A'</span>);
+<span class="kw">const</span> <span class="var">a2</span> <span class="op">=</span> <span class="kw">new</span> <span class="typ">MarkerV1</span>(<span class="str">'A'</span>);
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">a1</span>.<span class="var">describe</span> <span class="op">===</span> <span class="var">a2</span>.<span class="var">describe</span>);  <span class="cmt">// false（两份独立函数）</span>
+
+<span class="kw">const</span> <span class="var">b1</span> <span class="op">=</span> <span class="kw">new</span> <span class="typ">MarkerV2</span>(<span class="str">'B'</span>);
+<span class="kw">const</span> <span class="var">b2</span> <span class="op">=</span> <span class="kw">new</span> <span class="typ">MarkerV2</span>(<span class="str">'B'</span>);
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">b1</span>.<span class="var">describe</span> <span class="op">===</span> <span class="var">b2</span>.<span class="var">describe</span>);  <span class="cmt">// true（同一份函数）</span>
+</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>&#9888;&#65039; 经典坑：原型上的引用类型</h3>
+<pre><code><span class="kw">function</span> <span class="typ">Team</span>() {}
+<span class="typ">Team</span>.<span class="prp">prototype</span>.<span class="prp">members</span> <span class="op">=</span> [];   <span class="cmt">// 默认空数组</span>
+
+<span class="kw">const</span> <span class="var">t1</span> <span class="op">=</span> <span class="kw">new</span> <span class="typ">Team</span>();
+<span class="kw">const</span> <span class="var">t2</span> <span class="op">=</span> <span class="kw">new</span> <span class="typ">Team</span>();
+
+<span class="var">t1</span>.<span class="prp">members</span>.<span class="fn">push</span>(<span class="str">'Alice'</span>);
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">t2</span>.<span class="prp">members</span>);  <span class="cmt">// ['Alice'] ← 被影响了！</span>
+
+<span class="cmt">// 原因：t1 和 t2 共用同一个 members 数组（原型上的引用）</span>
+</code></pre>
+      <p>这就是为什么构造函数里写 <code>this.xxx = []</code>（实例属性）比 <code>prototype.xxx = []</code> 更安全——每个实例拥有独立的副本。</p>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 6: 六种继承方式对比                                    -->
+  <!-- ============================================================ -->
+  <div class="section" id="s6">
+    <div class="section-header">
+      <div class="section-num">6</div>
+      <h2>六种继承方式对比</h2>
+      <span class="tag">PATTERNS</span>
+    </div>
+
+    <div class="card">
+      <h3>&#128218; 历史上的 6 种继承方案</h3>
+      <p>在 ES6 class 出现之前，前辈们用各种"土办法"实现继承。每种都有缺陷，了解它们能让你更深入理解原型。</p>
+
+      <table>
+        <tr><th>方式</th><th>优点</th><th>缺点</th></tr>
+        <tr>
+          <td class="td-kw">原型链继承</td>
+          <td class="td-good">简单</td>
+          <td class="td-bad">引用类型属性共享；无法传参</td>
+        </tr>
+        <tr>
+          <td class="td-kw">构造函数继承</td>
+          <td class="td-good">可传参；属性独立</td>
+          <td class="td-bad">方法无法复用（每个实例都创建）</td>
+        </tr>
+        <tr>
+          <td class="td-kw">组合继承</td>
+          <td class="td-good">兼具两者优点</td>
+          <td class="td-bad">调用两次父构造函数</td>
+        </tr>
+        <tr>
+          <td class="td-kw">原型式继承</td>
+          <td class="td-good">适合对象间的继承</td>
+          <td class="td-bad">引用类型共享（同原型链）</td>
+        </tr>
+        <tr>
+          <td class="td-kw">寄生式继承</td>
+          <td class="td-good">增强对象</td>
+          <td class="td-bad">方法无法复用</td>
+        </tr>
+        <tr>
+          <td class="td-kw">寄生组合继承</td>
+          <td class="td-good">最完美！</td>
+          <td>实现稍复杂</td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3>&#128221; 方式 1：原型链继承</h3>
+<pre><code><span class="kw">function</span> <span class="typ">Parent</span>() {
+  <span class="kw">this</span>.<span class="prp">name</span> <span class="op">=</span> <span class="str">'parent'</span>;
+  <span class="kw">this</span>.<span class="prp">colors</span> <span class="op">=</span> [<span class="str">'red'</span>, <span class="str">'blue'</span>];
+}
+<span class="typ">Parent</span>.<span class="prp">prototype</span>.<span class="prp">say</span> <span class="op">=</span> <span class="kw">function</span>() {
+  <span class="fn">console</span>.<span class="fn">log</span>(<span class="kw">this</span>.<span class="prp">name</span>);
+};
+
+<span class="kw">function</span> <span class="typ">Child</span>() {}
+<span class="typ">Child</span>.<span class="prp">prototype</span> <span class="op">=</span> <span class="kw">new</span> <span class="typ">Parent</span>();  <span class="cmt">// ← 关键：子类的 prototype 指向父类实例</span>
+
+<span class="kw">const</span> <span class="var">c1</span> <span class="op">=</span> <span class="kw">new</span> <span class="typ">Child</span>();
+<span class="kw">const</span> <span class="var">c2</span> <span class="op">=</span> <span class="kw">new</span> <span class="typ">Child</span>();
+<span class="var">c1</span>.<span class="prp">colors</span>.<span class="fn">push</span>(<span class="str">'green'</span>);
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">c2</span>.<span class="prp">colors</span>);  <span class="cmt">// ['red', 'blue', 'green'] ← 共享了！</span>
+</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>&#128221; 方式 2：构造函数继承（call）</h3>
+<pre><code><span class="kw">function</span> <span class="typ">Parent</span>(<span class="var">name</span>) {
+  <span class="kw">this</span>.<span class="prp">name</span> <span class="op">=</span> <span class="var">name</span>;
+  <span class="kw">this</span>.<span class="prp">colors</span> <span class="op">=</span> [<span class="str">'red'</span>, <span class="str">'blue'</span>];
+}
+<span class="typ">Parent</span>.<span class="prp">prototype</span>.<span class="prp">say</span> <span class="op">=</span> <span class="kw">function</span>() {
+  <span class="fn">console</span>.<span class="fn">log</span>(<span class="kw">this</span>.<span class="prp">name</span>);
+};
+
+<span class="kw">function</span> <span class="typ">Child</span>(<span class="var">name</span>, <span class="var">age</span>) {
+  <span class="typ">Parent</span>.<span class="fn">call</span>(<span class="kw">this</span>, <span class="var">name</span>);  <span class="cmt">// ← 关键：借调父构造函数</span>
+  <span class="kw">this</span>.<span class="prp">age</span> <span class="op">=</span> <span class="var">age</span>;
+}
+
+<span class="kw">const</span> <span class="var">c1</span> <span class="op">=</span> <span class="kw">new</span> <span class="typ">Child</span>(<span class="str">'Alice'</span>, <span class="num">20</span>);
+<span class="kw">const</span> <span class="var">c2</span> <span class="op">=</span> <span class="kw">new</span> <span class="typ">Child</span>(<span class="str">'Bob'</span>, <span class="num">25</span>);
+<span class="var">c1</span>.<span class="prp">colors</span>.<span class="fn">push</span>(<span class="str">'green'</span>);
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">c2</span>.<span class="prp">colors</span>);  <span class="cmt">// ['red', 'blue'] ← 互不影响了！</span>
+<span class="cmt">// c1.say(); ← 报错！say 是父类 prototype 上的，c1 找不到</span>
+</code></pre>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 7: 寄生组合继承（最优解）                              -->
+  <!-- ============================================================ -->
+  <div class="section" id="s7">
+    <div class="section-header">
+      <div class="section-num">7</div>
+      <h2>寄生组合继承（最优解）</h2>
+      <span class="tag">BEST PRACTICE</span>
+    </div>
+
+    <div class="card">
+      <h3>&#127942; 业界公认的完美继承模式</h3>
+      <p>寄生组合继承结合了"借用构造函数"（属性独立）和"原型链"（方法共享）的优点，<strong>只调用一次父构造函数</strong>，没有冗余属性。这是 ES6 class 内部采用的方案。</p>
+<pre><code><span class="cmt">// 工具函数：创建"干净的"子类原型对象</span>
+<span class="kw">function</span> <span class="fn">inheritPrototype</span>(<span class="var">Child</span>, <span class="var">Parent</span>) {
+  <span class="cmt">// 1. 创建父类原型的副本（浅拷贝）</span>
+  <span class="kw">const</span> <span class="var">prototype</span> <span class="op">=</span> <span class="fn">Object</span>.<span class="fn">create</span>(<span class="fn">Object</span>.<span class="fn">getPrototypeOf</span>(<span class="var">Parent</span>.<span class="prp">prototype</span>));
+  <span class="cmt">// 2. 修复 constructor 指向</span>
+  <span class="var">prototype</span>.<span class="prp">constructor</span> <span class="op">=</span> <span class="var">Child</span>;
+  <span class="cmt">// 3. 把新原型赋给子类</span>
+  <span class="var">Child</span>.<span class="prp">prototype</span> <span class="op">=</span> <span class="var">prototype</span>;
+}
+
+<span class="cmt">// ===== 父类 =====</span>
+<span class="kw">function</span> <span class="typ">MapEntity</span>(<span class="var">name</span>) {
+  <span class="kw">this</span>.<span class="prp">name</span> <span class="op">=</span> <span class="var">name</span>;
+  <span class="kw">this</span>.<span class="prp">tags</span> <span class="op">=</span> [];
+}
+<span class="typ">MapEntity</span>.<span class="prp">prototype</span>.<span class="prp">describe</span> <span class="op">=</span> <span class="kw">function</span>() {
+  <span class="kw">return</span> <span class="str">`<span class="op">${</span><span class="kw">this</span>.<span class="prp">name</span><span class="op">}</span> (tags: <span class="op">${</span><span class="kw">this</span>.<span class="prp">tags</span>.<span class="fn">join</span>(<span class="str">', '</span>)<span class="op">}</span>)`</span>;
+};
+
+<span class="cmt">// ===== 子类 =====</span>
+<span class="kw">function</span> <span class="typ">Marker</span>(<span class="var">name</span>, <span class="var">lat</span>, <span class="var">lon</span>) {
+  <span class="typ">MapEntity</span>.<span class="fn">call</span>(<span class="kw">this</span>, <span class="var">name</span>);  <span class="cmt">// 继承属性</span>
+  <span class="kw">this</span>.<span class="prp">lat</span> <span class="op">=</span> <span class="var">lat</span>;
+  <span class="kw">this</span>.<span class="prp">lon</span> <span class="op">=</span> <span class="var">lon</span>;
+}
+
+<span class="fn">inheritPrototype</span>(<span class="typ">Marker</span>, <span class="typ">MapEntity</span>);  <span class="cmt">// 继承方法</span>
+
+<span class="cmt">// 添加子类自己的方法</span>
+<span class="typ">Marker</span>.<span class="prp">prototype</span>.<span class="prp">moveTo</span> <span class="op">=</span> <span class="kw">function</span>(<span class="var">lat</span>, <span class="var">lon</span>) {
+  <span class="kw">this</span>.<span class="prp">lat</span> <span class="op">=</span> <span class="var">lat</span>;
+  <span class="kw">this</span>.<span class="prp">lon</span> <span class="op">=</span> <span class="var">lon</span>;
+};
+
+<span class="cmt">// ===== 测试 =====</span>
+<span class="kw">const</span> <span class="var">m1</span> <span class="op">=</span> <span class="kw">new</span> <span class="typ">Marker</span>(<span class="str">'北京'</span>, <span class="num">39.9</span>, <span class="num">116.4</span>);
+<span class="kw">const</span> <span class="var">m2</span> <span class="op">=</span> <span class="kw">new</span> <span class="typ">Marker</span>(<span class="str">'上海'</span>, <span class="num">31.2</span>, <span class="num">121.5</span>);
+
+<span class="var">m1</span>.<span class="prp">tags</span>.<span class="fn">push</span>(<span class="str">'首都'</span>);
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">m1</span>.<span class="fn">describe</span>());  <span class="cmt">// "北京 (tags: 首都)"</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">m2</span>.<span class="fn">describe</span>());  <span class="cmt">// "上海 (tags: )" ← 互不影响！</span>
+
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">m1</span> <span class="kw">instanceof</span> <span class="typ">Marker</span>);     <span class="cmt">// true</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">m1</span> <span class="kw">instanceof</span> <span class="typ">MapEntity</span>);  <span class="cmt">// true</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">m1</span>.<span class="fn">moveTo</span>(<span class="num">40.0</span>, <span class="num">116.5</span>));
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">m1</span>.<span class="var">lat</span>, <span class="var">m1</span>.<span class="var">lon</span>);  <span class="cmt">// 40 116.5</span>
+</code></pre>
+    </div>
+
+    <div class="info">
+      <span class="icon">&#8505;&#65039;</span>
+      <div><strong>记住这个模式：</strong>用 <code>Object.create()</code> 创建"干净"的父类原型副本，<strong>避免调用两次父构造函数</strong>。这是理解 ES6 class extends 实现原理的关键。</div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 8: class 背后的原型真相                               -->
+  <!-- ============================================================ -->
+  <div class="section" id="s8">
+    <div class="section-header">
+      <div class="section-num">8</div>
+      <h2>class 语法背后的原型真相</h2>
+      <span class="tag">DESUGAR</span>
+    </div>
+
+    <div class="card">
+      <h3>&#127860; class ≈ 寄生组合继承 + 语法糖</h3>
+      <p>ES6 的 <code>class</code> 实际上就是用原型和构造函数实现的"伪装"。下面这段 class 代码：</p>
+<pre><code><span class="cmt">// ===== 你写的 class 代码 =====</span>
+<span class="kw">class</span> <span class="typ">MapEntity</span> {
+  <span class="fn">constructor</span>(<span class="var">name</span>) {
+    <span class="kw">this</span>.<span class="prp">name</span> <span class="op">=</span> <span class="var">name</span>;
+  }
+  <span class="fn">describe</span>() {
+    <span class="kw">return</span> <span class="kw">this</span>.<span class="prp">name</span>;
+  }
+}
+
+<span class="kw">class</span> <span class="typ">Marker</span> <span class="kw">extends</span> <span class="typ">MapEntity</span> {
+  <span class="fn">constructor</span>(<span class="var">name</span>, <span class="var">lat</span>, <span class="var">lon</span>) {
+    <span class="kw">super</span>(<span class="var">name</span>);
+    <span class="kw">this</span>.<span class="prp">lat</span> <span class="op">=</span> <span class="var">lat</span>;
+    <span class="kw">this</span>.<span class="prp">lon</span> <span class="op">=</span> <span class="var">lon</span>;
+  }
+  <span class="fn">moveTo</span>(<span class="var">lat</span>, <span class="var">lon</span>) {
+    <span class="kw">this</span>.<span class="prp">lat</span> <span class="op">=</span> <span class="var">lat</span>;
+    <span class="kw">this</span>.<span class="prp">lon</span> <span class="op">=</span> <span class="var">lon</span>;
+  }
+}
+</code></pre>
+      <p>被 JavaScript 引擎<strong>翻译成</strong>的等价代码（核心部分）：</p>
+<pre><code><span class="cmt">// ===== 引擎内部做的事 =====</span>
+<span class="kw">function</span> <span class="typ">MapEntity</span>(<span class="var">name</span>) {
+  <span class="kw">this</span>.<span class="prp">name</span> <span class="op">=</span> <span class="var">name</span>;
+}
+<span class="typ">MapEntity</span>.<span class="prp">prototype</span>.<span class="prp">describe</span> <span class="op">=</span> <span class="kw">function</span>() {
+  <span class="kw">return</span> <span class="kw">this</span>.<span class="prp">name</span>;
+};
+
+<span class="kw">function</span> <span class="typ">Marker</span>(<span class="var">name</span>, <span class="var">lat</span>, <span class="var">lon</span>) {
+  <span class="typ">MapEntity</span>.<span class="fn">call</span>(<span class="kw">this</span>, <span class="var">name</span>);   <span class="cmt">// ← super(name)</span>
+  <span class="kw">this</span>.<span class="prp">lat</span> <span class="op">=</span> <span class="var">lat</span>;
+  <span class="kw">this</span>.<span class="prp">lon</span> <span class="op">=</span> <span class="var">lon</span>;
+}
+
+<span class="cmt">// ← extends 的本质：Object.setPrototypeOf 串联原型链</span>
+<span class="fn">Object</span>.<span class="fn">setPrototypeOf</span>(<span class="typ">Marker</span>.<span class="prp">prototype</span>, <span class="typ">MapEntity</span>.<span class="prp">prototype</span>);
+
+<span class="cmt">// 修复 constructor 指向</span>
+<span class="typ">Marker</span>.<span class="prp">prototype</span>.<span class="prp">constructor</span> <span class="op">=</span> <span class="typ">Marker</span>;
+
+<span class="cmt">// 添加子类方法</span>
+<span class="typ">Marker</span>.<span class="prp">prototype</span>.<span class="prp">moveTo</span> <span class="op">=</span> <span class="kw">function</span>(<span class="var">lat</span>, <span class="var">lon</span>) {
+  <span class="kw">this</span>.<span class="prp">lat</span> <span class="op">=</span> <span class="var">lat</span>;
+  <span class="kw">this</span>.<span class="prp">lon</span> <span class="op">=</span> <span class="var">lon</span>;
+};
+</code></pre>
+    </div>
+
+    <div class="tip">
+      <span class="icon">&#128161;</span>
+      <div><strong>验证方法：</strong>打开浏览器控制台，输入 <code>Marker.prototype.__proto__ === MapEntity.prototype</code>，会返回 <code>true</code>。这证实了 class extends 的本质就是原型链操作。</div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 9: 对象操作                                            -->
+  <!-- ============================================================ -->
+  <div class="section" id="s9">
+    <div class="section-header">
+      <div class="section-num">9</div>
+      <h2>对象操作：hasOwnProperty / in / instanceof</h2>
+      <span class="tag">INSPECTION</span>
+    </div>
+
+    <div class="card">
+      <h3>&#128269; 区分"自己的"与"继承的"</h3>
+      <p>原型链让属性"无处不在"，但有时候你需要知道一个属性到底来自哪里：</p>
+
+      <table>
+        <tr><th>方法</th><th>检查范围</th><th>返回</th></tr>
+        <tr>
+          <td class="td-kw">obj.hasOwnProperty('key')</td>
+          <td>只看自身</td>
+          <td>boolean</td>
+        </tr>
+        <tr>
+          <td class="td-kw">'key' in obj</td>
+          <td>自身 + 原型链</td>
+          <td>boolean</td>
+        </tr>
+        <tr>
+          <td class="td-kw">obj instanceof Class</td>
+          <td>原型链上是否有 Class.prototype</td>
+          <td>boolean</td>
+        </tr>
+        <tr>
+          <td class="td-kw">Object.getPrototypeOf(obj)</td>
+          <td>取原型对象</td>
+          <td>对象/null</td>
+        </tr>
+      </table>
+<pre><code><span class="kw">function</span> <span class="typ">Marker</span>(<span class="var">name</span>) {
+  <span class="kw">this</span>.<span class="prp">name</span> <span class="op">=</span> <span class="var">name</span>;        <span class="cmt">// 自己的属性</span>
+}
+<span class="typ">Marker</span>.<span class="prp">prototype</span>.<span class="prp">describe</span> <span class="op">=</span> <span class="kw">function</span>() { <span class="kw">return</span> <span class="kw">this</span>.<span class="prp">name</span>; };
+
+<span class="kw">const</span> <span class="var">m</span> <span class="op">=</span> <span class="kw">new</span> <span class="typ">Marker</span>(<span class="str">'北京'</span>);
+
+<span class="cmt">// hasOwnProperty：只看自己</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">m</span>.<span class="fn">hasOwnProperty</span>(<span class="str">'name'</span>));     <span class="cmt">// true</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">m</span>.<span class="fn">hasOwnProperty</span>(<span class="str">'describe'</span>)); <span class="cmt">// false（在原型上）</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">m</span>.<span class="fn">hasOwnProperty</span>(<span class="str">'toString'</span>)); <span class="cmt">// false（继承自 Object）</span>
+
+<span class="cmt">// in 操作符：包括原型链</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="str">'name'</span>     <span class="kw">in</span> <span class="var">m</span>);  <span class="cmt">// true</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="str">'describe'</span> <span class="kw">in</span> <span class="var">m</span>);  <span class="cmt">// true ← 通过原型链能找到</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="str">'toString'</span> <span class="kw">in</span> <span class="var">m</span>);  <span class="cmt">// true</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="str">'xxx'</span>      <span class="kw">in</span> <span class="var">m</span>);  <span class="cmt">// false</span>
+
+<span class="cmt">// instanceof：检查原型链</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">m</span> <span class="kw">instanceof</span> <span class="typ">Marker</span>);      <span class="cmt">// true</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">m</span> <span class="kw">instanceof</span> <span class="fn">Object</span>);      <span class="cmt">// true（所有对象最终继承自 Object）</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">m</span> <span class="kw">instanceof</span> <span class="fn">Array</span>);       <span class="cmt">// false</span>
+
+<span class="cmt">// 遍历自身属性（最常用）</span>
+<span class="kw">const</span> <span class="var">ownKeys</span> <span class="op">=</span> <span class="fn">Object</span>.<span class="fn">keys</span>(<span class="var">m</span>);            <span class="cmt">// ['name']</span>
+<span class="kw">const</span> <span class="var">allKeys</span> <span class="op">=</span> <span class="kw">for</span>(<span class="kw">const</span> <span class="var">k</span> <span class="kw">in</span> <span class="var">m</span>);          <span class="cmt">// name, describe, ...</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="str">"ownKeys:"</span>, <span class="var">ownKeys</span>);
+</code></pre>
+    </div>
+
+    <div class="warn">
+      <span class="icon">&#9888;&#65039;</span>
+      <div><strong>hasOwnProperty 的陷阱：</strong>如果对象用 <code>Object.create(null)</code> 创建（没有原型），它就没有 <code>hasOwnProperty</code> 方法。安全做法：<code>Object.prototype.hasOwnProperty.call(obj, 'key')</code>。</div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 10: CesiumJS 关联场景                                 -->
+  <!-- ============================================================ -->
+  <div class="section" id="s10">
+    <div class="section-header">
+      <div class="section-num">10</div>
+      <h2>&#127758; CesiumJS 关联场景</h2>
+      <span class="tag">CESIUM</span>
+    </div>
+
+    <div class="card">
+      <h3>&#127760; 场景 1：CesiumJS 内部的类继承体系</h3>
+      <p>CesiumJS 大量使用原型继承。打开 Cesium 源码，你会看到这样的代码（简化版）：</p>
+<pre><code><span class="cmt">// Cesium 内部常见的继承模式</span>
+<span class="kw">function</span> <span class="fn">defineProperties</span>(<span class="var">Class</span>, <span class="var">properties</span>) {
+  <span class="kw">const</span> <span class="var">subDefines</span> <span class="op">=</span> [];  <span class="cmt">// 收集子类的 getter/setter</span>
+  <span class="kw">for</span> (<span class="kw">const</span> <span class="var">name</span> <span class="kw">in</span> <span class="var">properties</span>) {
+    <span class="cmt">// 用 Object.defineProperty 给原型定义属性</span>
+    <span class="fn">Object</span>.<span class="fn">defineProperty</span>(<span class="var">Class</span>.<span class="prp">prototype</span>, <span class="var">name</span>, <span class="var">properties</span>[<span class="var">name</span>]);
+  }
+  <span class="cmt">// ...</span>
+}
+
+<span class="cmt">// 父类 Cartesian3</span>
+<span class="kw">function</span> <span class="typ">Cartesian3</span>(<span class="var">x</span>, <span class="var">y</span>, <span class="var">z</span>) {
+  <span class="kw">this</span>.<span class="prp">x</span> <span class="op">=</span> <span class="var">x</span>;
+  <span class="kw">this</span>.<span class="prp">y</span> <span class="op">=</span> <span class="var">y</span>;
+  <span class="kw">this</span>.<span class="prp">z</span> <span class="op">=</span> <span class="var">z</span>;
+}
+
+<span class="cmt">// 给原型加方法</span>
+<span class="typ">Cartesian3</span>.<span class="prp">prototype</span>.<span class="prp">magnitude</span> <span class="op">=</span> <span class="kw">function</span>() {
+  <span class="kw">return</span> <span class="fn">Math</span>.<span class="fn">sqrt</span>(<span class="kw">this</span>.<span class="prp">x</span> <span class="op">**</span> <span class="num">2</span> <span class="op">+</span> <span class="kw">this</span>.<span class="prp">y</span> <span class="op">**</span> <span class="num">2</span> <span class="op">+</span> <span class="kw">this</span>.<span class="prp">z</span> <span class="op">**</span> <span class="num">2</span>);
+};
+
+<span class="cmt">// 创建实例：c.__proto__ === Cartesian3.prototype</span>
+<span class="kw">const</span> <span class="var">c</span> <span class="op">=</span> <span class="kw">new</span> <span class="typ">Cartesian3</span>(<span class="num">1</span>, <span class="num">2</span>, <span class="num">2</span>);
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">c</span>.<span class="fn">magnitude</span>());  <span class="cmt">// 3（共享原型方法）</span>
+</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>&#127760; 场景 2：扩展 Cesium 现有类</h3>
+      <p>用原型机制扩展 CesiumJS 的内置类（如 <code>Cesium.Cartesian3</code>）：</p>
+<pre><code><span class="cmt">// 给 Cesium.Cartesian3 扩展自定义方法（猴子补丁）</span>
+<span class="kw">if</span> (<span class="kw">typeof</span> <span class="typ">Cesium</span> <span class="op">!==</span> <span class="str">'undefined'</span>) {
+  <span class="cmt">// 判断方法是否已存在，避免重复定义</span>
+  <span class="kw">if</span> (<span class="op">!</span><span class="typ">Cesium</span>.<span class="typ">Cartesian3</span>.<span class="prp">prototype</span>.<span class="var">toLatLon</span>) {
+    <span class="typ">Cesium</span>.<span class="typ">Cartesian3</span>.<span class="prp">prototype</span>.<span class="prp">toLatLon</span> <span class="op">=</span> <span class="kw">function</span>() {
+      <span class="kw">const</span> <span class="var">cartographic</span> <span class="op">=</span> <span class="typ">Cesium</span>.<span class="typ">Cartographic</span>.<span class="fn">fromCartesian</span>(<span class="kw">this</span>);
+      <span class="kw">return</span> {
+        <span class="var">lon</span>: <span class="typ">Cesium</span>.<span class="fn">Math</span>.<span class="fn">toDegrees</span>(<span class="var">cartographic</span>.<span class="var">longitude</span>),
+        <span class="var">lat</span>: <span class="typ">Cesium</span>.<span class="fn">Math</span>.<span class="fn">toDegrees</span>(<span class="var">cartographic</span>.<span class="var">latitude</span>),
+        <span class="var">alt</span>: <span class="var">cartographic</span>.<span class="var">height</span>
+      };
+    };
+  }
+}
+
+<span class="cmt">// 之后所有 Cesium.Cartesian3 实例都能用 toLatLon()</span>
+<span class="cmt">// const pos = Cesium.Cartesian3.fromDegrees(116.4, 39.9, 0);</span>
+<span class="cmt">// console.log(pos.toLatLon()); // {lon: 116.4, lat: 39.9, alt: 0}</span>
+</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>&#127760; 场景 3：自定义 Entity 类型的继承体系</h3>
+      <p>实际 CesiumJS 项目中，常用类继承管理各种地理实体：</p>
+<pre><code><span class="cmt">// 父类：基础地理实体</span>
+<span class="kw">class</span> <span class="typ">GeoEntity</span> {
+  <span class="fn">constructor</span>(<span class="var">options</span>) {
+    <span class="kw">this</span>.<span class="prp">id</span> <span class="op">=</span> <span class="var">options</span>.<span class="var">id</span> <span class="op">||</span> <span class="fn">crypto</span>.<span class="fn">randomUUID</span>();
+    <span class="kw">this</span>.<span class="prp">name</span> <span class="op">=</span> <span class="var">options</span>.<span class="var">name</span> <span class="op">||</span> <span class="str">'未命名实体'</span>;
+    <span class="kw">this</span>.<span class="prp">createdAt</span> <span class="op">=</span> <span class="fn">Date</span>.<span class="fn">now</span>();
+    <span class="kw">this</span>.<span class="prp">metadata</span> <span class="op">=</span> <span class="var">options</span>.<span class="var">metadata</span> <span class="op">||</span> {};
+  }
+  <span class="fn">getAge</span>() {
+    <span class="kw">return</span> <span class="fn">Date</span>.<span class="fn">now</span>() <span class="op">-</span> <span class="kw">this</span>.<span class="prp">createdAt</span>;
+  }
+}
+
+<span class="cmt">// 子类：地理标记</span>
+<span class="kw">class</span> <span class="typ">GeoMarker</span> <span class="kw">extends</span> <span class="typ">GeoEntity</span> {
+  <span class="fn">constructor</span>(<span class="var">options</span>) {
+    <span class="kw">super</span>(<span class="var">options</span>);  <span class="cmt">// ← 父类构造函数（实际是 GeoEntity.call(this, options)）</span>
+    <span class="kw">this</span>.<span class="prp">lat</span> <span class="op">=</span> <span class="var">options</span>.<span class="var">lat</span>;
+    <span class="kw">this</span>.<span class="prp">lon</span> <span class="op">=</span> <span class="var">options</span>.<span class="var">lon</span>;
+    <span class="kw">this</span>.<span class="prp">altitude</span> <span class="op">=</span> <span class="var">options</span>.<span class="var">altitude</span> <span class="op">||</span> <span class="num">0</span>;
+  }
+  <span class="fn">toCartesian</span>() {
+    <span class="cmt">// 实际 CesiumJS: return Cesium.Cartesian3.fromDegrees(this.lon, this.lat, this.altitude);</span>
+    <span class="kw">return</span> { <span class="var">x</span>: <span class="kw">this</span>.<span class="prp">lon</span>, <span class="var">y</span>: <span class="kw">this</span>.<span class="prp">lat</span>, <span class="var">z</span>: <span class="kw">this</span>.<span class="prp">altitude</span> };
+  }
+}
+
+<span class="cmt">// 子类的子类：带图标的标记</span>
+<span class="kw">class</span> <span class="typ">IconMarker</span> <span class="kw">extends</span> <span class="typ">GeoMarker</span> {
+  <span class="fn">constructor</span>(<span class="var">options</span>) {
+    <span class="kw">super</span>(<span class="var">options</span>);
+    <span class="kw">this</span>.<span class="prp">icon</span> <span class="op">=</span> <span class="var">options</span>.<span class="var">icon</span> <span class="op">||</span> <span class="str">'📍'</span>;
+    <span class="kw">this</span>.<span class="prp">color</span> <span class="op">=</span> <span class="var">options</span>.<span class="var">color</span> <span class="op">||</span> <span class="str">'#61dafb'</span>;
+  }
+  <span class="fn">render</span>() {
+    <span class="kw">return</span> <span class="str">`<span class="op">${</span><span class="kw">this</span>.<span class="prp">icon</span><span class="op">}</span> <span class="op">${</span><span class="kw">this</span>.<span class="prp">name</span><span class="op">}</span>`</span>;
+  }
+}
+
+<span class="cmt">// 使用</span>
+<span class="kw">const</span> <span class="var">m</span> <span class="op">=</span> <span class="kw">new</span> <span class="typ">IconMarker</span>({
+  <span class="var">name</span>: <span class="str">'天安门'</span>, <span class="var">lat</span>: <span class="num">39.9054</span>, <span class="var">lon</span>: <span class="num">116.3976</span>, <span class="var">icon</span>: <span class="str">'🏛️'</span>
+});
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">m</span>.<span class="fn">render</span>());     <span class="cmt">// "🏛️ 天安门"</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">m</span>.<span class="fn">getAge</span>());      <span class="cmt">// 创建至今的毫秒数</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">m</span>.<span class="fn">toCartesian</span>()); <span class="cmt">// {x: 116.3976, y: 39.9054, z: 0}</span>
+</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>&#127760; 场景 4：判断对象类型 — instanceof 的实战</h3>
+      <p>在 CesiumJS 中处理各种实体时，经常需要判断类型：</p>
+<pre><code><span class="cmt">// CesiumJS 的 Entity 有多种类型</span>
+<span class="kw">function</span> <span class="fn">handleEntityClick</span>(<span class="var">entity</span>) {
+  <span class="cmt">// instanceof 适用于用 class 创建的实例</span>
+  <span class="kw">if</span> (<span class="var">entity</span> <span class="kw">instanceof</span> <span class="typ">Cesium</span>.<span class="typ">Entity</span>) {
+    <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">'点击了一个 Entity'</span>);
+  }
+
+  <span class="cmt">// hasOwnProperty 检查特定字段（更通用）</span>
+  <span class="kw">if</span> (<span class="var">entity</span>.<span class="prp">position</span> <span class="op">&amp;&amp;</span> <span class="var">entity</span>.<span class="fn">hasOwnProperty</span>(<span class="str">'billboard'</span>)) {
+    <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">'这是一个图标标注'</span>);
+  }
+
+  <span class="cmt">// in 操作符检查原型链上的方法（适合 Cesium 这种用原型扩展的库）</span>
+  <span class="kw">if</span> (<span class="str">'flyTo'</span> <span class="kw">in</span> <span class="var">entity</span>) {
+    <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">'该对象支持 flyTo 方法'</span>);
+  }
+
+  <span class="cmt">// 实际项目中的典型模式：组合判断</span>
+  <span class="kw">const</span> <span class="var">type</span> <span class="op">=</span> <span class="var">entity</span>.<span class="var">billboard</span> <span class="op">?</span> <span class="str">'图标'</span>
+            : <span class="var">entity</span>.<span class="var">polyline</span> <span class="op">?</span> <span class="str">'线'</span>
+            : <span class="var">entity</span>.<span class="var">polygon</span> <span class="op">?</span> <span class="str">'面'</span>
+            : <span class="str">'其他'</span>;
+  <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">`实体类型：<span class="op">${</span><span class="var">type</span><span class="op">}</span>`</span>);
+}
+</code></pre>
+    </div>
+
+    <div class="tip">
+      <span class="icon">&#128161;</span>
+      <div><strong>原型知识在 CesiumJS 中的应用：</strong>CesiumJS 源码几乎全部用原型机制组织（早期代码用 <code>function</code> 构造函数 + <code>prototype</code>，新代码用 <code>class</code>）。理解原型链能让你阅读 CesiumJS 源码时不被绕晕，也能写出更高效的扩展代码。</div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 11: 练习题                                            -->
+  <!-- ============================================================ -->
+  <div class="section" id="s11">
+    <div class="section-header">
+      <div class="section-num">11</div>
+      <h2>练习题</h2>
+      <span class="tag">PRACTICE</span>
+    </div>
+
+    <div class="practice">
+      <h2>&#127919; 动手练习</h2>
+      <p>在下方控制台中输入代码并运行（Ctrl+Enter），验证你的答案：</p>
+
+      <div class="exercise">
+        <div class="q">题 1：理解 prototype 与 __proto__</div>
+        <p style="color:var(--text);font-size:14px;">创建一个构造函数 <code>City(name, lat, lon)</code>，在 <code>City.prototype</code> 上添加 <code>describe()</code> 方法。然后验证：实例的 <code>__proto__</code> 是否等于 <code>City.prototype</code>？</p>
+<pre><code><span class="cmt">// 补全代码</span>
+<span class="kw">function</span> <span class="typ">City</span>(<span class="var">name</span>, <span class="var">lat</span>, <span class="var">lon</span>) {
+  <span class="cmt">// ...</span>
+}
+<span class="cmt">// City.prototype.describe = ...</span>
+
+<span class="kw">const</span> <span class="var">bj</span> <span class="op">=</span> <span class="kw">new</span> <span class="typ">City</span>(<span class="str">'北京'</span>, <span class="num">39.9</span>, <span class="num">116.4</span>);
+<span class="cmt">// 验证原型关系：</span>
+<span class="cmt">// console.log(bj.__proto__ === City.prototype);  // ?</span>
+<span class="cmt">// console.log(bj.hasOwnProperty('describe'));  // ?</span>
+<span class="cmt">// console.log('describe' in bj);                // ?</span>
+</code></pre>
+      </div>
+
+      <div class="exercise">
+        <div class="q">题 2：实现寄生组合继承</div>
+        <p style="color:var(--text);font-size:14px;">用寄生组合继承（不用 ES6 class）实现一个 <code>TrackPoint</code> 继承 <code>GeoPoint</code>。<code>TrackPoint</code> 额外有 <code>timestamp</code> 属性和 <code>getTimeString()</code> 方法。</p>
+<pre><code><span class="cmt">// 父类</span>
+<span class="kw">function</span> <span class="typ">GeoPoint</span>(<span class="var">name</span>, <span class="var">lat</span>, <span class="var">lon</span>) {
+  <span class="kw">this</span>.<span class="prp">name</span> <span class="op">=</span> <span class="var">name</span>;
+  <span class="kw">this</span>.<span class="prp">lat</span>  <span class="op">=</span> <span class="var">lat</span>;
+  <span class="kw">this</span>.<span class="prp">lon</span>  <span class="op">=</span> <span class="var">lon</span>;
+}
+<span class="typ">GeoPoint</span>.<span class="prp">prototype</span>.<span class="prp">describe</span> <span class="op">=</span> <span class="kw">function</span>() {
+  <span class="kw">return</span> <span class="str">`<span class="op">${</span><span class="kw">this</span>.<span class="prp">name</span><span class="op">}</span>(<span class="op">${</span><span class="kw">this</span>.<span class="prp">lat</span><span class="op">}</span>,<span class="op">${</span><span class="kw">this</span>.<span class="prp">lon</span><span class="op">}</span>)`</span>;
+};
+
+<span class="cmt">// 寄生组合继承工具函数</span>
+<span class="kw">function</span> <span class="fn">inherit</span>(<span class="var">Child</span>, <span class="var">Parent</span>) {
+  <span class="cmt">// 用 Object.create 实现</span>
+  <span class="cmt">// ...</span>
+}
+
+<span class="cmt">// 子类</span>
+<span class="kw">function</span> <span class="typ">TrackPoint</span>(<span class="var">name</span>, <span class="var">lat</span>, <span class="var">lon</span>, <span class="var">timestamp</span>) {
+  <span class="cmt">// 调用父类构造函数</span>
+  <span class="cmt">// ...</span>
+  <span class="kw">this</span>.<span class="prp">timestamp</span> <span class="op">=</span> <span class="var">timestamp</span>;
+}
+<span class="cmt">// 继承方法</span>
+<span class="cmt">// inherit(TrackPoint, GeoPoint);</span>
+<span class="cmt">// TrackPoint.prototype.getTimeString = function() { ... };</span>
+
+<span class="cmt">// 验证：</span>
+<span class="cmt">// const p1 = new TrackPoint('A', 39, 116, Date.now());</span>
+<span class="cmt">// console.log(p1.describe());  // "A(39,116)"</span>
+<span class="cmt">// console.log(p1 instanceof TrackPoint);  // true</span>
+<span class="cmt">// console.log(p1 instanceof GeoPoint);    // true</span>
+</code></pre>
+      </div>
+
+      <div class="exercise">
+        <div class="q">题 3：类继承实战（与 CesiumJS 关联）</div>
+        <p style="color:var(--text);font-size:14px;">用 ES6 <code>class</code> 实现：父类 <code>Sensor</code>（有 <code>name</code> 和 <code>type</code>），子类 <code>RadarSensor</code>（额外有 <code>rangeKm</code> 属性和 <code>scanArea()</code> 方法，返回扫描覆盖面积 π·r²）。</p>
+<pre><code><span class="cmt">// 补全代码</span>
+<span class="kw">class</span> <span class="typ">Sensor</span> {
+  <span class="cmt">// ...</span>
+}
+
+<span class="kw">class</span> <span class="typ">RadarSensor</span> <span class="kw">extends</span> <span class="typ">Sensor</span> {
+  <span class="cmt">// ...</span>
+  <span class="fn">scanArea</span>() {
+    <span class="cmt">// 圆面积公式：π * r²</span>
+    <span class="cmt">// ...</span>
+  }
+}
+
+<span class="kw">const</span> <span class="var">radar</span> <span class="op">=</span> <span class="kw">new</span> <span class="typ">RadarSensor</span>(<span class="str">'R-001'</span>, <span class="str">'雷达'</span>, <span class="num">100</span>);
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">radar</span>.<span class="var">name</span>);      <span class="cmt">// "R-001"</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">radar</span>.<span class="var">type</span>);      <span class="cmt">// "雷达"</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">radar</span>.<span class="var">rangeKm</span>);   <span class="cmt">// 100</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="var">radar</span>.<span class="fn">scanArea</span>()); <span class="cmt">// 31415.93...</span>
+
+<span class="cmt">// 验证原型链：</span>
+<span class="cmt">// console.log(radar.__proto__ === RadarSensor.prototype);  // true</span>
+<span class="cmt">// console.log(RadarSensor.prototype.__proto__ === Sensor.prototype);  // true</span>
+<span class="cmt">// console.log(Sensor.prototype.__proto__ === Object.prototype);  // true</span>
+</code></pre>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 12: 交互控制台                                        -->
+  <!-- ============================================================ -->
+  <div id="s12" style="margin-bottom:52px;">
+    <div class="section-header">
+      <div class="section-num">12</div>
+      <h2>在线练习控制台</h2>
+      <span class="tag">SANDBOX</span>
+    </div>
+
+    <p style="margin-bottom:16px;color:var(--muted);">在这里写 JavaScript，用 Ctrl+Enter 运行查看结果：</p>
+
+    <div class="console-area">
+      <div class="console-header">
+        <div class="console-dots">
+          <div class="dot dot-r"></div>
+          <div class="dot dot-y"></div>
+          <div class="dot dot-g"></div>
+        </div>
+        <span>JS SANDBOX</span>
+        <span style="font-size:11px;color:var(--muted);">Day 09</span>
+      </div>
+      <textarea id="sandbox-code" spellcheck="false">// 1. 原型 vs __proto__ 关系演示
+function GeoEntity(name) {
+  this.name = name;
+}
+GeoEntity.prototype.describe = function() {
+  return `Entity: ${this.name}`;
+};
+
+const e = new GeoEntity('北京');
+
+// 验证三等关系
+console.log('e.__proto__ === GeoEntity.prototype:', e.__proto__ === GeoEntity.prototype);
+console.log('Object.getPrototypeOf(e) === GeoEntity.prototype:', Object.getPrototypeOf(e) === GeoEntity.prototype);
+
+// 2. 原型链查找
+console.log('e.name (自己):', e.name);
+console.log('e.describe (原型):', typeof e.describe);
+console.log('e.toString (Object.prototype):', typeof e.toString);
+
+// 3. hasOwnProperty vs in
+console.log('hasOwnProperty name:', e.hasOwnProperty('name'));     // true
+console.log('hasOwnProperty describe:', e.hasOwnProperty('describe')); // false
+console.log('"describe" in e:', 'describe' in e);                    // true
+
+// 4. 寄生组合继承
+function inherit(Child, Parent) {
+  const prototype = Object.create(Object.getPrototypeOf(Parent.prototype));
+  prototype.constructor = Child;
+  Child.prototype = prototype;
+}
+
+// 父类
+function MapEntity(name) {
+  this.name = name;
+  this.tags = [];
+}
+MapEntity.prototype.describe = function() {
+  return `${this.name} [${this.tags.join(', ')}]`;
+};
+
+// 子类
+function Marker(name, lat, lon) {
+  MapEntity.call(this, name);
+  this.lat = lat;
+  this.lon = lon;
+}
+inherit(Marker, MapEntity);
+Marker.prototype.moveTo = function(lat, lon) {
+  this.lat = lat; this.lon = lon;
+};
+
+// 测试
+const m1 = new Marker('北京', 39.9, 116.4);
+const m2 = new Marker('上海', 31.2, 121.5);
+m1.tags.push('首都');
+
+console.log(m1.describe());  // "北京 [首都]"
+console.log(m2.describe());  // "上海 []"
+console.log('m1 instanceof Marker:', m1 instanceof Marker);
+console.log('m1 instanceof MapEntity:', m1 instanceof MapEntity);
+console.log('原型链长度:', Object.getPrototypeOf(m1) === Marker.prototype);
+
+// 5. ES6 class 内部就是原型
+class Sensor {
+  constructor(name) { this.name = name; }
+  info() { return this.name; }
+}
+class Radar extends Sensor {
+  scan() { return 'Scanning...'; }
+}
+const r = new Radar('R-001');
+console.log('class 本质验证:');
+console.log('  r.__proto__ === Radar.prototype:', r.__proto__ === Radar.prototype);
+console.log('  Radar.prototype.__proto__ === Sensor.prototype:', Radar.prototype.__proto__ === Sensor.prototype);
+console.log('  typeof Sensor === "function":', typeof Sensor === 'function');
+</textarea>
+      <div class="console-actions">
+        <button class="btn btn-run" onclick="runCode()">&#9654; 运行</button>
+        <button class="btn btn-clear" onclick="clearOutput()">清空输出</button>
+        <button class="btn btn-clear" onclick="resetCode()">重置代码</button>
+      </div>
+      <div id="output-box">// 点击"运行"查看输出结果...</div>
+    </div>
+  </div>
+
+
+  <!-- 今日总结 -->
+  <div class="card" style="border-color:var(--accent);border-left-width:4px;">
+    <h3 style="color:var(--accent)">&#128203; 今日知识点总结</h3>
+    <ul style="margin-top:12px;">
+      <li>&#9989; 每个函数都自带 <code>prototype</code> 属性，指向一个原型对象</li>
+      <li>&#9989; 每个实例都有 <code>__proto__</code>，指向其构造函数的 <code>prototype</code></li>
+      <li>&#9989; 推荐用 <code>Object.getPrototypeOf</code> 代替 <code>__proto__</code></li>
+      <li>&#9989; <strong>原型链</strong>是属性查找的路径：自己 &rarr; 父类 &rarr; Object.prototype &rarr; null</li>
+      <li>&#9989; 方法放在 <code>prototype</code> 上<strong>共享</strong>，属性放在 <code>this</code> 上<strong>独立</strong></li>
+      <li>&#9989; 6 种继承方式中，<strong>寄生组合继承</strong>是 ES6 class 内部采用的方案</li>
+      <li>&#9989; <code>class</code> 本质是<strong>语法糖</strong>，引擎内部用原型实现继承</li>
+      <li>&#9989; <code>hasOwnProperty</code> 只看自己，<code>in</code> 包含原型链</li>
+      <li>&#9989; 理解原型是阅读 CesiumJS 源码、扩展内置类、调试继承问题的基础</li>
+    </ul>
+  </div>
+
+</div><!-- /container -->
+
+<!-- ===== FOOTER ===== -->
+<div class="footer">
+  <p>&#128640; <strong>每日JS</strong> — JavaScript &rarr; CesiumJS 学习路径</p>
+  <p style="margin-top:6px;">Day 09 / 原型与继承 &middot; 明天继续：<strong>错误处理与调试</strong></p>
+</div>
+
+
+<!-- ===== SCRIPT ===== -->
+<script>
+  const DEFAULT_CODE = document.getElementById('sandbox-code').value;
+
+  function runCode() {
+    const code = document.getElementById('sandbox-code').value;
+    const outputBox = document.getElementById('output-box');
+    const logs = [];
+
+    const origLog = console.log;
+    const origError = console.error;
+    const origWarn = console.warn;
+
+    console.log = (...args) => {
+      logs.push(args.map(a => {
+        if (typeof a === 'object' && a !== null) {
+          try { return JSON.stringify(a, null, 2); } catch { return String(a); }
+        }
+        return String(a);
+      }).join(' '));
+      origLog(...args);
+    };
+    console.error = (...args) => {
+      logs.push('\u274C ' + args.join(' '));
+      origError(...args);
+    };
+    console.warn = (...args) => {
+      logs.push('\u26A0\uFE0F ' + args.join(' '));
+      origWarn(...args);
+    };
+
+    try {
+      eval(code);
+      outputBox.innerHTML = logs.length
+        ? logs.map(l => '<span>' + escHtml(l) + '</span>').join('\n')
+        : '<span style="color:var(--muted)">// 代码运行成功（无输出）</span>';
+    } catch(e) {
+      outputBox.innerHTML = '<span class="err">\u274C ' + escHtml(e.message) + '</span>';
+    } finally {
+      console.log = origLog;
+      console.error = origError;
+      console.warn = origWarn;
+    }
+  }
+
+  function clearOutput() {
+    document.getElementById('output-box').innerHTML = '// 输出已清空...';
+  }
+
+  function resetCode() {
+    document.getElementById('sandbox-code').value = DEFAULT_CODE;
+    clearOutput();
+  }
+
+  function escHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  document.getElementById('sandbox-code').addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      e.preventDefault();
+      runCode();
+    }
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,1470 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>JavaScript 每日学习 — Day 13：认识 CesiumJS 与第一个三维地球</title>
+  <style>
+    /* ===== 全局 ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0f1117;
+      --surface:   #1a1d27;
+      --card:      #21253a;
+      --border:    #2e3350;
+      --accent:    #2dd4bf;
+      --accent2:   #f7c948;
+      --accent3:   #7ee787;
+      --accent4:   #818cf8;
+      --text:      #cdd3e0;
+      --muted:     #6e7a96;
+      --tag-bg:    #0d3321;
+      --code-bg:   #161b2e;
+    }
+
+    body {
+      font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.75;
+      font-size: 15px;
+    }
+
+    /* ===== 顶部 Banner ===== */
+    .hero {
+      background: linear-gradient(135deg, #0d3321 0%, #115542 50%, #0d3321 100%);
+      border-bottom: 1px solid #16533e;
+      padding: 52px 24px 40px;
+      text-align: center;
+    }
+    .hero .badge {
+      display: inline-block;
+      background: var(--accent);
+      color: #0f0e1a;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 4px 12px;
+      border-radius: 20px;
+      margin-bottom: 16px;
+    }
+    .hero h1 {
+      font-size: clamp(24px, 5vw, 42px);
+      font-weight: 800;
+      color: #fff;
+      line-height: 1.2;
+      margin-bottom: 12px;
+    }
+    .hero h1 span { color: var(--accent); }
+    .hero p {
+      color: var(--muted);
+      font-size: 15px;
+      max-width: 640px;
+      margin: 0 auto 24px;
+    }
+    .hero .meta {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      flex-wrap: wrap;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .hero .meta span { display: flex; align-items: center; gap: 5px; }
+
+    /* ===== 布局 ===== */
+    .container { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; }
+
+    /* ===== 目录卡片 ===== */
+    .toc {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--accent);
+      border-radius: 12px;
+      padding: 24px 28px;
+      margin-bottom: 40px;
+    }
+    .toc h2 { font-size: 14px; letter-spacing: 1px; text-transform: uppercase; color: var(--accent); margin-bottom: 14px; }
+    .toc ol { padding-left: 20px; }
+    .toc li { margin: 6px 0; }
+    .toc a { color: var(--text); text-decoration: none; }
+    .toc a:hover { color: var(--accent); }
+
+    /* ===== 章节标题 ===== */
+    .section { margin-bottom: 52px; }
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 24px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    .section-num {
+      width: 38px; height: 38px;
+      border-radius: 10px;
+      background: var(--accent);
+      color: #0f0e1a;
+      font-weight: 800;
+      font-size: 16px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .section-header h2 {
+      font-size: 22px;
+      font-weight: 700;
+      color: #fff;
+    }
+    .section-header .tag {
+      font-size: 11px;
+      background: var(--tag-bg);
+      color: var(--accent);
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    /* ===== 卡片 ===== */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+    .card h3 {
+      font-size: 16px;
+      color: var(--accent2);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card p { margin-bottom: 10px; color: var(--text); }
+    .card p:last-child { margin-bottom: 0; }
+
+    /* ===== 代码块 ===== */
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px 22px;
+      overflow-x: auto;
+      margin: 16px 0;
+      font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+      font-size: 13.5px;
+      line-height: 1.7;
+    }
+    code { font-family: inherit; }
+
+    /* 语法着色 */
+    .kw  { color: #c792ea; }
+    .str { color: #c3e88d; }
+    .num { color: #f78c6c; }
+    .cmt { color: #546e7a; font-style: italic; }
+    .fn  { color: #82aaff; }
+    .var { color: #eeffff; }
+    .op  { color: var(--accent); }
+    .typ { color: var(--accent2); }
+    .out { color: var(--accent3); }
+    .prp { color: #ffcb6b; }
+    .ces { color: #2dd4bf; font-weight: 600; }
+
+    /* ===== 提示框 ===== */
+    .tip, .warn, .info {
+      border-radius: 10px;
+      padding: 14px 18px;
+      margin: 16px 0;
+      font-size: 14px;
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+    .tip  { background: #0d3321; border-left: 4px solid var(--accent3); }
+    .warn { background: #3a2500; border-left: 4px solid var(--accent2); }
+    .info { background: #1e1b4b; border-left: 4px solid var(--accent4); }
+
+    /* ===== 对比表格 ===== */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 14px;
+    }
+    th {
+      background: var(--surface);
+      color: var(--accent);
+      padding: 12px 16px;
+      text-align: left;
+      border-bottom: 2px solid var(--border);
+      font-weight: 600;
+    }
+    td {
+      padding: 11px 16px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+      vertical-align: top;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(45, 212, 191, 0.04); }
+    .td-kw { color: #c792ea; font-family: 'Cascadia Code','Fira Code',monospace; font-weight: 600; }
+    .td-type { color: var(--accent2); }
+    .td-good { color: var(--accent3); }
+    .td-bad  { color: #ff7b72; }
+
+    /* ===== 两列网格 ===== */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 600px) { .grid-2 { grid-template-columns: 1fr; } }
+
+    /* ===== 大卡片 ===== */
+    .big-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 28px;
+      margin-bottom: 20px;
+    }
+    .big-card h3 { font-size: 17px; color: var(--accent); margin-bottom: 16px; }
+
+    /* ===== 架构图 ===== */
+    .arch-diagram {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 28px;
+      margin: 16px 0;
+      text-align: center;
+    }
+    .arch-layer {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+    .arch-box {
+      padding: 10px 24px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      min-width: 200px;
+    }
+    .arch-arrow { color: var(--accent); font-size: 20px; }
+    .ab-app   { background: #115542; border: 2px solid var(--accent); color: var(--accent); }
+    .ab-ces   { background: #1a1d27; border: 2px solid var(--accent); color: var(--accent); }
+    .ab-wg    { background: #1e1b4b; border: 1px solid var(--accent4); color: var(--accent4); }
+    .ab-gpu   { background: #161b2e; border: 1px solid var(--border); color: var(--muted); }
+    .arch-row { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin: 6px 0; }
+    .arch-sub {
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 12px;
+      border: 1px solid #2e3350;
+      color: var(--text);
+    }
+
+    /* ===== API 速查表 ===== */
+    .api-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+      gap: 12px;
+      margin: 16px 0;
+    }
+    .api-item {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      text-align: center;
+      transition: border-color 0.2s;
+    }
+    .api-item:hover { border-color: var(--accent); }
+    .api-item .icon { font-size: 28px; margin-bottom: 8px; display: block; }
+    .api-item strong { display: block; color: var(--accent); font-size: 14px; }
+    .api-item small { display: block; color: var(--muted); font-size: 12px; margin-top: 4px; }
+
+    /* ===== 练习区 ===== */
+    .practice {
+      background: linear-gradient(135deg, #1e1b3a, #1a1a2d);
+      border: 1px solid #3b3580;
+      border-radius: 12px;
+      padding: 28px;
+      margin-top: 48px;
+    }
+    .practice h2 {
+      font-size: 20px;
+      color: var(--accent3);
+      margin-bottom: 8px;
+    }
+    .practice p { color: var(--muted); margin-bottom: 20px; font-size: 14px; }
+    .exercise {
+      background: var(--code-bg);
+      border: 1px dashed #3b3580;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+    .exercise .q {
+      color: var(--accent2);
+      font-weight: 600;
+      margin-bottom: 12px;
+      font-size: 14px;
+    }
+    .exercise pre { margin: 0; }
+
+    /* ===== 交互控制台 ===== */
+    .console-area {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-top: 48px;
+    }
+    .console-header {
+      background: var(--surface);
+      padding: 12px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+    .console-header span { color: var(--accent); font-size: 13px; font-weight: 600; letter-spacing: 1px; }
+    .console-dots { display: flex; gap: 6px; }
+    .dot { width: 12px; height: 12px; border-radius: 50%; }
+    .dot-r { background: #ff5f57; }
+    .dot-y { background: #febc2e; }
+    .dot-g { background: #28c840; }
+    #sandbox-code {
+      width: 100%;
+      background: var(--code-bg);
+      color: var(--accent3);
+      border: none;
+      padding: 18px 20px;
+      font-family: 'Cascadia Code','Fira Code',monospace;
+      font-size: 13.5px;
+      line-height: 1.7;
+      resize: vertical;
+      min-height: 160px;
+      outline: none;
+    }
+    .console-actions {
+      padding: 12px 18px;
+      display: flex;
+      gap: 10px;
+      border-top: 1px solid var(--border);
+    }
+    .btn {
+      padding: 8px 20px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      transition: opacity .2s;
+    }
+    .btn:hover { opacity: .85; }
+    .btn-run { background: var(--accent); color: #0f0e1a; }
+    .btn-clear { background: var(--surface); color: var(--muted); border: 1px solid var(--border); }
+    #output-box {
+      padding: 16px 20px;
+      min-height: 60px;
+      font-family: 'Cascadia Code','Fira Code',monospace;
+      font-size: 13px;
+      color: var(--accent3);
+      border-top: 1px solid var(--border);
+      white-space: pre-wrap;
+    }
+    #output-box .err { color: #ff7b72; }
+
+    /* ===== 进度条 ===== */
+    .progress-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 22px 26px;
+      margin-bottom: 40px;
+    }
+    .progress-card h3 { font-size: 13px; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); margin-bottom: 16px; }
+    .progress-list { display: flex; flex-wrap: wrap; gap: 8px; }
+    .progress-item {
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+    }
+    .pi-done  { background: #0d3321; color: var(--accent3); border: 1px solid #1a4d2a; }
+    .pi-js    { background: #1e1b4b; color: var(--accent4); border: 1px solid #312e81; }
+    .pi-today { background: #0d3321; color: var(--accent); border: 1px solid var(--accent); }
+    .pi-next  { background: var(--card); color: var(--muted); border: 1px solid var(--border); }
+
+    /* ===== 时间线 ===== */
+    .timeline {
+      position: relative;
+      padding: 20px 0;
+    }
+    .tl-item {
+      display: flex;
+      gap: 16px;
+      padding: 10px 0;
+      align-items: flex-start;
+    }
+    .tl-dot {
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      background: var(--accent);
+      flex-shrink: 0;
+      margin-top: 6px;
+    }
+    .tl-content { flex: 1; }
+    .tl-content strong { color: var(--accent); display: block; margin-bottom: 4px; }
+    .tl-content small { color: var(--muted); display: block; }
+
+    /* ===== 底部 ===== */
+    .footer {
+      text-align: center;
+      padding: 40px 24px 20px;
+      color: var(--muted);
+      font-size: 13px;
+      border-top: 1px solid var(--border);
+    }
+    .footer strong { color: var(--accent); }
+
+    /* ===== inline code ===== */
+    p code, li code, td code {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      padding: 1px 6px;
+      border-radius: 5px;
+      font-family: 'Cascadia Code','Fira Code',monospace;
+      font-size: 12.5px;
+      color: var(--accent);
+    }
+    ul { padding-left: 20px; }
+    li { margin: 5px 0; }
+
+    /* Cesium 关键字高亮 */
+    .ces-kw { color: #2dd4bf; }
+  </style>
+</head>
+<body>
+
+<!-- ===== HERO ===== -->
+<div class="hero">
+  <div class="badge">CesiumJS 学习路径 · 三维地球篇</div>
+  <h1>Day 13 — <span>认识 CesiumJS</span> 与第一个三维地球</h1>
+  <p>从今天起，你不再只是"写网页"——你将<strong>创建整个地球</strong>。CesiumJS 是全球最强大的开源三维地球引擎，它把 WebGL 的复杂性封装成简单的 API，让你用 JavaScript 就能构建令人惊叹的地理可视化应用。</p>
+  <div class="meta">
+    <span>&#128197; 第 13 天</span>
+    <span>&#9201; 预计 60 分钟</span>
+    <span>&#127758; CesiumJS 阶段 · 第 1 天</span>
+  </div>
+</div>
+
+<!-- ===== CONTAINER ===== -->
+<div class="container">
+
+  <!-- 学习进度 -->
+  <div class="progress-card">
+    <h3>&#128205; 学习路线图</h3>
+    <div class="progress-list">
+      <div class="progress-item pi-js">Day 01-12 · JS 基础完成 &#127881;</div>
+      <div class="progress-item pi-today">Day 13 · CesiumJS入门 &#8592; 今天</div>
+      <div class="progress-item pi-next">Day 14 · 实体与几何体</div>
+      <div class="progress-item pi-next">Day 15+ · 三维地球深入</div>
+    </div>
+  </div>
+
+  <!-- 目录 -->
+  <div class="toc">
+    <h2>&#128218; 本课目录</h2>
+    <ol>
+      <li><a href="#s1">什么是 CesiumJS？为什么学它？</a></li>
+      <li><a href="#s2">核心架构：Viewer / Scene / Globe / Camera</a></li>
+      <li><a href="#s3">核心对象：Entity / Primitive / DataSource</a></li>
+      <li><a href="#s4">环境搭建：CDN + Cesium Ion Token</a></li>
+      <li><a href="#s5">Hello Earth：第一个 CesiumJS 程序</a></li>
+      <li><a href="#s6">底图与地形：ImageryLayer & Terrain</a></li>
+      <li><a href="#s7">相机控制：飞到地球上任何一个角落</a></li>
+      <li><a href="#s8">添加第一个 Entity：点、线、标注</a></li>
+      <li><a href="#s9">JavaScript 基础如何支撑 CesiumJS</a></li>
+      <li><a href="#s10">练习题</a></li>
+      <li><a href="#s11">在线练习控制台</a></li>
+    </ol>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 1: 什么是 CesiumJS                                      -->
+  <!-- ============================================================ -->
+  <div class="section" id="s1">
+    <div class="section-header">
+      <div class="section-num">1</div>
+      <h2>什么是 CesiumJS？为什么学它？</h2>
+      <span class="tag">入门</span>
+    </div>
+
+    <div class="card">
+      <h3>&#127758; CesiumJS 是什么？</h3>
+      <p><strong>CesiumJS</strong> 是一个开源的 JavaScript 库，用于创建<strong>三维地球和二维地图</strong>的 Web 应用。它基于 <strong>WebGL</strong>（你在 Day 12 学的 Canvas 的 3D 版本），可以在浏览器中直接渲染全球范围的高精度地形、卫星影像、3D 建筑模型、矢量数据——无需安装任何插件。</p>
+      <p>简单说：CesiumJS 就是<strong>浏览器里的 Google Earth</strong>，但它是给开发者用的——你可以完全控制它的一切。</p>
+    </div>
+
+    <div class="card">
+      <h3>&#127919; 用来做什么？（真实应用场景）</h3>
+      <table>
+        <tr><th>行业</th><th>典型应用</th></tr>
+        <tr><td class="td-kw">航空航天</td><td>卫星轨道可视化、火箭发射轨迹模拟、空间碎片追踪</td></tr>
+        <tr><td class="td-kw">智慧城市</td><td>3D 建筑白模、BIM 模型叠加、城市交通监控</td></tr>
+        <tr><td class="td-kw">海洋/气象</td><td>洋流可视化、台风路径、天气预报数据展示</td></tr>
+        <tr><td class="td-kw">军事/国防</td><td>战场态势、雷达覆盖范围、导弹轨迹模拟</td></tr>
+        <tr><td class="td-kw">自动驾驶</td><td>高精地图、传感器数据可视化、路径规划展示</td></tr>
+        <tr><td class="td-kw">物流/IoT</td><td>实时车辆/船舶追踪、无人机航线规划</td></tr>
+        <tr><td class="td-kw">自然资源</td><td>森林覆盖、矿产分布、地质灾害监测</td></tr>
+      </table>
+    </div>
+
+    <div class="info">
+      <span class="icon">&#128161;</span>
+      <div><strong>为什么选 CesiumJS 而不是 Three.js？</strong>Three.js 是通用 3D 引擎——适合做游戏、产品展示。CesiumJS 专门为<strong>地理空间数据</strong>设计——它内置了全球坐标系（WGS84）、地图投影、地形渲染、时间轴动画等 GIS 功能。如果你要做地球相关的应用，CesiumJS 省掉你 90% 的工作量。</div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 2: 核心架构                                            -->
+  <!-- ============================================================ -->
+  <div class="section" id="s2">
+    <div class="section-header">
+      <div class="section-num">2</div>
+      <h2>核心架构：Viewer / Scene / Globe / Camera</h2>
+      <span class="tag">架构</span>
+    </div>
+
+    <div class="arch-diagram">
+      <div class="arch-layer">
+        <div class="arch-box ab-app">&#127968; 你的应用代码</div>
+        <div class="arch-arrow">&#8595;</div>
+        <div class="arch-box ab-ces" style="font-size:16px;">Cesium.Viewer（总控制器）</div>
+        <div class="arch-arrow">&#8595;</div>
+        <div class="arch-row">
+          <div class="arch-sub" style="border-color:var(--accent);color:var(--accent);">Cesium.Scene<br/><small>3D 场景管理</small></div>
+          <div class="arch-sub" style="border-color:var(--accent2);color:var(--accent2);">Cesium.Camera<br/><small>视角控制</small></div>
+          <div class="arch-sub" style="border-color:var(--accent);color:var(--accent);">Cesium.Globe<br/><small>地球表面</small></div>
+        </div>
+        <div class="arch-arrow">&#8595;</div>
+        <div class="arch-box ab-wg">WebGL 渲染层（Canvas 3D 上下文）</div>
+        <div class="arch-arrow">&#8595;</div>
+        <div class="arch-box ab-gpu">GPU 硬件加速</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>&#127760; Viewer — 一切的入口</h3>
+      <p><code>new Cesium.Viewer('container')</code> 是你创建的第一个对象。它像一个"管家"——包含场景、相机、地球、UI 控件、事件处理等一切。</p>
+<pre><code><span class="kw">const</span> <span class="var">viewer</span> <span class="op">=</span> <span class="kw">new</span> <span class="typ">Cesium</span>.<span class="typ">Viewer</span>(<span class="str">'cesiumContainer'</span>, {
+  <span class="cmt">// 大量配置选项（后面会学）</span>
+  <span class="var">animation</span>: <span class="kw">false</span>,       <span class="cmt">// 关闭底部动画控件</span>
+  <span class="var">timeline</span>:  <span class="kw">false</span>,       <span class="cmt">// 关闭时间轴</span>
+  <span class="var">baseLayerPicker</span>: <span class="kw">false</span> <span class="cmt">// 关闭底图选择器</span>
+});
+
+<span class="cmt">// Viewer 的核心子对象：</span>
+<span class="var">viewer</span>.<span class="var">scene</span>;      <span class="cmt">// Cesium.Scene — 3D 场景，管理所有可视化内容</span>
+<span class="var">viewer</span>.<span class="var">camera</span>;     <span class="cmt">// Cesium.Camera — 相机，控制你看地球的视角</span>
+<span class="var">viewer</span>.<span class="var">entities</span>;   <span class="cmt">// Cesium.EntityCollection — 实体集合，你添加的所有东西</span>
+<span class="var">viewer</span>.<span class="var">dataSources</span>;<span class="cmt">// Cesium.DataSourceCollection — 数据源集合</span>
+<span class="var">viewer</span>.<span class="var">imageryLayers</span>;<span class="cmt">// 影像图层（卫星图/地图）</span>
+</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>&#127912; Scene — 3D 世界的舞台</h3>
+      <p>Scene 管理所有<strong>被渲染的东西</strong>：Primitive（图元）、Globe（地球）、SkyBox（天空盒）、大气效果、光照。大多数时候你通过 Viewer 间接操作 Scene，但深入开发时需要直接访问它。</p>
+<pre><code><span class="cmt">// Scene 的常用操作</span>
+<span class="var">viewer</span>.<span class="var">scene</span>.<span class="var">globe</span>.<span class="var">enableLighting</span> <span class="op">=</span> <span class="kw">true</span>;   <span class="cmt">// 开启光照（有阴影）</span>
+<span class="var">viewer</span>.<span class="var">scene</span>.<span class="var">skyBox</span>            <span class="cmt">// 天空盒（默认显示星空）</span>
+<span class="var">viewer</span>.<span class="var">scene</span>.<span class="var">sun</span>               <span class="cmt">// 太阳光源</span>
+<span class="var">viewer</span>.<span class="var">scene</span>.<span class="var">moon</span>              <span class="cmt">// 月球</span>
+<span class="var">viewer</span>.<span class="var">scene</span>.<span class="var">primitives</span>        <span class="cmt">// 图元集合（性能优化的渲染对象）</span>
+<span class="var">viewer</span>.<span class="var">scene</span>.<span class="var">mode</span> <span class="op">=</span> <span class="typ">Cesium</span>.<span class="typ">SceneMode</span>.<span class="var">SCENE2D</span>; <span class="cmt">// 切换到 2D 模式</span>
+</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>&#127758; Globe — 地球本身</h3>
+      <p>Globe 代表地球的"壳"——它管理地表影像（卫星图）和地形高度。</p>
+<pre><code><span class="cmt">// 访问 Globe</span>
+<span class="kw">const</span> <span class="var">globe</span> <span class="op">=</span> <span class="var">viewer</span>.<span class="var">scene</span>.<span class="var">globe</span>;
+
+<span class="cmt">// 常用属性</span>
+<span class="var">globe</span>.<span class="var">show</span>              <span class="op">=</span> <span class="kw">true</span>;      <span class="cmt">// 显示/隐藏地球</span>
+<span class="var">globe</span>.<span class="var">baseColor</span>         <span class="op">=</span> <span class="typ">Cesium</span>.<span class="typ">Color</span>.<span class="var">BLUE</span>;  <span class="cmt">// 基础颜色（无影像时显示）</span>
+<span class="var">globe</span>.<span class="var">depthTestAgainstTerrain</span> <span class="op">=</span> <span class="kw">true</span>; <span class="cmt">// 实体被地形遮挡</span>
+</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>&#128247; Camera — 你的眼睛</h3>
+      <p>Camera 决定你从哪个角度看地球。它有三个核心属性：位置（position）、朝向（direction/heading）、俯仰（pitch）。</p>
+<pre><code><span class="cmt">// 方法 1：直接设置视角（瞬间跳转）</span>
+<span class="var">viewer</span>.<span class="var">camera</span>.<span class="fn">setView</span>({
+  <span class="var">destination</span>: <span class="typ">Cesium</span>.<span class="typ">Cartesian3</span>.<span class="fn">fromDegrees</span>(
+    <span class="num">116.3974</span>,  <span class="cmt">// 经度 — 北京</span>
+    <span class="num">39.9093</span>,   <span class="cmt">// 纬度 — 北京</span>
+    <span class="num">15000</span>      <span class="cmt">// 高度（米）</span>
+  ),
+  <span class="var">orientation</span>: {
+    <span class="var">heading</span>: <span class="typ">Cesium</span>.<span class="typ">Math</span>.<span class="fn">toRadians</span>(<span class="num">0</span>),   <span class="cmt">// 方位角（北=0，顺时针）</span>
+    <span class="var">pitch</span>:   <span class="typ">Cesium</span>.<span class="typ">Math</span>.<span class="fn">toRadians</span>(<span class="op">-</span><span class="num">45</span>),<span class="cmt">// 俯仰角（负=向下看）</span>
+    <span class="var">roll</span>:    <span class="num">0</span>
+  }
+});
+
+<span class="cmt">// 方法 2：飞行动画（3 秒飞过去）</span>
+<span class="var">viewer</span>.<span class="var">camera</span>.<span class="fn">flyTo</span>({
+  <span class="var">destination</span>: <span class="typ">Cesium</span>.<span class="typ">Cartesian3</span>.<span class="fn">fromDegrees</span>(<span class="num">-122.4194</span>, <span class="num">37.7749</span>, <span class="num">5000</span>),
+  <span class="var">duration</span>: <span class="num">3</span>  <span class="cmt">// 秒</span>
+});
+</code></pre>
+    </div>
+
+    <div class="tip">
+      <span class="icon">&#128161;</span>
+      <div><strong>记忆口诀：</strong>Viewer 是房子，Scene 是客厅，Globe 是地球仪，Camera 是你的眼睛，Entity 是你摆进去的家具。</div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 3: Entity / Primitive / DataSource                     -->
+  <!-- ============================================================ -->
+  <div class="section" id="s3">
+    <div class="section-header">
+      <div class="section-num">3</div>
+      <h2>核心对象：Entity / Primitive / DataSource</h2>
+      <span class="tag">API</span>
+    </div>
+
+    <div class="card">
+      <h3>&#127912; 三者的区别</h3>
+      <table>
+        <tr><th></th><th>Entity</th><th>Primitive</th><th>DataSource</th></tr>
+        <tr>
+          <td class="td-kw">定位</td>
+          <td>高级 API，易用</td>
+          <td>低级 API，高性能</td>
+          <td>数据加载器</td>
+        </tr>
+        <tr>
+          <td class="td-kw">使用场景</td>
+          <td class="td-good">快速添加点、线、面、模型（日常开发首选）</td>
+          <td class="td-good">海量对象（百万级）需要极致性能</td>
+          <td class="td-good">从 GeoJSON/CZML/KML 加载数据</td>
+        </tr>
+        <tr>
+          <td class="td-kw">渲染方式</td>
+          <td>内部转为 Primitive</td>
+          <td>直接 WebGL 渲染</td>
+          <td>内部创建 Entity</td>
+        </tr>
+        <tr>
+          <td class="td-kw">代码量</td>
+          <td class="td-good">少</td>
+          <td class="td-bad">多</td>
+          <td class="td-good">极简（一行）</td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3>&#128640; Entity — 90% 时间都在用它</h3>
+      <p>Entity 是 CesiumJS 最常用的 API。你可以把它理解为"地球上的一件东西"——一个点、一根线、一个多边形、一个 3D 模型。它有位置（position）和图形（point/polyline/polygon/model 等）。</p>
+<pre><code><span class="cmt">// 添加一个红色的点标记</span>
+<span class="kw">const</span> <span class="var">entity</span> <span class="op">=</span> <span class="var">viewer</span>.<span class="var">entities</span>.<span class="fn">add</span>({
+  <span class="var">id</span>:       <span class="str">'my-point'</span>,       <span class="cmt">// 唯一标识（可选，方便后续查找/删除）</span>
+  <span class="var">name</span>:     <span class="str">'北京'</span>,            <span class="cmt">// 显示名称</span>
+  <span class="var">position</span>: <span class="typ">Cesium</span>.<span class="typ">Cartesian3</span>.<span class="fn">fromDegrees</span>(<span class="num">116.3974</span>, <span class="num">39.9093</span>),
+  <span class="var">point</span>: {                    <span class="cmt">// 图形：点</span>
+    <span class="var">pixelSize</span>: <span class="num">10</span>,           <span class="cmt">// 像素大小</span>
+    <span class="var">color</span>:     <span class="typ">Cesium</span>.<span class="typ">Color</span>.<span class="var">RED</span>,
+    <span class="var">outlineColor</span>: <span class="typ">Cesium</span>.<span class="typ">Color</span>.<span class="var">WHITE</span>,
+    <span class="var">outlineWidth</span>: <span class="num">2</span>
+  },
+  <span class="var">label</span>: {                    <span class="cmt">// 图形：文字标签</span>
+    <span class="var">text</span>: <span class="str">'北京'</span>,
+    <span class="var">font</span>: <span class="str">'16px sans-serif'</span>,
+    <span class="var">style</span>: <span class="typ">Cesium</span>.<span class="typ">LabelStyle</span>.<span class="var">FILL_AND_OUTLINE</span>,
+    <span class="var">fillColor</span>: <span class="typ">Cesium</span>.<span class="typ">Color</span>.<span class="var">WHITE</span>,
+    <span class="var">outlineColor</span>: <span class="typ">Cesium</span>.<span class="typ">Color</span>.<span class="var">BLACK</span>,
+    <span class="var">outlineWidth</span>: <span class="num">3</span>,
+    <span class="var">verticalOrigin</span>: <span class="typ">Cesium</span>.<span class="typ">VerticalOrigin</span>.<span class="var">BOTTOM</span>,
+    <span class="var">pixelOffset</span>: <span class="kw">new</span> <span class="typ">Cesium</span>.<span class="typ">Cartesian2</span>(<span class="num">0</span>, <span class="op">-</span><span class="num">14</span>)  <span class="cmt">// 偏移，避免标签遮挡点</span>
+  }
+});
+
+<span class="cmt">// 查询实体</span>
+<span class="kw">const</span> <span class="var">found</span> <span class="op">=</span> <span class="var">viewer</span>.<span class="var">entities</span>.<span class="fn">getById</span>(<span class="str">'my-point'</span>);
+
+<span class="cmt">// 删除实体</span>
+<span class="var">viewer</span>.<span class="var">entities</span>.<span class="fn">remove</span>(<span class="var">entity</span>);
+</code></pre>
+    </div>
+
+    <div class="info">
+      <span class="icon">&#128161;</span>
+      <div><strong>Entity 的图形（Graphics）类型：</strong>每个 Entity 可以同时附加多种图形——<code>point</code>（点）、<code>polyline</code>（线）、<code>polygon</code>（面）、<code>model</code>（3D 模型）、<code>billboard</code>（图标）、<code>label</code>（标签）、<code>ellipse</code>（椭圆）、<code>rectangle</code>（矩形）、<code>corridor</code>（走廊）、<code>wall</code>（墙）、<code>box</code>（立方体）……一个 Entity 可以同时有 position + point + label + polyline。</div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 4: 环境搭建                                            -->
+  <!-- ============================================================ -->
+  <div class="section" id="s4">
+    <div class="section-header">
+      <div class="section-num">4</div>
+      <h2>环境搭建：CDN + Cesium Ion Token</h2>
+      <span class="tag">配置</span>
+    </div>
+
+    <div class="card">
+      <h3>&#128736;&#65039; 方式一：CDN 引入（推荐入门）</h3>
+      <p>最简单的入门方式——只需 CDN 引入 JS 和 CSS，无需构建工具：</p>
+<pre><code><span class="cmt">&lt;!-- 1. 引入 CesiumJS CSS --&gt;</span>
+<span class="op">&lt;</span><span class="var">link</span> <span class="var">rel</span><span class="op">=</span><span class="str">"stylesheet"</span>
+      <span class="var">href</span><span class="op">=</span><span class="str">"https://cesium.com/downloads/cesiumjs/releases/1.121/Build/Cesium/Widgets/widgets.css"</span><span class="op">&gt;</span>
+
+<span class="cmt">&lt;!-- 2. 引入 CesiumJS JavaScript --&gt;</span>
+<span class="op">&lt;</span><span class="var">script</span> <span class="var">src</span><span class="op">=</span><span class="str">"https://cesium.com/downloads/cesiumjs/releases/1.121/Build/Cesium/Cesium.js"</span><span class="op">&gt;&lt;/</span><span class="var">script</span><span class="op">&gt;</span>
+
+<span class="cmt">&lt;!-- 3. 指定地球容器 --&gt;</span>
+<span class="op">&lt;</span><span class="var">div</span> <span class="var">id</span><span class="op">=</span><span class="str">"cesiumContainer"</span> <span class="var">style</span><span class="op">=</span><span class="str">"width:100%;height:100vh"</span><span class="op">&gt;&lt;/</span><span class="var">div</span><span class="op">&gt;</span>
+</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>&#128230; 方式二：npm 安装（推荐项目开发）</h3>
+<pre><code><span class="cmt"># 安装 CesiumJS</span>
+npm install cesium
+
+<span class="cmt"># 然后在 JS 中 import</span>
+<span class="kw">import</span> <span class="op">*</span> <span class="kw">as</span> <span class="var">Cesium</span> <span class="kw">from</span> <span class="str">'cesium'</span>;
+<span class="kw">import</span> <span class="str">'cesium/Build/Cesium/Widgets/widgets.css'</span>;
+
+<span class="cmt">// 需要配置 vite/webpack 处理静态资源（后面会讲）</span>
+</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>&#128273; Cesium Ion Token — 必配！</h3>
+      <p>从 CesiumJS 1.104+ 开始，默认底图（Bing Maps）和 Cesium World Terrain 地形需要 token。免费注册即可获得：</p>
+      <ol style="margin:10px 0;">
+        <li>访问 <code>https://ion.cesium.com</code> 注册（免费）</li>
+        <li>进入 <strong>Access Tokens</strong> → 复制默认 token</li>
+        <li>在代码最前面设置：</li>
+      </ol>
+<pre><code><span class="cmt">// 必须放在 new Cesium.Viewer() 之前！</span>
+<span class="typ">Cesium</span>.<span class="var">Ion</span>.<span class="var">defaultAccessToken</span> <span class="op">=</span>
+  <span class="str">'你的 token 粘贴在这里'</span>;
+
+<span class="kw">const</span> <span class="var">viewer</span> <span class="op">=</span> <span class="kw">new</span> <span class="typ">Cesium</span>.<span class="typ">Viewer</span>(<span class="str">'cesiumContainer'</span>);
+</code></pre>
+    </div>
+
+    <div class="warn">
+      <span class="icon">&#9888;&#65039;</span>
+      <div><strong>没有 Token 的后果：</strong>地球会显示为纯色球体（没有卫星图），地形也会缺失。虽然可以切换到 OpenStreetMap 等免费底图——但地形渲染仍然需要 Ion。所以<strong>先注册，拿到 token</strong>，这是第一步。</div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 5: Hello Earth                                         -->
+  <!-- ============================================================ -->
+  <div class="section" id="s5">
+    <div class="section-header">
+      <div class="section-num">5</div>
+      <h2>Hello Earth：第一个 CesiumJS 程序</h2>
+      <span class="tag">实战</span>
+    </div>
+
+    <div class="card">
+      <h3>&#127758; 最小化完整示例</h3>
+      <p>创建一个 HTML 文件，复制以下代码，用浏览器打开就能看到旋转的地球：</p>
+<pre><code><span class="op">&lt;!</span><span class="kw">DOCTYPE</span> <span class="var">html</span><span class="op">&gt;</span>
+<span class="op">&lt;</span><span class="var">html</span> <span class="var">lang</span><span class="op">=</span><span class="str">"zh-CN"</span><span class="op">&gt;</span>
+<span class="op">&lt;</span><span class="var">head</span><span class="op">&gt;</span>
+  <span class="op">&lt;</span><span class="var">meta</span> <span class="var">charset</span><span class="op">=</span><span class="str">"UTF-8"</span><span class="op">&gt;</span>
+  <span class="op">&lt;</span><span class="var">title</span><span class="op">&gt;</span>Hello CesiumJS!<span class="op">&lt;/</span><span class="var">title</span><span class="op">&gt;</span>
+  <span class="op">&lt;</span><span class="var">link</span> <span class="var">rel</span><span class="op">=</span><span class="str">"stylesheet"</span>
+        <span class="var">href</span><span class="op">=</span><span class="str">"https://cesium.com/downloads/cesiumjs/releases/1.121/Build/Cesium/Widgets/widgets.css"</span><span class="op">&gt;</span>
+  <span class="op">&lt;</span><span class="var">style</span><span class="op">&gt;</span>
+    <span class="var">html</span>, <span class="var">body</span>, <span class="var">#cesiumContainer</span> {
+      <span class="var">width</span>: <span class="num">100</span><span class="str">%; height: 100%; margin: 0; padding: 0; overflow: hidden;
+    }
+  &lt;/</span><span class="var">style</span><span class="op">&gt;</span>
+<span class="op">&lt;/</span><span class="var">head</span><span class="op">&gt;</span>
+<span class="op">&lt;</span><span class="var">body</span><span class="op">&gt;</span>
+  <span class="op">&lt;</span><span class="var">div</span> <span class="var">id</span><span class="op">=</span><span class="str">"cesiumContainer"</span><span class="op">&gt;&lt;/</span><span class="var">div</span><span class="op">&gt;</span>
+
+  <span class="op">&lt;</span><span class="var">script</span> <span class="var">src</span><span class="op">=</span><span class="str">"https://cesium.com/downloads/cesiumjs/releases/1.121/Build/Cesium/Cesium.js"</span><span class="op">&gt;</span>
+  <span class="op">&lt;/</span><span class="var">script</span><span class="op">&gt;</span>
+
+  <span class="op">&lt;</span><span class="var">script</span><span class="op">&gt;</span>
+    <span class="cmt">// 1. 设置 Token（用自己的 token 替换！）</span>
+    <span class="typ">Cesium</span>.<span class="var">Ion</span>.<span class="var">defaultAccessToken</span> <span class="op">=</span>
+      <span class="str">'你的 Ion Token'</span>;
+
+    <span class="cmt">// 2. 创建 Viewer</span>
+    <span class="kw">const</span> <span class="var">viewer</span> <span class="op">=</span> <span class="kw">new</span> <span class="typ">Cesium</span>.<span class="typ">Viewer</span>(<span class="str">'cesiumContainer'</span>);
+
+    <span class="cmt">// 3. (可选) 飞到中国上空</span>
+    <span class="var">viewer</span>.<span class="var">camera</span>.<span class="fn">flyTo</span>({
+      <span class="var">destination</span>: <span class="typ">Cesium</span>.<span class="typ">Cartesian3</span>.<span class="fn">fromDegrees</span>(
+        <span class="num">104.0</span>,  <span class="cmt">// 经度：中国中心</span>
+        <span class="num">35.0</span>,   <span class="cmt">// 纬度：中国中心</span>
+        <span class="num">10000000</span> <span class="cmt">// 1 万公里高度（看到整个中国）</span>
+      ),
+      <span class="var">duration</span>: <span class="num">3</span>
+    });
+
+    <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">'&#127758; 地球已就绪！'</span>);
+  <span class="op">&lt;/</span><span class="var">script</span><span class="op">&gt;</span>
+<span class="op">&lt;/</span><span class="var">body</span><span class="op">&gt;</span>
+<span class="op">&lt;/</span><span class="var">html</span><span class="op">&gt;</span>
+</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>&#128295; Viewer 常用配置项</h3>
+      <p>创建 Viewer 时可以传入第二个参数——一个配置对象，控制显示哪些默认 UI 控件：</p>
+<pre><code><span class="kw">const</span> <span class="var">viewer</span> <span class="op">=</span> <span class="kw">new</span> <span class="typ">Cesium</span>.<span class="typ">Viewer</span>(<span class="str">'cesiumContainer'</span>, {
+  <span class="var">animation</span>:       <span class="kw">false</span>,   <span class="cmt">// 隐藏底部动画控件</span>
+  <span class="var">timeline</span>:        <span class="kw">false</span>,   <span class="cmt">// 隐藏时间轴</span>
+  <span class="var">baseLayerPicker</span>: <span class="kw">false</span>,   <span class="cmt">// 隐藏底图选择器</span>
+  <span class="var">geocoder</span>:        <span class="kw">false</span>,   <span class="cmt">// 隐藏地名搜索框</span>
+  <span class="var">homeButton</span>:      <span class="kw">false</span>,   <span class="cmt">// 隐藏 Home 按钮</span>
+  <span class="var">sceneModePicker</span>:  <span class="kw">false</span>,   <span class="cmt">// 隐藏 2D/3D 切换按钮</span>
+  <span class="var">navigationHelpButton</span>: <span class="kw">false</span>, <span class="cmt">// 隐藏帮助按钮</span>
+  <span class="var">fullscreenButton</span>: <span class="kw">false</span>,   <span class="cmt">// 隐藏全屏按钮</span>
+  <span class="var">infoBox</span>:         <span class="kw">false</span>,   <span class="cmt">// 隐藏信息框（点击实体默认弹出）</span>
+  <span class="var">selectionIndicator</span>: <span class="kw">false</span>, <span class="cmt">// 隐藏选择指示器</span>
+  <span class="cmt">// 也可以保留部分，按需选择</span>
+});
+</code></pre>
+    </div>
+
+    <div class="tip">
+      <span class="icon">&#128161;</span>
+      <div><strong>开发阶段建议：</strong>先全部 <code>false</code>，自己通过代码控制一切。等熟悉了再根据需要打开某些控件。</div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 6: 底图与地形                                          -->
+  <!-- ============================================================ -->
+  <div class="section" id="s6">
+    <div class="section-header">
+      <div class="section-num">6</div>
+      <h2>底图与地形：ImageryLayer & Terrain</h2>
+      <span class="tag">地图</span>
+    </div>
+
+    <div class="card">
+      <h3>&#127912; 底图（ImageryLayer）— 地球的"皮肤"</h3>
+      <p>底图是覆盖在地球表面的影像——卫星图、街道图、地形图等。你可以叠加多层底图，上层透明的地方会露出下层。</p>
+<pre><code><span class="cmt">// 方法 1：创建时指定（替换默认 Bing Maps）</span>
+<span class="kw">const</span> <span class="var">viewer</span> <span class="op">=</span> <span class="kw">new</span> <span class="typ">Cesium</span>.<span class="typ">Viewer</span>(<span class="str">'cesiumContainer'</span>, {
+  <span class="var">imageryProvider</span>: <span class="kw">new</span> <span class="typ">Cesium</span>.<span class="typ">UrlTemplateImageryProvider</span>({
+    <span class="var">url</span>: <span class="str">'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'</span>
+  })
+});
+
+<span class="cmt">// 方法 2：动态添加/替换图层</span>
+<span class="kw">const</span> <span class="var">layer</span> <span class="op">=</span> <span class="var">viewer</span>.<span class="var">imageryLayers</span>.<span class="fn">addImageryProvider</span>(
+  <span class="kw">new</span> <span class="typ">Cesium</span>.<span class="typ">UrlTemplateImageryProvider</span>({
+    <span class="var">url</span>: <span class="str">'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'</span>
+  })
+);
+</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>&#9968;&#65039; 常用底图源一览</h3>
+      <table>
+        <tr><th>底图</th><th>Provider 类</th><th>说明</th></tr>
+        <tr>
+          <td class="td-kw">Bing Maps</td>
+          <td class="td-type">BingMapsImageryProvider</td>
+          <td>默认底图，有卫星/道路/混合模式，需 token</td>
+        </tr>
+        <tr>
+          <td class="td-kw">OpenStreetMap</td>
+          <td class="td-type">OpenStreetMapImageryProvider</td>
+          <td class="td-good">免费，街道图，初学者友好</td>
+        </tr>
+        <tr>
+          <td class="td-kw">ArcGIS</td>
+          <td class="td-type">ArcGisMapServerImageryProvider</td>
+          <td>Esri 提供的全球影像</td>
+        </tr>
+        <tr>
+          <td class="td-kw">天地图（中国）</td>
+          <td class="td-type">UrlTemplateImageryProvider</td>
+          <td>中国地区精度更高，需申请 key</td>
+        </tr>
+        <tr>
+          <td class="td-kw">自定义瓦片</td>
+          <td class="td-type">UrlTemplateImageryProvider</td>
+          <td class="td-good">任意 XYZ/TMS 瓦片服务</td>
+        </tr>
+        <tr>
+          <td class="td-kw">单张图片</td>
+          <td class="td-type">SingleTileImageryProvider</td>
+          <td>覆盖全球的一张图</td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3>&#9968;&#65039; 地形（Terrain）— 地球的"骨架"</h3>
+      <p>地形决定了地球表面的起伏——从平面球体变成有山脉和峡谷的真实地球。</p>
+<pre><code><span class="cmt">// 添加 Cesium World Terrain（全球高精度地形，需要 Ion Token）</span>
+<span class="var">viewer</span>.<span class="var">terrainProvider</span> <span class="op">=</span> <span class="kw">await</span> <span class="typ">Cesium</span>.<span class="fn">createWorldTerrainAsync</span>({
+  <span class="var">requestWaterMask</span>: <span class="kw">true</span>,     <span class="cmt">// 请求水面遮罩（海洋有光泽效果）</span>
+  <span class="var">requestVertexNormals</span>: <span class="kw">true</span> <span class="cmt">// 请求法线（更好的光照效果）</span>
+});
+
+<span class="cmt">// 无地形的默认模式（平滑球体）</span>
+<span class="var">viewer</span>.<span class="var">terrainProvider</span> <span class="op">=</span> <span class="kw">new</span> <span class="typ">Cesium</span>.<span class="typ">EllipsoidTerrainProvider</span>();
+</code></pre>
+    </div>
+
+    <div class="info">
+      <span class="icon">&#128161;</span>
+      <div><strong>多图层叠加：</strong><code>viewer.imageryLayers</code> 是一个有序的图层列表。你可以同时显示卫星图 + 行政边界 + 交通路网——底层是卫星图，上面叠半透明的边界和路网。这使得 CesiumJS 远超普通二维地图。</div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 7: 相机控制                                            -->
+  <!-- ============================================================ -->
+  <div class="section" id="s7">
+    <div class="section-header">
+      <div class="section-num">7</div>
+      <h2>相机控制：飞到地球上任何一个角落</h2>
+      <span class="tag">视角</span>
+    </div>
+
+    <div class="card">
+      <h3>&#9992;&#65039; 四种移动相机的方式</h3>
+      <table>
+        <tr><th>方式</th><th>API</th><th>特点</th></tr>
+        <tr>
+          <td class="td-kw">瞬间跳转</td>
+          <td class="td-type">camera.setView()</td>
+          <td>立即切换视角，无动画</td>
+        </tr>
+        <tr>
+          <td class="td-kw">飞行</td>
+          <td class="td-type">camera.flyTo()</td>
+          <td class="td-good">带弧线动画飞过去，推荐</td>
+        </tr>
+        <tr>
+          <td class="td-kw">缩放</td>
+          <td class="td-type">camera.zoomIn() / zoomOut()</td>
+          <td>基于当前位置缩放</td>
+        </tr>
+        <tr>
+          <td class="td-kw">看向某点</td>
+          <td class="td-type">camera.lookAt()</td>
+          <td>保持当前位置，朝向某点</td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3>&#128640; flyTo 的完整参数</h3>
+<pre><code><span class="var">viewer</span>.<span class="var">camera</span>.<span class="fn">flyTo</span>({
+  <span class="cmt">// destination：飞到哪里</span>
+  <span class="var">destination</span>: <span class="typ">Cesium</span>.<span class="typ">Cartesian3</span>.<span class="fn">fromDegrees</span>(
+    <span class="num">121.4737</span>,  <span class="cmt">// 经度 — 上海</span>
+    <span class="num">31.2304</span>,   <span class="cmt">// 纬度 — 上海</span>
+    <span class="num">3000</span>       <span class="cmt">// 高度（米）</span>
+  ),
+
+  <span class="cmt">// orientation：以什么姿态看（可选）</span>
+  <span class="var">orientation</span>: {
+    <span class="var">heading</span>: <span class="typ">Cesium</span>.<span class="typ">Math</span>.<span class="fn">toRadians</span>(<span class="num">90</span>),   <span class="cmt">// 朝东看</span>
+    <span class="var">pitch</span>:   <span class="typ">Cesium</span>.<span class="typ">Math</span>.<span class="fn">toRadians</span>(<span class="op">-</span><span class="num">60</span>),<span class="cmt">// 向下 60 度</span>
+    <span class="var">roll</span>:    <span class="num">0</span>
+  },
+
+  <span class="var">duration</span>: <span class="num">3</span>,           <span class="cmt">// 飞行时长（秒）</span>
+  <span class="var">easingFunction</span>: <span class="typ">Cesium</span>.<span class="typ">EasingFunction</span>.<span class="var">QUADRATIC_IN_OUT</span>
+});
+
+<span class="cmt">// 常用高度参考：</span>
+<span class="cmt">// 1000m     — 城市级（俯视城区）</span>
+<span class="cmt">// 10000m    — 省级（看到整个省份）</span>
+<span class="cmt">// 100000m   — 国家级</span>
+<span class="cmt">// 10000000m — 全球视角</span>
+<span class="cmt">// 25000000m — 能看到半个地球</span>
+</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>&#127760; 飞到世界各地的示例</h3>
+<pre><code><span class="cmt">// 飞到北京</span>
+<span class="var">viewer</span>.<span class="var">camera</span>.<span class="fn">flyTo</span>({
+  <span class="var">destination</span>: <span class="typ">Cesium</span>.<span class="typ">Cartesian3</span>.<span class="fn">fromDegrees</span>(<span class="num">116.3974</span>, <span class="num">39.9093</span>, <span class="num">5000</span>)
+});
+
+<span class="cmt">// 飞到纽约</span>
+<span class="var">viewer</span>.<span class="var">camera</span>.<span class="fn">flyTo</span>({
+  <span class="var">destination</span>: <span class="typ">Cesium</span>.<span class="typ">Cartesian3</span>.<span class="fn">fromDegrees</span>(<span class="op">-</span><span class="num">74.0060</span>, <span class="num">40.7128</span>, <span class="num">8000</span>)
+});
+
+<span class="cmt">// 飞到珠穆朗玛峰</span>
+<span class="var">viewer</span>.<span class="var">camera</span>.<span class="fn">flyTo</span>({
+  <span class="var">destination</span>: <span class="typ">Cesium</span>.<span class="typ">Cartesian3</span>.<span class="fn">fromDegrees</span>(<span class="num">86.9250</span>, <span class="num">27.9881</span>, <span class="num">20000</span>)
+});
+
+<span class="cmt">// 飞到南海（曾母暗沙）</span>
+<span class="var">viewer</span>.<span class="var">camera</span>.<span class="fn">flyTo</span>({
+  <span class="var">destination</span>: <span class="typ">Cesium</span>.<span class="typ">Cartesian3</span>.<span class="fn">fromDegrees</span>(<span class="num">112.0</span>, <span class="num">4.0</span>, <span class="num">300000</span>)
+});
+</code></pre>
+    </div>
+
+    <div class="tip">
+      <span class="icon">&#128161;</span>
+      <div><strong>鼠标控制（无需代码）：</strong>左键拖拽=旋转地球、右键拖拽=缩放、中键拖拽=平移。这些是 Viewer 自带的交互，你的用户不需要写一行代码就能浏览全球。</div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 8: 第一个 Entity                                       -->
+  <!-- ============================================================ -->
+  <div class="section" id="s8">
+    <div class="section-header">
+      <div class="section-num">8</div>
+      <h2>添加第一个 Entity：点、线、标注</h2>
+      <span class="tag">实战</span>
+    </div>
+
+    <div class="card">
+      <h3>&#128205; 综合示例：在地球上标记五个中国城市</h3>
+<pre><code><span class="cmt">// 中国五大城市坐标</span>
+<span class="kw">const</span> <span class="var">cities</span> <span class="op">=</span> [
+  { <span class="var">name</span>: <span class="str">'北京'</span>,   <span class="var">lng</span>: <span class="num">116.3974</span>, <span class="var">lat</span>: <span class="num">39.9093</span>,  <span class="var">color</span>: <span class="typ">Cesium</span>.<span class="typ">Color</span>.<span class="var">RED</span> },
+  { <span class="var">name</span>: <span class="str">'上海'</span>,   <span class="var">lng</span>: <span class="num">121.4737</span>, <span class="var">lat</span>: <span class="num">31.2304</span>,  <span class="var">color</span>: <span class="typ">Cesium</span>.<span class="typ">Color</span>.<span class="var">BLUE</span> },
+  { <span class="var">name</span>: <span class="str">'广州'</span>,   <span class="var">lng</span>: <span class="num">113.2644</span>, <span class="var">lat</span>: <span class="num">23.1291</span>,  <span class="var">color</span>: <span class="typ">Cesium</span>.<span class="typ">Color</span>.<span class="var">GREEN</span> },
+  { <span class="var">name</span>: <span class="str">'成都'</span>,   <span class="var">lng</span>: <span class="num">104.0665</span>, <span class="var">lat</span>: <span class="num">30.5728</span>,  <span class="var">color</span>: <span class="typ">Cesium</span>.<span class="typ">Color</span>.<span class="var">YELLOW</span> },
+  { <span class="var">name</span>: <span class="str">'乌鲁木齐'</span>, <span class="var">lng</span>: <span class="num">87.6168</span>,  <span class="var">lat</span>: <span class="num">43.8256</span>,  <span class="var">color</span>: <span class="typ">Cesium</span>.<span class="typ">Color</span>.<span class="var">ORANGE</span> }
+];
+
+<span class="var">cities</span>.<span class="fn">forEach</span>((<span class="var">city</span>, <span class="var">index</span>) <span class="op">=&gt;</span> {
+  <span class="var">viewer</span>.<span class="var">entities</span>.<span class="fn">add</span>({
+    <span class="var">name</span>: <span class="var">city</span>.<span class="var">name</span>,
+    <span class="var">position</span>: <span class="typ">Cesium</span>.<span class="typ">Cartesian3</span>.<span class="fn">fromDegrees</span>(<span class="var">city</span>.<span class="var">lng</span>, <span class="var">city</span>.<span class="var">lat</span>),
+    <span class="var">point</span>: {
+      <span class="var">pixelSize</span>: <span class="num">10</span>,
+      <span class="var">color</span>: <span class="var">city</span>.<span class="var">color</span>
+    },
+    <span class="var">label</span>: {
+      <span class="var">text</span>: <span class="var">city</span>.<span class="var">name</span>,
+      <span class="var">font</span>: <span class="str">'14px sans-serif'</span>,
+      <span class="var">fillColor</span>: <span class="typ">Cesium</span>.<span class="typ">Color</span>.<span class="var">WHITE</span>,
+      <span class="var">outlineColor</span>: <span class="typ">Cesium</span>.<span class="typ">Color</span>.<span class="var">BLACK</span>,
+      <span class="var">outlineWidth</span>: <span class="num">2</span>,
+      <span class="var">style</span>: <span class="typ">Cesium</span>.<span class="typ">LabelStyle</span>.<span class="var">FILL_AND_OUTLINE</span>,
+      <span class="var">verticalOrigin</span>: <span class="typ">Cesium</span>.<span class="typ">VerticalOrigin</span>.<span class="var">BOTTOM</span>,
+      <span class="var">pixelOffset</span>: <span class="kw">new</span> <span class="typ">Cesium</span>.<span class="typ">Cartesian2</span>(<span class="num">0</span>, <span class="op">-</span><span class="num">12</span>)
+    }
+  });
+});
+
+<span class="cmt">// 飞到能看见所有城市的视角</span>
+<span class="var">viewer</span>.<span class="var">camera</span>.<span class="fn">flyTo</span>({
+  <span class="var">destination</span>: <span class="typ">Cesium</span>.<span class="typ">Cartesian3</span>.<span class="fn">fromDegrees</span>(<span class="num">104.0</span>, <span class="num">35.0</span>, <span class="num">5000000</span>)
+});
+</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>&#128207; Entity 的更多图形类型预览</h3>
+      <div class="grid-2">
+        <div>
+<pre><code><span class="cmt">// 线 (Polyline)</span>
+<span class="var">viewer</span>.<span class="var">entities</span>.<span class="fn">add</span>({
+  <span class="var">polyline</span>: {
+    <span class="var">positions</span>: <span class="typ">Cesium</span>.<span class="typ">Cartesian3</span>.<span class="fn">fromDegreesArray</span>([
+      <span class="num">116.39</span>, <span class="num">39.91</span>,   <span class="cmt">// 北京</span>
+      <span class="num">121.47</span>, <span class="num">31.23</span>    <span class="cmt">// 上海</span>
+    ]),
+    <span class="var">width</span>: <span class="num">3</span>,
+    <span class="var">material</span>: <span class="typ">Cesium</span>.<span class="typ">Color</span>.<span class="var">CYAN</span>
+  }
+});
+</code></pre>
+        </div>
+        <div>
+<pre><code><span class="cmt">// 多边形 (Polygon)</span>
+<span class="var">viewer</span>.<span class="var">entities</span>.<span class="fn">add</span>({
+  <span class="var">polygon</span>: {
+    <span class="var">hierarchy</span>: <span class="typ">Cesium</span>.<span class="typ">Cartesian3</span>.<span class="fn">fromDegreesArray</span>([
+      <span class="num">116.0</span>, <span class="num">39.5</span>,
+      <span class="num">117.0</span>, <span class="num">39.5</span>,
+      <span class="num">117.0</span>, <span class="num">40.5</span>,
+      <span class="num">116.0</span>, <span class="num">40.5</span>
+    ]),
+    <span class="var">material</span>: <span class="typ">Cesium</span>.<span class="typ">Color</span>.<span class="var">RED</span>.<span class="fn">withAlpha</span>(<span class="num">0.3</span>),
+    <span class="var">outline</span>: <span class="kw">true</span>,
+    <span class="var">outlineColor</span>: <span class="typ">Cesium</span>.<span class="typ">Color</span>.<span class="var">RED</span>
+  }
+});
+</code></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 9: JS 基础如何支撑 CesiumJS                              -->
+  <!-- ============================================================ -->
+  <div class="section" id="s9">
+    <div class="section-header">
+      <div class="section-num">9</div>
+      <h2>JavaScript 基础如何支撑 CesiumJS</h2>
+      <span class="tag">关联</span>
+    </div>
+
+    <div class="card">
+      <h3>&#128279; 过去 12 天的知识点——今天全部用上了</h3>
+      <p>回头看看，你会发现 CesiumJS 开发中用到的就是你在前面 12 天学到的所有 JS 知识：</p>
+      <table>
+        <tr><th>知识点</th><th>在 CesiumJS 中的体现</th></tr>
+        <tr>
+          <td class="td-kw">变量/对象</td>
+          <td><code>viewer.entities.add({ position: ..., point: {...} })</code> — 大量配置对象</td>
+        </tr>
+        <tr>
+          <td class="td-kw">数组/forEach</td>
+          <td>批量添加城市标记——上面 cities.forEach 的例子</td>
+        </tr>
+        <tr>
+          <td class="td-kw">控制流 if/else</td>
+          <td>根据条件决定是否显示某些图层；判断相机高度切换细节级别</td>
+        </tr>
+        <tr>
+          <td class="td-kw">函数/类</td>
+          <td>封装自己的工具函数：flyToCity(), addMarker() 等</td>
+        </tr>
+        <tr>
+          <td class="td-kw">ES6 解构/模板字符串</td>
+          <td><code>const {lng, lat} = city; `飞到${name}`</code></td>
+        </tr>
+        <tr>
+          <td class="td-kw">异步 async/await</td>
+          <td><code>await Cesium.createWorldTerrainAsync()</code>、加载 GeoJSON/CZML</td>
+        </tr>
+        <tr>
+          <td class="td-kw">错误处理 try/catch</td>
+          <td>Token 无效时优雅降级；数据加载失败时显示备用底图</td>
+        </tr>
+        <tr>
+          <td class="td-kw">DOM 操作</td>
+          <td>创建自定义 UI 控件叠加在地球上（按钮、信息面板）</td>
+        </tr>
+        <tr>
+          <td class="td-kw">事件处理</td>
+          <td>click 事件选中 Entity；鼠标移动显示坐标；键盘控制飞行</td>
+        </tr>
+        <tr>
+          <td class="td-kw">浏览器 API</td>
+          <td>fetch 拉取 GeoJSON；Canvas/WebGL 渲染；Geolocation 定位</td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="info">
+      <span class="icon">&#128161;</span>
+      <div><strong>你现在已经具备了看懂任何一个 CesiumJS 项目代码的能力。</strong>CesiumJS 的 API 再多再复杂，本质上就是 JavaScript 对象的组合和调用——你掌握了语言本身，剩下的只是查文档和练习。接下来的每一天，你都会发现：哦，这不就是我学过的东西吗！</div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 10: 练习题                                             -->
+  <!-- ============================================================ -->
+  <div class="section" id="s10">
+    <div class="section-header">
+      <div class="section-num">10</div>
+      <h2>练习题</h2>
+      <span class="tag">练习</span>
+    </div>
+
+    <div class="practice">
+      <h2>&#9997;&#65039; 今日练习（3 道）</h2>
+      <p>这些题目侧重理解 CesiumJS 核心概念，部分可用伪代码回答。</p>
+
+      <div class="exercise">
+        <div class="q">&#9312; Viewer 配置：创建"极简版"地球</div>
+        <p style="color:var(--muted); margin-bottom:12px;">写一段代码，创建一个 Viewer：①隐藏所有默认 UI 控件；②使用 OpenStreetMap 作为底图；③设置默认的 Ion Token；④把地球基础色设为深蓝（当无影像时显示蓝色）。</p>
+<pre><code><span class="cmt">// TODO: 写一个极简版本的 Viewer 初始化</span>
+<span class="kw">const</span> <span class="var">viewer</span> <span class="op">=</span> <span class="kw">new</span> <span class="typ">Cesium</span>.<span class="typ">Viewer</span>(<span class="str">'cesiumContainer'</span>, {
+  <span class="cmt">// 你的代码</span>
+});
+</code></pre>
+<details class="exercise-hint" style="margin-top:12px;">
+<summary style="cursor:pointer;color:var(--accent2);font-size:13px;">&#128161; 点击查看提示</summary>
+<p style="color:var(--muted);margin-top:8px;font-size:13px;">需要用到：<code>animation:false, timeline:false, baseLayerPicker:false</code> 等 8 个配置项 + <code>imageryProvider: new Cesium.OpenStreetMapImageryProvider(...)</code> + <code>globe.baseColor</code>。</p>
+</details>
+      </div>
+
+      <div class="exercise">
+        <div class="q">&#9313; 相机漫游：设计一条"中国巡礼"航线</div>
+        <p style="color:var(--muted); margin-bottom:12px;">用 <code>flyTo</code> 依次访问北京(116.40, 39.90)、上海(121.47, 31.23)、广州(113.26, 23.13)、成都(104.07, 30.57)、乌鲁木齐(87.62, 43.83)。每个点飞 2 秒，间隔 3 秒自动飞到下一个。提示：可以用 <code>setTimeout</code> 或 <code>setInterval</code> 串行控制。</p>
+<pre><code><span class="cmt">// TODO: 实现中国城市巡礼漫游</span>
+<span class="kw">const</span> <span class="var">cities</span> <span class="op">=</span> [
+  { <span class="var">name</span>: <span class="str">'北京'</span>, <span class="var">lng</span>: <span class="num">116.40</span>, <span class="var">lat</span>: <span class="num">39.90</span> },
+  { <span class="var">name</span>: <span class="str">'上海'</span>, <span class="var">lng</span>: <span class="num">121.47</span>, <span class="var">lat</span>: <span class="num">31.23</span> },
+  <span class="cmt">// ...</span>
+];
+
+<span class="cmt">// 使用 for 循环 + 延时实现</span>
+</code></pre>
+      </div>
+
+      <div class="exercise">
+        <div class="q">&#9314; Entity 管理：实现 addMarker / removeMarker 函数</div>
+        <p style="color:var(--muted); margin-bottom:12px;">封装两个函数：<code>addMarker(viewer, id, lng, lat, name, color)</code> 添加一个带标签的点标记，返回 entity；<code>removeMarker(viewer, id)</code> 根据 id 删除标记。要求：标签在点的下方偏移 14 像素，标签有白色描边。</p>
+<pre><code><span class="cmt">// TODO: 实现</span>
+<span class="kw">function</span> <span class="fn">addMarker</span>(<span class="var">viewer</span>, <span class="var">id</span>, <span class="var">lng</span>, <span class="var">lat</span>, <span class="var">name</span>, <span class="var">color</span>) {
+  <span class="cmt">// 返回 entity</span>
+}
+
+<span class="kw">function</span> <span class="fn">removeMarker</span>(<span class="var">viewer</span>, <span class="var">id</span>) {
+  <span class="cmt">// 通过 id 获取 entity 并删除</span>
+}
+
+<span class="cmt">// 测试</span>
+<span class="kw">const</span> <span class="var">e1</span> <span class="op">=</span> <span class="fn">addMarker</span>(<span class="var">viewer</span>, <span class="str">'city-bj'</span>, <span class="num">116.40</span>, <span class="num">39.90</span>, <span class="str">'北京'</span>, <span class="typ">Cesium</span>.<span class="typ">Color</span>.<span class="var">RED</span>);
+<span class="fn">removeMarker</span>(<span class="var">viewer</span>, <span class="str">'city-bj'</span>);
+</code></pre>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 11: 交互沙盒                                           -->
+  <!-- ============================================================ -->
+  <div class="section" id="s11">
+    <div class="section-header">
+      <div class="section-num">11</div>
+      <h2>在线练习控制台</h2>
+      <span class="tag">动手</span>
+    </div>
+
+    <div class="console-area">
+      <div class="console-header">
+        <div class="console-dots">
+          <div class="dot dot-r"></div>
+          <div class="dot dot-y"></div>
+          <div class="dot dot-g"></div>
+        </div>
+        <span>&#128187; JavaScript 交互沙盒 (Ctrl+Enter 运行)</span>
+      </div>
+      <textarea id="sandbox-code" spellcheck="false">// ===== CesiumJS 概念实验区 =====
+// 在这里练习 CesiumJS 的核心 API 使用（伪代码也可，测试 JS 逻辑）
+
+// 示例 1：模拟坐标数组 → Cartesian3 转换
+// CesiumJS 中大量使用 fromDegreesArray 将 [lng,lat,lng,lat,...] 转为坐标
+function simulateFromDegreesArray(coords) {
+  const result = [];
+  for (let i = 0; i < coords.length; i += 2) {
+    result.push({
+      lng: coords[i],
+      lat: coords[i + 1]
+    });
+  }
+  return result;
+}
+
+const cities = [116.40, 39.90, 121.47, 31.23, 113.26, 23.13];
+console.log('城市坐标:', simulateFromDegreesArray(cities));
+
+// 示例 2：Entity 配置对象的工厂函数
+function createCityEntity(name, lng, lat, color) {
+  return {
+    name: name,
+    position: { lng, lat },  // 真实 CesiumJS 中会用 Cartesian3.fromDegrees
+    point: {
+      pixelSize: 10,
+      color: color
+    },
+    label: {
+      text: name,
+      font: '14px sans-serif',
+      fillColor: 'white',
+      outlineColor: 'black',
+      outlineWidth: 2,
+      style: 'FILL_AND_OUTLINE',
+      verticalOrigin: 'BOTTOM',
+      pixelOffset: [0, -12]
+    }
+  };
+}
+
+const beijingEntity = createCityEntity('北京', 116.40, 39.90, 'RED');
+console.log('Entity 配置对象:');
+console.log(JSON.stringify(beijingEntity, null, 2));
+
+// 示例 3：相机配置对象的默认值
+function createCameraConfig(lng, lat, height = 5000) {
+  return {
+    destination: { lng, lat, height },
+    orientation: {
+      heading: 0,     // Cesium.Math.toRadians(0)
+      pitch: -45,     // Cesium.Math.toRadians(-45)
+      roll: 0
+    },
+    duration: 3
+  };
+}
+
+console.log('\n相机配置:', createCameraConfig(121.47, 31.23, 8000));
+
+// ===== 自己动手 =====
+// 练 1：写一个函数，输入城市数组 [{name,lng,lat}]，返回 Entity 配置对象数组
+// 练 2：修改 simulateFromDegreesArray，也支持带高度的坐标 [lng,lat,alt,...]
+// 练 3：写一个简单的 Entity 注册表（Map），用 id 存取 Entity 配置对象</textarea>
+      <div class="console-actions">
+        <button class="btn btn-run" onclick="runCode()">&#9654; 运行</button>
+        <button class="btn btn-clear" onclick="clearOutput()">清空输出</button>
+        <button class="btn btn-clear" onclick="resetCode()">重置代码</button>
+      </div>
+      <div id="output-box">// 点击"运行"查看输出结果...</div>
+    </div>
+  </div>
+
+
+  <!-- 今日总结 -->
+  <div class="card" style="border-color:var(--accent);border-left-width:4px;">
+    <h3 style="color:var(--accent)">&#128203; 今日知识点总结</h3>
+    <ul style="margin-top:12px;">
+      <li>&#127758; CesiumJS 是基于 WebGL 的开源三维地球引擎，用来在浏览器中创建地理可视化应用</li>
+      <li>&#127758; <strong>核心架构：</strong>Viewer（总入口）→ Scene（3D 场景）+ Camera（视角）+ Globe（地球）+ ImageryLayers（图层）</li>
+      <li>&#127758; <strong>Entity vs Primitive：</strong>Entity 是高级 API（易用，90% 场景足够）；Primitive 是低级 API（高性能，海量数据场景）</li>
+      <li>&#127758; <strong>Viewer 配置：</strong>创建时可通过第二个参数控制 UI 控件显隐（animation/timeline/baseLayerPicker 等 10+ 开关）</li>
+      <li>&#127758; <strong>底图：</strong>默认 Bing Maps（需 Token）；可切换为 OpenStreetMap（免费）或其他地图瓦片服务</li>
+      <li>&#127758; <strong>地形：</strong>Cesium World Terrain 提供全球高精度地形；<code>createWorldTerrainAsync()</code> 异步加载</li>
+      <li>&#127758; <strong>相机：</strong><code>setView()</code> 瞬间跳转；<code>flyTo()</code> 带动画飞行（最常用）；高度单位是米</li>
+      <li>&#127758; <strong>Entity 添加：</strong><code>viewer.entities.add({ position, point/label/polyline/polygon/model... })</code></li>
+      <li>&#127758; <strong>Cesium Ion Token：</strong>使用 Cesium 服务的前置条件（底图/地形/3D Tiles），免费注册即可获得</li>
+      <li>&#127758; <strong>坐标系：</strong><code>Cartesian3.fromDegrees(lng, lat, height)</code> 将经纬度转为 Cesium 内部坐标</li>
+    </ul>
+  </div>
+
+  <!-- 新阶段里程碑 -->
+  <div class="card" style="border-color:var(--accent); border-left-width:4px; background:linear-gradient(135deg,#0d3321,#1a1d27);">
+    <h3 style="color:var(--accent)">&#127758; CesiumJS 三维地球阶段 — 正式开始！</h3>
+    <p style="margin-top:8px;">从今天起，你进入了全新的领域。12 天的 JavaScript 基础不是白学的——你现在写的每一个 <code>viewer.entities.add()</code> 都是在用你学过的对象、数组、函数知识。</p>
+    <p style="margin-top:8px;color:var(--accent3);"><strong>接下来的每一天，你都会离"构建自己的三维地球应用"更近一步。</strong></p>
+  </div>
+
+</div><!-- /container -->
+
+<!-- ===== FOOTER ===== -->
+<div class="footer">
+  <p>&#127758; <strong>每日JS</strong> — JavaScript &rarr; CesiumJS 学习路径</p>
+  <p style="margin-top:6px;">Day 13 / 认识 CesiumJS 与第一个三维地球 &middot; 明天继续：<strong>Entity 实体与几何体</strong></p>
+</div>
+
+
+<!-- ===== SCRIPT ===== -->
+<script>
+  const DEFAULT_CODE = document.getElementById('sandbox-code').value;
+
+  function runCode() {
+    const code = document.getElementById('sandbox-code').value;
+    const outputBox = document.getElementById('output-box');
+    const logs = [];
+
+    const origLog = console.log;
+    const origError = console.error;
+    const origWarn = console.warn;
+
+    console.log = (...args) => {
+      logs.push(args.map(a => {
+        if (typeof a === 'object' && a !== null) {
+          try { return JSON.stringify(a, null, 2); } catch { return String(a); }
+        }
+        return String(a);
+      }).join(' '));
+      origLog(...args);
+    };
+    console.error = (...args) => {
+      logs.push('\u274C ' + args.join(' '));
+      origError(...args);
+    };
+    console.warn = (...args) => {
+      logs.push('\u26A0\uFE0F ' + args.join(' '));
+      origWarn(...args);
+    };
+
+    try {
+      eval(code);
+      setTimeout(() => {
+        outputBox.innerHTML = logs.length
+          ? logs.map(l => '<span>' + escHtml(l) + '</span>').join('\n')
+          : '<span style="color:var(--muted)">// 代码执行完毕，无输出</span>';
+
+        console.log = origLog;
+        console.error = origError;
+        console.warn = origWarn;
+      }, 150);
+    } catch(e) {
+      outputBox.innerHTML = '<span class="err">\u274C ' + escHtml(e.message) + '</span>';
+      console.log = origLog;
+      console.error = origError;
+      console.warn = origWarn;
+    }
+
+    setTimeout(() => {
+      if (logs.length > 0) {
+        outputBox.innerHTML = logs.map(l => '<span>' + escHtml(l) + '</span>').join('\n');
+      }
+    }, 3000);
+  }
+
+  function clearOutput() {
+    document.getElementById('output-box').innerHTML = '// 输出已清空...';
+  }
+
+  function resetCode() {
+    document.getElementById('sandbox-code').value = DEFAULT_CODE;
+    clearOutput();
+  }
+
+  function escHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  document.getElementById('sandbox-code').addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      e.preventDefault();
+      runCode();
+    }
+  });
+</script>
+</body>
+</html>

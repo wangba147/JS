@@ -1,0 +1,1744 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>JavaScript 每日学习 — Day 18：数据源（DataSource）与交互</title>
+  <style>
+    /* ===== 全局 ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0f1117;
+      --surface:   #1a1d27;
+      --card:      #21253a;
+      --border:    #2e3350;
+      --accent:    #2dd4bf;
+      --accent2:   #f7c948;
+      --accent3:   #7ee787;
+      --accent4:   #818cf8;
+      --text:      #cdd3e0;
+      --muted:     #6e7a96;
+      --tag-bg:    #0d3321;
+      --code-bg:   #161b2e;
+    }
+
+    body {
+      font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.75;
+      font-size: 15px;
+    }
+
+    /* ===== 顶部 Banner ===== */
+    .hero {
+      background: linear-gradient(135deg, #1e1b3a 0%, #2d2252 50%, #1e1b3a 100%);
+      border-bottom: 1px solid #3b3580;
+      padding: 52px 24px 40px;
+      text-align: center;
+    }
+    .hero .badge {
+      display: inline-block;
+      background: var(--accent4);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 4px 12px;
+      border-radius: 20px;
+      margin-bottom: 16px;
+    }
+    .hero h1 {
+      font-size: clamp(24px, 5vw, 42px);
+      font-weight: 800;
+      color: #fff;
+      line-height: 1.2;
+      margin-bottom: 12px;
+    }
+    .hero h1 span { color: var(--accent4); }
+    .hero p {
+      color: var(--muted);
+      font-size: 15px;
+      max-width: 640px;
+      margin: 0 auto 24px;
+    }
+    .hero .meta {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      flex-wrap: wrap;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .hero .meta span { display: flex; align-items: center; gap: 5px; }
+
+    /* ===== 布局 ===== */
+    .container { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; }
+
+    /* ===== 目录卡片 ===== */
+    .toc {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--accent4);
+      border-radius: 12px;
+      padding: 24px 28px;
+      margin-bottom: 40px;
+    }
+    .toc h2 { font-size: 14px; letter-spacing: 1px; text-transform: uppercase; color: var(--accent4); margin-bottom: 14px; }
+    .toc ol { padding-left: 20px; }
+    .toc li { margin: 6px 0; }
+    .toc a { color: var(--text); text-decoration: none; }
+    .toc a:hover { color: var(--accent4); }
+
+    /* ===== 章节标题 ===== */
+    .section { margin-bottom: 52px; }
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 24px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    .section-num {
+      width: 38px; height: 38px;
+      border-radius: 10px;
+      background: var(--accent4);
+      color: #fff;
+      font-weight: 800;
+      font-size: 16px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .section-header h2 {
+      font-size: 22px;
+      font-weight: 700;
+      color: #fff;
+    }
+    .section-header .tag {
+      font-size: 11px;
+      background: #1e1b4b;
+      color: var(--accent4);
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    /* ===== 卡片 ===== */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+    .card h3 {
+      font-size: 16px;
+      color: var(--accent2);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card p { margin-bottom: 10px; color: var(--text); }
+    .card p:last-child { margin-bottom: 0; }
+
+    /* ===== 代码块 ===== */
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px 22px;
+      overflow-x: auto;
+      margin: 16px 0;
+      font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+      font-size: 13.5px;
+      line-height: 1.7;
+    }
+    code { font-family: inherit; }
+
+    /* 语法着色 */
+    .kw  { color: #c792ea; }
+    .str { color: #c3e88d; }
+    .num { color: #f78c6c; }
+    .cmt { color: #546e7a; font-style: italic; }
+    .fn  { color: #82aaff; }
+    .var { color: #eeffff; }
+    .op  { color: var(--accent4); }
+    .typ { color: var(--accent2); }
+    .out { color: var(--accent3); }
+    .prp { color: #ffcb6b; }
+    .ces { color: #818cf8; font-weight: 600; }
+
+    /* ===== 提示框 ===== */
+    .tip, .warn, .info {
+      border-radius: 10px;
+      padding: 14px 18px;
+      margin: 16px 0;
+      font-size: 14px;
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+    .tip  { background: #0d3321; border-left: 4px solid var(--accent3); }
+    .warn { background: #3a2500; border-left: 4px solid var(--accent2); }
+    .info { background: #1e1b4b; border-left: 4px solid var(--accent4); }
+
+    /* ===== 对比表格 ===== */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 14px;
+    }
+    th {
+      background: var(--surface);
+      color: var(--accent4);
+      padding: 12px 16px;
+      text-align: left;
+      border-bottom: 2px solid var(--border);
+      font-weight: 600;
+    }
+    td {
+      padding: 11px 16px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+      vertical-align: top;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(129, 140, 248, 0.04); }
+    .td-kw { color: #c792ea; font-family: 'Cascadia Code','Fira Code',monospace; font-weight: 600; }
+    .td-type { color: var(--accent2); }
+    .td-good { color: var(--accent3); }
+    .td-bad  { color: #ff7b72; }
+
+    /* ===== 两列网格 ===== */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 600px) { .grid-2 { grid-template-columns: 1fr; } }
+
+    /* ===== 大卡片 ===== */
+    .big-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 28px;
+      margin-bottom: 20px;
+    }
+    .big-card h3 { font-size: 17px; color: var(--accent4); margin-bottom: 16px; }
+
+    /* ===== 流程图 ===== */
+    .flow-diagram {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 28px;
+      margin: 16px 0;
+      text-align: center;
+    }
+    .flow-row { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin: 6px 0; }
+    .flow-box {
+      padding: 10px 24px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      min-width: 160px;
+    }
+    .flow-arrow { color: var(--accent4); font-size: 20px; }
+    .fb-file  { background: #115542; border: 2px solid var(--accent); color: var(--accent); }
+    .fb-ds    { background: #1e1b4b; border: 2px solid var(--accent4); color: var(--accent4); }
+    .fb-entity { background: #3a2500; border: 2px solid var(--accent2); color: var(--accent2); }
+    .fb-view  { background: #161b2e; border: 1px solid var(--border); color: var(--muted); }
+
+    /* ===== inline code ===== */
+    p code, li code, td code {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      padding: 1px 6px;
+      border-radius: 5px;
+      font-family: 'Cascadia Code','Fira Code',monospace;
+      font-size: 12.5px;
+      color: var(--accent4);
+    }
+    ul { padding-left: 20px; }
+    li { margin: 5px 0; }
+
+    /* ===== 练习区 ===== */
+    .practice {
+      background: linear-gradient(135deg, #1e1b3a, #1a1a2d);
+      border: 1px solid #3b3580;
+      border-radius: 12px;
+      padding: 28px;
+      margin-top: 48px;
+    }
+    .practice h2 {
+      font-size: 20px;
+      color: var(--accent3);
+      margin-bottom: 8px;
+    }
+    .practice p { color: var(--muted); margin-bottom: 20px; font-size: 14px; }
+    .exercise {
+      background: var(--code-bg);
+      border: 1px dashed #3b3580;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+    .exercise .q {
+      color: var(--accent2);
+      font-weight: 600;
+      margin-bottom: 12px;
+      font-size: 14px;
+    }
+    .exercise pre { margin: 0; }
+
+    /* ===== 交互控制台 ===== */
+    .console-area {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-top: 48px;
+    }
+    .console-header {
+      background: var(--surface);
+      padding: 12px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+    .console-header span { color: var(--accent4); font-size: 13px; font-weight: 600; letter-spacing: 1px; }
+    .console-dots { display: flex; gap: 6px; }
+    .dot { width: 12px; height: 12px; border-radius: 50%; }
+    .dot-r { background: #ff5f57; }
+    .dot-y { background: #febc2e; }
+    .dot-g { background: #28c840; }
+    #sandbox-code {
+      width: 100%;
+      background: var(--code-bg);
+      color: var(--accent3);
+      border: none;
+      padding: 18px 20px;
+      font-family: 'Cascadia Code','Fira Code',monospace;
+      font-size: 13.5px;
+      line-height: 1.7;
+      resize: vertical;
+      min-height: 160px;
+      outline: none;
+    }
+    .console-actions {
+      padding: 12px 18px;
+      display: flex;
+      gap: 10px;
+      border-top: 1px solid var(--border);
+    }
+    .btn {
+      padding: 8px 20px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      transition: opacity .2s;
+    }
+    .btn:hover { opacity: .85; }
+    .btn-run { background: var(--accent4); color: #fff; }
+    .btn-clear { background: var(--surface); color: var(--muted); border: 1px solid var(--border); }
+    #output-box {
+      padding: 16px 20px;
+      min-height: 60px;
+      font-family: 'Cascadia Code','Fira Code',monospace;
+      font-size: 13px;
+      color: var(--accent3);
+      border-top: 1px solid var(--border);
+      white-space: pre-wrap;
+    }
+    #output-box .err { color: #ff7b72; }
+
+    /* ===== 进度条 ===== */
+    .progress-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 22px 26px;
+      margin-bottom: 40px;
+    }
+    .progress-card h3 { font-size: 13px; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); margin-bottom: 16px; }
+    .progress-list { display: flex; flex-wrap: wrap; gap: 8px; }
+    .progress-item {
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+    }
+    .pi-done  { background: #0d3321; color: var(--accent3); border: 1px solid #1a4d2a; }
+    .pi-js    { background: #1e1b4b; color: var(--accent4); border: 1px solid #312e81; }
+    .pi-today { background: #1e1b4b; color: var(--accent4); border: 1px solid var(--accent4); }
+    .pi-next  { background: var(--card); color: var(--muted); border: 1px solid var(--border); }
+
+    /* ===== footer ===== */
+    .footer {
+      text-align: center;
+      padding: 40px 24px 60px;
+      color: var(--muted);
+      font-size: 13px;
+      border-top: 1px solid var(--border);
+    }
+  </style>
+</head>
+<body>
+
+<!-- ===== HERO ===== -->
+<div class="hero">
+  <div class="badge">CesiumJS 学习路径 · 数据与交互篇</div>
+  <h1>Day 18 — <span>数据源（DataSource）与交互</span></h1>
+  <p>前五天你学会了搭建地球、放置实体、控制相机和叠加图层。但真实项目中的数据从哪来？GeoJSON、CZML、KML 文件如何一键加载？用户如何点击地球上的物体？今天深入 CesiumJS 的<strong>数据加载系统</strong>与<strong>交互机制</strong>——这是从"展示"到"应用"的关键一步。</p>
+  <div class="meta">
+    <span>&#128197; 第 18 天</span>
+    <span>&#9201; 预计 70 分钟</span>
+    <span>&#127758; CesiumJS 阶段 · 第 6 天</span>
+  </div>
+</div>
+
+<!-- ===== CONTAINER ===== -->
+<div class="container">
+
+  <!-- 学习进度 -->
+  <div class="progress-card">
+    <h3>&#128205; 学习路线图</h3>
+    <div class="progress-list">
+      <div class="progress-item pi-js">Day 01-12 · JS 基础完成 &#127881;</div>
+      <div class="progress-item pi-done">Day 13 · CesiumJS 入门</div>
+      <div class="progress-item pi-done">Day 14 · Entity 实体与几何体</div>
+      <div class="progress-item pi-done">Day 15 · 材质、贴图与 3D Tiles</div>
+      <div class="progress-item pi-done">Day 16 · 相机控制与视角管理</div>
+      <div class="progress-item pi-done">Day 17 · 地形与影像图层</div>
+      <div class="progress-item pi-today">Day 18 · 数据源与交互 &#8592; 今天</div>
+      <div class="progress-item pi-next">Day 19+ · 更多主题</div>
+    </div>
+  </div>
+
+  <!-- 目录 -->
+  <div class="toc">
+    <h2>&#128218; 本课目录</h2>
+    <ol>
+      <li><a href="#s1">为什么需要 DataSource</a></li>
+      <li><a href="#s2">DataSource 体系概览</a></li>
+      <li><a href="#s3">GeoJsonDataSource：矢量数据之王</a></li>
+      <li><a href="#s4">CzmlDataSource：时间动态数据</a></li>
+      <li><a href="#s5">KmlDataSource：Google Earth 数据</a></li>
+      <li><a href="#s6">CustomDataSource：自定义数据加载</a></li>
+      <li><a href="#s7">DataSourceCollection：统一管理</a></li>
+      <li><a href="#s8">交互事件：ScreenSpaceEventHandler</a></li>
+      <li><a href="#s9">拾取（Picking）：scene.pick / drillPick</a></li>
+      <li><a href="#s10">Entity 点击与悬停交互</a></li>
+      <li><a href="#s11">综合实战：交互式数据浏览器</a></li>
+      <li><a href="#s12">CesiumJS 关联场景</a></li>
+      <li><a href="#s13">练习题</a></li>
+      <li><a href="#s14">在线练习控制台</a></li>
+    </ol>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 1: 为什么需要 DataSource -->
+  <!-- ============================================================ -->
+  <div class="section" id="s1">
+    <div class="section-header">
+      <div class="section-num">1</div>
+      <h2>为什么需要 DataSource</h2>
+      <span class="tag">动机</span>
+    </div>
+
+    <div class="card">
+      <h3>&#129300; 两种加载数据的方式</h3>
+      <p>在 CesiumJS 中，把数据放到地球上<strong>有两种方式</strong>。理解两者的区别是今天所有内容的基础：</p>
+      <div class="grid-2">
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px;">
+          <h4 style="color:#ff7b72;margin-bottom:10px;">&#10060; 方式 A：手动逐条 add</h4>
+          <pre style="margin:0;font-size:12px;"><span class="cmt">// 加载 100 个城市点...</span>
+<span class="kw">for</span> (<span class="kw">const</span> <span class="var">city</span> <span class="kw">of</span> <span class="var">cities</span>) {
+  <span class="var">viewer</span>.<span class="var">entities</span>.<span class="fn">add</span>({
+    <span class="prp">position</span>: <span class="typ">Cesium.Cartesian3</span>.<span class="fn">fromDegrees</span>(<span class="var">city</span>.<span class="var">lon</span>, <span class="var">city</span>.<span class="var">lat</span>),
+    <span class="prp">point</span>: { <span class="prp">pixelSize</span>: <span class="num">10</span>, <span class="prp">color</span>: <span class="typ">Cesium.Color</span>.<span class="prp">RED</span> }
+  });
+}
+<span class="cmt">// 问题：无法统一删除、无法控制加载状态、</span>
+<span class="cmt">// 手动循环效率低、没有"数据源"概念</span></pre>
+        </div>
+        <div style="background:var(--surface);border:1px solid var(--accent3);border-radius:10px;padding:18px;">
+          <h4 style="color:var(--accent3);margin-bottom:10px;">&#9989; 方式 B：DataSource 批量加载</h4>
+          <pre style="margin:0;font-size:12px;"><span class="cmt">// 一行加载整个 GeoJSON 文件</span>
+<span class="kw">const</span> <span class="var">ds</span> = <span class="kw">await</span> <span class="typ">Cesium.GeoJsonDataSource</span>.<span class="fn">load</span>(
+  <span class="str">'data/cities.geojson'</span>,
+  { <span class="prp">stroke</span>: <span class="typ">Cesium.Color</span>.<span class="prp">WHITE</span> }
+);
+<span class="var">viewer</span>.<span class="var">dataSources</span>.<span class="fn">add</span>(<span class="var">ds</span>);
+<span class="cmt">// 优势：统一管理、自动解析、支持异步、</span>
+<span class="cmt">// 一键移除、支持 GeoJSON/CZML/KML 等格式</span></pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>&#128161; DataSource 的核心价值</h3>
+      <table>
+        <tr><th>特性</th><th>手动 Entity.add()</th><th>DataSource</th></tr>
+        <tr>
+          <td>批量加载</td>
+          <td class="td-bad">手动循环</td>
+          <td class="td-good">自动解析，一行代码</td>
+        </tr>
+        <tr>
+          <td>标准格式</td>
+          <td class="td-bad">需自行解析</td>
+          <td class="td-good">原生支持 GeoJSON/CZML/KML</td>
+        </tr>
+        <tr>
+          <td>统一移除</td>
+          <td class="td-bad">逐条 remove</td>
+          <td class="td-good">dataSources.remove(ds) 一键清</td>
+        </tr>
+        <tr>
+          <td>加载状态</td>
+          <td class="td-bad">手动管理</td>
+          <td class="td-good">isLoading / loadingEvent</td>
+        </tr>
+        <tr>
+          <td>错误处理</td>
+          <td class="td-bad">需自行 try/catch</td>
+          <td class="td-good">errorEvent 事件</td>
+        </tr>
+        <tr>
+          <td>动态更新</td>
+          <td class="td-bad">手动修改属性</td>
+          <td class="td-good">CZML 原生支持时间序列</td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="info">
+      <span>&#128161;</span>
+      <span><strong>一句话理解：</strong>DataSource 是 Entity 的<strong>批量工厂</strong>。它读取标准格式数据文件，自动创建并管理一系列 Entity。你不需要关心每个 Entity 怎么创建，只需要告诉 DataSource "加载这个文件"，它会自动完成所有事情。</span>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 2: DataSource 体系概览 -->
+  <!-- ============================================================ -->
+  <div class="section" id="s2">
+    <div class="section-header">
+      <div class="section-num">2</div>
+      <h2>DataSource 体系概览</h2>
+      <span class="tag">架构</span>
+    </div>
+
+    <div class="card">
+      <h3>&#128300; CesiumJS DataSource 类层级</h3>
+      <div class="flow-diagram">
+        <div class="flow-row">
+          <div class="flow-box fb-view">DataSource（抽象接口）<br><small>定义了 show / entities / isLoading / update()</small></div>
+        </div>
+        <div class="flow-row">
+          <div class="flow-arrow" style="font-size:14px;">&#8600;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#8595;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#8601;</div>
+        </div>
+        <div class="flow-row">
+          <div class="flow-box fb-file">GeoJsonDataSource<br><small>GeoJSON / TopoJSON</small></div>
+          <div class="flow-box fb-ds">CzmlDataSource<br><small>CZML 时间序列</small></div>
+          <div class="flow-box fb-entity">KmlDataSource<br><small>KML / KMZ</small></div>
+        </div>
+        <div class="flow-row">
+          <div class="flow-arrow" style="font-size:14px;">&#8595;</div>
+          <div class="flow-arrow" style="font-size:14px;">&#8595;</div>
+          <div class="flow-arrow" style="font-size:14px;">&#8595;</div>
+        </div>
+        <div class="flow-row">
+          <div class="flow-box fb-view">CustomDataSource<br><small>用户自定义 Entity 集合</small></div>
+          <div class="flow-box fb-view">（可扩展）<br><small>实现 DataSource 接口</small></div>
+          <div class="flow-box fb-view">viewer.dataSources<br><small>DataSourceCollection</small></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>&#128451; 四种内置 DataSource 对比</h3>
+      <table>
+        <tr><th>DataSource</th><th>文件格式</th><th>是否支持时间</th><th>加载方式</th><th>典型场景</th></tr>
+        <tr>
+          <td class="td-kw">GeoJsonDataSource</td>
+          <td>.geojson, .topojson</td>
+          <td class="td-bad">&#10060; 静态</td>
+          <td>load(url) / load(data)</td>
+          <td>行政区划、建筑轮廓、点数据</td>
+        </tr>
+        <tr>
+          <td class="td-kw">CzmlDataSource</td>
+          <td>.czml</td>
+          <td class="td-good">&#9989; 原生时间序列</td>
+          <td>load(url) / load(czml)</td>
+          <td>卫星轨道、航班轨迹、动态传感器</td>
+        </tr>
+        <tr>
+          <td class="td-kw">KmlDataSource</td>
+          <td>.kml, .kmz</td>
+          <td class="td-good">&#9989; 部分支持</td>
+          <td>load(url, options)</td>
+          <td>Google Earth 数据迁移</td>
+        </tr>
+        <tr>
+          <td class="td-kw">CustomDataSource</td>
+          <td>无（内存数据）</td>
+          <td>取决于实现</td>
+          <td>new CustomDataSource()</td>
+          <td>程序化生成、API 响应数据</td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3>&#128295; DataSource 接口的核心属性和方法</h3>
+      <table>
+        <tr><th>成员</th><th>类型</th><th>说明</th></tr>
+        <tr><td class="td-kw">name</td><td class="td-type">String</td><td>数据源名称，用于 UI 和调试</td></tr>
+        <tr><td class="td-kw">show</td><td class="td-type">Boolean</td><td>是否显示该数据源的所有实体（一键显隐）</td></tr>
+        <tr><td class="td-kw">entities</td><td class="td-type">EntityCollection</td><td>该数据源管理的实体集合</td></tr>
+        <tr><td class="td-kw">isLoading</td><td class="td-type">Boolean (get)</td><td>是否正在加载数据（只读）</td></tr>
+        <tr><td class="td-kw">loadingEvent</td><td class="td-type">Event</td><td>加载状态变化时触发</td></tr>
+        <tr><td class="td-kw">changedEvent</td><td class="td-type">Event</td><td>数据源内容变化时触发</td></tr>
+        <tr><td class="td-kw">errorEvent</td><td class="td-type">Event</td><td>加载或处理出错时触发</td></tr>
+        <tr><td class="td-kw">update(time)</td><td class="td-type">Function</td><td>每帧调用，用于动态更新实体（CZML 时间驱动）</td></tr>
+        <tr><td class="td-kw">clock</td><td class="td-type">DataSourceClock</td><td>该数据源的时间定义</td></tr>
+      </table>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 3: GeoJsonDataSource -->
+  <!-- ============================================================ -->
+  <div class="section" id="s3">
+    <div class="section-header">
+      <div class="section-num">3</div>
+      <h2>GeoJsonDataSource：矢量数据之王</h2>
+      <span class="tag">核心</span>
+    </div>
+
+    <div class="card">
+      <h3>&#127760; 什么是 GeoJSON？</h3>
+      <p>GeoJSON 是<strong>最通用的地理空间数据交换格式</strong>。它是一个 JSON 对象，用标准化的方式描述点、线、面和它们的属性。几乎所有 GIS 软件和 Web 地图库都支持 GeoJSON。</p>
+      <pre><span class="cmt">// 一个 GeoJSON FeatureCollection 示例</span>
+{
+  <span class="str">"type"</span>: <span class="str">"FeatureCollection"</span>,
+  <span class="str">"features"</span>: [
+    {
+      <span class="str">"type"</span>: <span class="str">"Feature"</span>,
+      <span class="str">"geometry"</span>: {
+        <span class="str">"type"</span>: <span class="str">"Point"</span>,
+        <span class="str">"coordinates"</span>: [<span class="num">116.3972</span>, <span class="num">39.9075</span>]  <span class="cmt">// [经度, 纬度]</span>
+      },
+      <span class="str">"properties"</span>: {
+        <span class="str">"name"</span>: <span class="str">"北京"</span>,
+        <span class="str">"population"</span>: <span class="num">21540000</span>
+      }
+    }
+  ]
+}</pre>
+      <p><strong>注意：</strong>GeoJSON 的坐标顺序是 <code>[经度, 纬度]</code>（和 CesiumJS 内部一样），但部分工具（如 Leaflet）使用 <code>[纬度, 经度]</code>，容易混淆。</p>
+    </div>
+
+    <div class="card">
+      <h3>&#128295; 加载 GeoJSON 数据</h3>
+      <pre><span class="cmt">// 方式 1：从 URL 加载（最常用）</span>
+<span class="kw">const</span> <span class="var">geoJsonDs</span> = <span class="kw">await</span> <span class="typ">Cesium.GeoJsonDataSource</span>.<span class="fn">load</span>(
+  <span class="str">'https://example.com/china-provinces.geojson'</span>,
+  {
+    <span class="prp">stroke</span>: <span class="typ">Cesium.Color</span>.<span class="prp">WHITE</span>,          <span class="cmt">// 线条颜色</span>
+    <span class="prp">fill</span>: <span class="typ">Cesium.Color</span>.<span class="prp">BLUE</span>.<span class="fn">withAlpha</span>(<span class="num">0.3</span>), <span class="cmt">// 填充颜色（半透明）</span>
+    <span class="prp">strokeWidth</span>: <span class="num">2</span>,
+    <span class="prp">markerSymbol</span>: <span class="str">'&#11044;'</span>,              <span class="cmt">// 点的标记符号</span>
+    <span class="prp">markerColor</span>: <span class="typ">Cesium.Color</span>.<span class="prp">RED</span>,
+    <span class="prp">markerSize</span>: <span class="num">24</span>
+  }
+);
+<span class="var">viewer</span>.<span class="var">dataSources</span>.<span class="fn">add</span>(<span class="var">geoJsonDs</span>);
+
+<span class="cmt">// 方式 2：从 JS 对象加载</span>
+<span class="kw">const</span> <span class="var">data</span> = {
+  <span class="prp">type</span>: <span class="str">'FeatureCollection'</span>,
+  <span class="prp">features</span>: [<span class="cmt">/* ... */</span>]
+};
+<span class="kw">const</span> <span class="var">ds</span> = <span class="kw">await</span> <span class="typ">Cesium.GeoJsonDataSource</span>.<span class="fn">load</span>(<span class="var">data</span>, {
+  <span class="prp">stroke</span>: <span class="typ">Cesium.Color</span>.<span class="prp">YELLOW</span>
+});
+<span class="var">viewer</span>.<span class="var">dataSources</span>.<span class="fn">add</span>(<span class="var">ds</span>);
+
+<span class="cmt">// 方式 3：控制相机飞到数据范围</span>
+<span class="kw">const</span> <span class="var">ds</span> = <span class="kw">await</span> <span class="typ">Cesium.GeoJsonDataSource</span>.<span class="fn">load</span>(<span class="var">url</span>, <span class="var">options</span>);
+<span class="var">viewer</span>.<span class="var">dataSources</span>.<span class="fn">add</span>(<span class="var">ds</span>);
+<span class="kw">await</span> <span class="var">viewer</span>.<span class="fn">flyTo</span>(<span class="var">ds</span>);  <span class="cmt">// 飞到数据源范围</span></pre>
+    </div>
+
+    <div class="card">
+      <h3>&#127912; GeoJSON 几何类型 → CesiumJS Entity 映射</h3>
+      <table>
+        <tr><th>GeoJSON 类型</th><th>CesiumJS Entity 图形</th><th>说明</th></tr>
+        <tr><td class="td-kw">Point</td><td class="td-type">point + billboard</td><td>自动添加文本标签（从 properties.name 读取）</td></tr>
+        <tr><td class="td-kw">MultiPoint</td><td class="td-type">多个 point</td><td>每个点独立为一个 Entity</td></tr>
+        <tr><td class="td-kw">LineString</td><td class="td-type">polyline</td><td>折线</td></tr>
+        <tr><td class="td-kw">MultiLineString</td><td class="td-type">多个 polyline</td><td>多条折线</td></tr>
+        <tr><td class="td-kw">Polygon</td><td class="td-type">polygon</td><td>多边形面（自动识别内外环）</td></tr>
+        <tr><td class="td-kw">MultiPolygon</td><td class="td-type">多个 polygon</td><td>多面</td></tr>
+        <tr><td class="td-kw">GeometryCollection</td><td class="td-type">混合类型</td><td>每种几何单独处理</td></tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3>&#128396; properties → Entity 属性映射</h3>
+      <p>GeoJSON 的 <code>properties</code> 对象会自动映射到 Entity 的描述信息：</p>
+      <pre><span class="cmt">// GeoJSON properties 中的特殊字段：</span>
+{
+  <span class="str">"properties"</span>: {
+    <span class="str">"name"</span>: <span class="str">"北京市"</span>,           <span class="cmt">// → Entity.name（显示为标签）</span>
+    <span class="str">"description"</span>: <span class="str">"中国首都"</span>,  <span class="cmt">// → Entity.description（点击弹窗）</span>
+    <span class="str">"population"</span>: <span class="num">21540000</span>      <span class="cmt">// → Entity.properties.population（自定义属性）</span>
+  }
+}</pre>
+      <p><code>name</code> 和 <code>description</code> 是 GeoJsonDataSource 自动识别的两个特殊字段。其他所有字段都会存入 <code>Entity.properties</code>，可以在交互时读取。</p>
+    </div>
+
+    <div class="tip">
+      <span>&#128161;</span>
+      <span><strong>性能提示：</strong>GeoJSON 文件可能非常大（省级行政区划可达几十 MB）。大文件建议（1）先简化几何（如用 MapShaper 降低精度），（2）转为 TopoJSON 减小体积，（3）或使用 3D Tiles / 矢量瓦片替代——GeoJSON 适合中小规模数据（&lt; 10MB）。</span>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 4: CzmlDataSource -->
+  <!-- ============================================================ -->
+  <div class="section" id="s4">
+    <div class="section-header">
+      <div class="section-num">4</div>
+      <h2>CzmlDataSource：时间动态数据</h2>
+      <span class="tag">核心</span>
+    </div>
+
+    <div class="card">
+      <h3>&#9200; 什么是 CZML？</h3>
+      <p>CZML（Cesium Language）是 Cesium 团队设计的<strong>JSON 格式</strong>，专门用于描述<strong>随时间变化</strong>的地理空间数据。它是 GeoJSON 的"时间增强版"——不仅有空间坐标，还有时间戳。</p>
+      <p><strong>典型应用：</strong>卫星轨道、飞机航线、导弹轨迹、无人机编队、传感器实时数据——任何"会动的东西"都适合用 CZML。</p>
+    </div>
+
+    <div class="card">
+      <h3>&#128295; CZML 基本结构</h3>
+      <pre><span class="cmt">// 一个描述飞行轨迹的 CZML 文档</span>
+[
+  {
+    <span class="str">"id"</span>: <span class="str">"document"</span>,
+    <span class="str">"name"</span>: <span class="str">"CZML 示例"</span>,
+    <span class="str">"version"</span>: <span class="str">"1.0"</span>,
+    <span class="str">"clock"</span>: {                        <span class="cmt">// 时间范围定义</span>
+      <span class="str">"interval"</span>: <span class="str">"2025-01-01T00:00:00Z/2025-01-01T01:00:00Z"</span>,
+      <span class="str">"currentTime"</span>: <span class="str">"2025-01-01T00:00:00Z"</span>,
+      <span class="str">"multiplier"</span>: <span class="num">60</span>               <span class="cmt">// 时间倍速（60倍）</span>
+    }
+  },
+  {
+    <span class="str">"id"</span>: <span class="str">"flight001"</span>,
+    <span class="str">"name"</span>: <span class="str">"航班 CA1234"</span>,
+    <span class="str">"position"</span>: {
+      <span class="str">"interpolationAlgorithm"</span>: <span class="str">"LAGRANGE"</span>,
+      <span class="str">"interpolationDegree"</span>: <span class="num">5</span>,
+      <span class="str">"referenceFrame"</span>: <span class="str">"INERTIAL"</span>,
+      <span class="str">"cartesian"</span>: [
+        <span class="num">0</span>,  <span class="var">x1</span>, <span class="var">y1</span>, <span class="var">z1</span>,       <span class="cmt">// time=0 时的位置</span>
+        <span class="num">300</span>, <span class="var">x2</span>, <span class="var">y2</span>, <span class="var">z2</span>,       <span class="cmt">// time=300s 时的位置</span>
+        <span class="num">600</span>, <span class="var">x3</span>, <span class="var">y3</span>, <span class="var">z3</span>,       <span class="cmt">// time=600s 时的位置</span>
+        <span class="num">900</span>, <span class="var">x4</span>, <span class="var">y4</span>, <span class="var">z4</span>        <span class="cmt">// time=900s 时的位置</span>
+      ]
+    },
+    <span class="str">"point"</span>: {
+      <span class="str">"color"</span>: { <span class="str">"rgba"</span>: [<span class="num">255</span>, <span class="num">0</span>, <span class="num">0</span>, <span class="num">255</span>] },
+      <span class="str">"pixelSize"</span>: <span class="num">10</span>
+    },
+    <span class="str">"path"</span>: {
+      <span class="str">"material"</span>: { <span class="str">"solidColor"</span>: { <span class="str">"color"</span>: { <span class="str">"rgba"</span>: [<span class="num">255</span>, <span class="num">140</span>, <span class="num">0</span>, <span class="num">200</span>] } } },
+      <span class="str">"width"</span>: <span class="num">2</span>,
+      <span class="str">"leadTime"</span>: <span class="num">60</span>,               <span class="cmt">// 轨迹前导时间（显示最近 60 秒的轨迹）</span>
+      <span class="str">"trailTime"</span>: <span class="num">300</span>              <span class="cmt">// 轨迹尾迹时间（保留 300 秒的轨迹）</span>
+    }
+  }
+]</pre>
+    </div>
+
+    <div class="card">
+      <h3>&#128295; 加载 CZML 数据</h3>
+      <pre><span class="cmt">// 从 URL 加载 CZML</span>
+<span class="kw">const</span> <span class="var">czmlDs</span> = <span class="kw">await</span> <span class="typ">Cesium.CzmlDataSource</span>.<span class="fn">load</span>(
+  <span class="str">'https://example.com/satellite-orbit.czml'</span>
+);
+<span class="var">viewer</span>.<span class="var">dataSources</span>.<span class="fn">add</span>(<span class="var">czmlDs</span>);
+
+<span class="cmt">// 加载后，CZML 可能定义了自己的时钟设置</span>
+<span class="cmt">// 检查是否需要设置时钟范围</span>
+<span class="var">viewer</span>.<span class="var">timeline</span>.<span class="var">zoomTo</span> = <span class="var">viewer</span>.<span class="var">clock</span>.<span class="var">startTime</span>;
+<span class="var">viewer</span>.<span class="var">timeline</span>.<span class="var">zoomTo</span> = <span class="var">viewer</span>.<span class="var">clock</span>.<span class="var">stopTime</span>;</pre>
+    </div>
+
+    <div class="card">
+      <h3>&#9881; CZML 核心特性</h3>
+      <table>
+        <tr><th>特性</th><th>说明</th></tr>
+        <tr><td class="td-kw">时间插值</td><td>LAGRANGE（拉格朗日）或 HERMITE（埃尔米特）插值算法，在关键帧之间平滑过渡</td></tr>
+        <tr><td class="td-kw">参考系</td><td>INERTIAL（惯性系）或 FIXED（地固系），影响位置计算方式</td></tr>
+        <tr><td class="td-kw">path.leadTime</td><td>轨迹前导时间（秒），从当前位置向前延伸</td></tr>
+        <tr><td class="td-kw">path.trailTime</td><td>轨迹尾迹时间（秒），保留历史轨迹</td></tr>
+        <tr><td class="td-kw">availability</td><td>实体存在的时间范围（在这个时间之外不显示）</td></tr>
+        <tr><td class="td-kw">orientation</td><td>随时间变化的姿态/朝向（如卫星天线指向）</td></tr>
+        <tr><td class="td-kw">model</td><td>可以绑定随时间变化的 glTF 3D 模型</td></tr>
+      </table>
+    </div>
+
+    <div class="warn">
+      <span>&#9888;&#65039;</span>
+      <span><strong>注意：</strong>CZML 中的时间用 <strong>Unix 时间（ISO 8601）</strong> 或 <strong>相对秒数</strong> 表示。坐标用 <strong>Cartesian3（ECEF 地心地固坐标）</strong>，不是经纬度！需要用 <code>Cesium.Cartesian3.fromDegrees()</code> 转换后再写入 CZML。</span>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 5: KmlDataSource -->
+  <!-- ============================================================ -->
+  <div class="section" id="s5">
+    <div class="section-header">
+      <div class="section-num">5</div>
+      <h2>KmlDataSource：Google Earth 数据</h2>
+      <span class="tag">兼容</span>
+    </div>
+
+    <div class="card">
+      <h3>&#127758; KML/KMZ：Google Earth 的遗产</h3>
+      <p>KML（Keyhole Markup Language）是 Google Earth 使用的<strong>XML 格式</strong>地理数据文件。KMZ 是 KML 的压缩版本（ZIP 压缩）。</p>
+      <p>如果你有大量 Google Earth 的历史数据需要迁移到 CesiumJS，KmlDataSource 是最直接的途径。</p>
+    </div>
+
+    <div class="card">
+      <h3>&#128295; 加载 KML/KMZ</h3>
+      <pre><span class="cmt">// 加载 KML 文件</span>
+<span class="kw">const</span> <span class="var">kmlDs</span> = <span class="kw">await</span> <span class="typ">Cesium.KmlDataSource</span>.<span class="fn">load</span>(
+  <span class="str">'data/sites.kml'</span>,
+  {
+    <span class="prp">camera</span>: <span class="var">viewer</span>.<span class="var">scene</span>.<span class="var">camera</span>,
+    <span class="prp">canvas</span>: <span class="var">viewer</span>.<span class="var">scene</span>.<span class="var">canvas</span>,
+    <span class="prp">clampToGround</span>: <span class="kw">true</span>     <span class="cmt">// 贴地显示</span>
+  }
+);
+<span class="var">viewer</span>.<span class="var">dataSources</span>.<span class="fn">add</span>(<span class="var">kmlDs</span>);
+
+<span class="cmt">// KML 支持的特性（部分）</span>
+<span class="cmt">// Placemark → Entity (point/billboard/label/polygon)</span>
+<span class="cmt">// LineString → polyline</span>
+<span class="cmt">// Polygon → polygon</span>
+<span class="cmt">// NetworkLink → 动态刷新（时间驱动）</span>
+<span class="cmt">// ScreenOverlay → 受限支持</span>
+<span class="cmt">// GroundOverlay → 受限支持</span></pre>
+    </div>
+
+    <div class="info">
+      <span>&#128161;</span>
+      <span><strong>实用建议：</strong>KML 格式历史悠久，很多企业仍有大量 KML 数据。但<strong>新项目建议优先使用 GeoJSON 或 CZML</strong>——它们更简单、更适合 Web 传输且支持更完整。KmlDataSource 主要用于兼容旧系统。</span>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 6: CustomDataSource -->
+  <!-- ============================================================ -->
+  <div class="section" id="s6">
+    <div class="section-header">
+      <div class="section-num">6</div>
+      <h2>CustomDataSource：自定义数据加载</h2>
+      <span class="tag">灵活</span>
+    </div>
+
+    <div class="card">
+      <h3>&#128736; 什么时候用 CustomDataSource？</h3>
+      <p>当你的数据<strong>不是标准格式</strong>——比如从 REST API 获取的 JSON、WebSocket 实时推送、数据库查询结果——CustomDataSource 就是最好的容器。</p>
+      <p>它本质上是一个<strong>命名的 EntityCollection</strong>，提供统一的数据源管理接口。</p>
+    </div>
+
+    <div class="card">
+      <h3>&#128295; 基本用法</h3>
+      <pre><span class="cmt">// 创建自定义数据源</span>
+<span class="kw">const</span> <span class="var">myDs</span> = <span class="kw">new</span> <span class="typ">Cesium.CustomDataSource</span>(<span class="str">'实时传感器'</span>);
+<span class="var">viewer</span>.<span class="var">dataSources</span>.<span class="fn">add</span>(<span class="var">myDs</span>);
+
+<span class="cmt">// 从 API 获取数据并添加到数据源</span>
+<span class="kw">async</span> <span class="kw">function</span> <span class="fn">loadSensorData</span>() {
+  <span class="kw">const</span> <span class="var">response</span> = <span class="kw">await</span> <span class="fn">fetch</span>(<span class="str">'https://api.example.com/sensors'</span>);
+  <span class="kw">const</span> <span class="var">sensors</span> = <span class="kw">await</span> <span class="var">response</span>.<span class="fn">json</span>();
+
+  <span class="var">sensors</span>.<span class="fn">forEach</span>(<span class="var">s</span> => {
+    <span class="var">myDs</span>.<span class="var">entities</span>.<span class="fn">add</span>({
+      <span class="prp">name</span>: <span class="var">s</span>.<span class="var">name</span>,
+      <span class="prp">position</span>: <span class="typ">Cesium.Cartesian3</span>.<span class="fn">fromDegrees</span>(<span class="var">s</span>.<span class="var">lon</span>, <span class="var">s</span>.<span class="var">lat</span>, <span class="var">s</span>.<span class="var">alt</span>),
+      <span class="prp">point</span>: {
+        <span class="prp">pixelSize</span>: <span class="num">8</span>,
+        <span class="prp">color</span>: <span class="var">s</span>.<span class="var">active</span> ? <span class="typ">Cesium.Color</span>.<span class="prp">GREEN</span> : <span class="typ">Cesium.Color</span>.<span class="prp">RED</span>
+      },
+      <span class="prp">label</span>: {
+        <span class="prp">text</span>: <span class="var">s</span>.<span class="var">name</span>,
+        <span class="prp">font</span>: <span class="str">'12px sans-serif'</span>
+      },
+      <span class="prp">properties</span>: <span class="var">s</span>  <span class="cmt">// 保存原始数据，供交互使用</span>
+    });
+  });
+}
+
+<span class="cmt">// 一键关闭/删除整个数据源</span>
+<span class="var">myDs</span>.<span class="prp">show</span> = <span class="kw">false</span>;                          <span class="cmt">// 隐藏</span>
+<span class="var">viewer</span>.<span class="var">dataSources</span>.<span class="fn">remove</span>(<span class="var">myDs</span>, <span class="kw">true</span>);        <span class="cmt">// 移除并销毁</span></pre>
+    </div>
+
+    <div class="tip">
+      <span>&#128161;</span>
+      <span><strong>最佳实践：</strong>即使你的数据很简单，也建议用 CustomDataSource 包装而不是直接操作 <code>viewer.entities</code>。因为它让你能按"数据源"维度管理——显隐、移除、状态监听都在一个对象上完成。这在大项目中至关重要。</span>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 7: DataSourceCollection -->
+  <!-- ============================================================ -->
+  <div class="section" id="s7">
+    <div class="section-header">
+      <div class="section-num">7</div>
+      <h2>DataSourceCollection：统一管理</h2>
+      <span class="tag">管理</span>
+    </div>
+
+    <div class="card">
+      <h3>&#128202; viewer.dataSources — 所有数据源的家</h3>
+      <p><code>viewer.dataSources</code> 是一个 <code>DataSourceCollection</code>，管理着场景中<strong>所有的数据源</strong>。每个数据源在这里都是平等的——无论它是 GeoJSON、CZML、KML 还是 CustomDataSource。</p>
+    </div>
+
+    <div class="card">
+      <h3>&#128295; DataSourceCollection 核心操作</h3>
+      <table>
+        <tr><th>方法 / 属性</th><th>说明</th></tr>
+        <tr><td class="td-kw">add(dataSource)</td><td>添加一个数据源到场景中</td></tr>
+        <tr><td class="td-kw">remove(dataSource, destroy)</td><td>移除数据源，可选是否销毁</td></tr>
+        <tr><td class="td-kw">removeAll(destroy)</td><td>移除所有数据源</td></tr>
+        <tr><td class="td-kw">contains(dataSource)</td><td>判断是否包含某数据源</td></tr>
+        <tr><td class="td-kw">indexOf(dataSource)</td><td>获取数据源索引</td></tr>
+        <tr><td class="td-kw">get(index)</td><td>按索引获取数据源</td></tr>
+        <tr><td class="td-kw">length</td><td>数据源数量</td></tr>
+        <tr><td class="td-kw">dataSourceAdded</td><td>数据源添加事件（Event）</td></tr>
+        <tr><td class="td-kw">dataSourceRemoved</td><td>数据源移除事件（Event）</td></tr>
+        <tr><td class="td-kw">dataSourceMoved</td><td>数据源顺序变化事件（Event）</td></tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3>&#128295; 实战：数据源管理器</h3>
+      <pre><span class="cmt">// 封装一个简单的数据源管理器</span>
+<span class="kw">class</span> <span class="typ">DataSourceManager</span> {
+  <span class="fn">constructor</span>(<span class="var">viewer</span>) {
+    <span class="kw">this</span>.<span class="var">_viewer</span> = <span class="var">viewer</span>;
+    <span class="kw">this</span>.<span class="var">_sources</span> = <span class="kw">new</span> <span class="typ">Map</span>();  <span class="cmt">// name → DataSource</span>
+  }
+
+  <span class="kw">async</span> <span class="fn">loadGeoJSON</span>(<span class="var">name</span>, <span class="var">url</span>, <span class="var">options</span> = {}) {
+    <span class="kw">const</span> <span class="var">ds</span> = <span class="kw">await</span> <span class="typ">Cesium.GeoJsonDataSource</span>.<span class="fn">load</span>(<span class="var">url</span>, <span class="var">options</span>);
+    <span class="var">ds</span>.<span class="var">name</span> = <span class="var">name</span>;
+    <span class="kw">this</span>.<span class="var">_viewer</span>.<span class="var">dataSources</span>.<span class="fn">add</span>(<span class="var">ds</span>);
+    <span class="kw">this</span>.<span class="var">_sources</span>.<span class="fn">set</span>(<span class="var">name</span>, <span class="var">ds</span>);
+    <span class="kw">return</span> <span class="var">ds</span>;
+  }
+
+  <span class="fn">toggle</span>(<span class="var">name</span>) {
+    <span class="kw">const</span> <span class="var">ds</span> = <span class="kw">this</span>.<span class="var">_sources</span>.<span class="fn">get</span>(<span class="var">name</span>);
+    <span class="kw">if</span> (<span class="var">ds</span>) <span class="var">ds</span>.<span class="prp">show</span> = !<span class="var">ds</span>.<span class="prp">show</span>;
+    <span class="kw">return</span> <span class="var">ds</span>?.<span class="var">show</span>;
+  }
+
+  <span class="fn">remove</span>(<span class="var">name</span>) {
+    <span class="kw">const</span> <span class="var">ds</span> = <span class="kw">this</span>.<span class="var">_sources</span>.<span class="fn">get</span>(<span class="var">name</span>);
+    <span class="kw">if</span> (<span class="var">ds</span>) {
+      <span class="kw">this</span>.<span class="var">_viewer</span>.<span class="var">dataSources</span>.<span class="fn">remove</span>(<span class="var">ds</span>, <span class="kw">true</span>);
+      <span class="kw">this</span>.<span class="var">_sources</span>.<span class="fn">delete</span>(<span class="var">name</span>);
+    }
+  }
+
+  <span class="fn">list</span>() {
+    <span class="kw">return</span> [...<span class="kw">this</span>.<span class="var">_sources</span>.<span class="fn">entries</span>()].<span class="fn">map</span>(([<span class="var">name</span>, <span class="var">ds</span>]) => ({
+      <span class="prp">name</span>, <span class="prp">show</span>: <span class="var">ds</span>.<span class="prp">show</span>,
+      <span class="prp">entityCount</span>: <span class="var">ds</span>.<span class="var">entities</span>.<span class="var">values</span>.<span class="var">length</span>
+    }));
+  }
+}</pre>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 8: ScreenSpaceEventHandler -->
+  <!-- ============================================================ -->
+  <div class="section" id="s8">
+    <div class="section-header">
+      <div class="section-num">8</div>
+      <h2>交互事件：ScreenSpaceEventHandler</h2>
+      <span class="tag">核心</span>
+    </div>
+
+    <div class="card">
+      <h3>&#128070; 从"看"到"交互"</h3>
+      <p>前面 5 天我们一直在<strong>"看"</strong>地球。今天开始学习<strong>"点"</strong>地球——CesiumJS 提供了强大的事件系统来响应用户的鼠标和触摸操作。</p>
+      <p><code>ScreenSpaceEventHandler</code> 是 CesiumJS 中处理<strong>屏幕空间事件</strong>的核心类。它监听鼠标、触摸、键盘事件，并让你对屏幕上的位置进行操作。</p>
+    </div>
+
+    <div class="card">
+      <h3>&#128451; ScreenSpaceEventType 事件类型大全</h3>
+      <table>
+        <tr><th>事件类型</th><th>触发时机</th><th>常用度</th></tr>
+        <tr><td class="td-kw">LEFT_CLICK</td><td>鼠标左键单击</td><td class="td-good">&#9733;&#9733;&#9733;&#9733;&#9733;</td></tr>
+        <tr><td class="td-kw">LEFT_DOUBLE_CLICK</td><td>鼠标左键双击</td><td class="td-good">&#9733;&#9733;&#9733;</td></tr>
+        <tr><td class="td-kw">LEFT_DOWN / LEFT_UP</td><td>鼠标左键按下/释放</td><td class="td-good">&#9733;&#9733;</td></tr>
+        <tr><td class="td-kw">RIGHT_CLICK</td><td>鼠标右键单击</td><td class="td-good">&#9733;&#9733;&#9733;&#9733;</td></tr>
+        <tr><td class="td-kw">MOUSE_MOVE</td><td>鼠标移动</td><td class="td-good">&#9733;&#9733;&#9733;&#9733;</td></tr>
+        <tr><td class="td-kw">WHEEL</td><td>鼠标滚轮</td><td class="td-good">&#9733;&#9733;</td></tr>
+        <tr><td class="td-kw">PINCH_START / PINCH_END / PINCH_MOVE</td><td>触摸捏合（移动端）</td><td class="td-good">&#9733;&#9733;</td></tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3>&#128295; 基本用法</h3>
+      <pre><span class="cmt">// 创建事件处理器</span>
+<span class="kw">const</span> <span class="var">handler</span> = <span class="kw">new</span> <span class="typ">Cesium.ScreenSpaceEventHandler</span>(
+  <span class="var">viewer</span>.<span class="var">scene</span>.<span class="var">canvas</span>  <span class="cmt">// 绑定到 Canvas 元素</span>
+);
+
+<span class="cmt">// 监听鼠标左键点击</span>
+<span class="var">handler</span>.<span class="fn">setInputAction</span>(<span class="kw">function</span>(<span class="var">movement</span>) {
+  <span class="cmt">// movement.position: {x, y} — 屏幕坐标</span>
+  <span class="var">console</span>.<span class="fn">log</span>(<span class="str">'点击位置:'</span>, <span class="var">movement</span>.<span class="var">position</span>);
+  <span class="var">console</span>.<span class="fn">log</span>(<span class="str">'屏幕坐标: x='</span> + <span class="var">movement</span>.<span class="var">position</span>.<span class="var">x</span> + <span class="str">', y='</span> + <span class="var">movement</span>.<span class="var">position</span>.<span class="var">y</span>);
+}, <span class="typ">Cesium.ScreenSpaceEventType</span>.<span class="prp">LEFT_CLICK</span>);
+
+<span class="cmt">// 监听鼠标移动</span>
+<span class="var">handler</span>.<span class="fn">setInputAction</span>(<span class="kw">function</span>(<span class="var">movement</span>) {
+  <span class="cmt">// movement.endPosition: 鼠标当前位置</span>
+  <span class="cmt">// movement.startPosition: 鼠标起始位置</span>
+}, <span class="typ">Cesium.ScreenSpaceEventType</span>.<span class="prp">MOUSE_MOVE</span>);
+
+<span class="cmt">// 移除特定事件监听</span>
+<span class="var">handler</span>.<span class="fn">removeInputAction</span>(<span class="typ">Cesium.ScreenSpaceEventType</span>.<span class="prp">LEFT_CLICK</span>);
+
+<span class="cmt">// 销毁整个处理器</span>
+<span class="var">handler</span>.<span class="fn">destroy</span>();</pre>
+    </div>
+
+    <div class="warn">
+      <span>&#9888;&#65039;</span>
+      <span><strong>重要：</strong>ScreenSpaceEventHandler 绑定的位置是<strong>像素坐标</strong>（屏幕 2D 坐标），左上角为 (0,0)。要获取 3D 地理坐标，需要使用 <strong>Picking（拾取）</strong>机制，见下一节。</span>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 9: 拾取 Picking -->
+  <!-- ============================================================ -->
+  <div class="section" id="s9">
+    <div class="section-header">
+      <div class="section-num">9</div>
+      <h2>拾取（Picking）：scene.pick / drillPick</h2>
+      <span class="tag">核心</span>
+    </div>
+
+    <div class="card">
+      <h3>&#127919; 什么是 Picking？</h3>
+      <p>Picking 就是<strong>"射线检测"</strong>——从屏幕上鼠标的位置发射一条射线，穿过 3D 场景，看这条射线<strong>击中了什么</strong>。这是所有 3D 交互的基础。</p>
+      <p>CesiumJS 提供了两个核心拾取方法：</p>
+      <ul>
+        <li><code>scene.pick(position)</code> — 拾取<strong>第一个</strong>被击中的对象（最前面的）</li>
+        <li><code>scene.drillPick(position)</code> — 拾取<strong>所有</strong>被射线穿过的对象（按从前到后排序）</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3>&#128295; scene.pick() — 拾取最前面的对象</h3>
+      <pre><span class="cmt">// scene.pick(windowPosition, width, height)</span>
+<span class="cmt">// 返回 Cesium.PickedObject 或 undefined</span>
+
+<span class="var">handler</span>.<span class="fn">setInputAction</span>(<span class="kw">function</span>(<span class="var">movement</span>) {
+  <span class="kw">const</span> <span class="var">picked</span> = <span class="var">viewer</span>.<span class="var">scene</span>.<span class="fn">pick</span>(<span class="var">movement</span>.<span class="var">position</span>);
+  <span class="kw">if</span> (<span class="typ">Cesium</span>.<span class="fn">defined</span>(<span class="var">picked</span>)) {
+    <span class="cmt">// picked.id       → Entity 对象（如果有）</span>
+    <span class="cmt">// picked.primitive → Primitive 对象</span>
+    <span class="var">console</span>.<span class="fn">log</span>(<span class="str">'拾取到: '</span>, <span class="var">picked</span>.<span class="var">id</span>?.<span class="var">name</span>);
+  } <span class="kw">else</span> {
+    <span class="var">console</span>.<span class="fn">log</span>(<span class="str">'未拾取到任何对象'</span>);
+  }
+}, <span class="typ">Cesium.ScreenSpaceEventType</span>.<span class="prp">LEFT_CLICK</span>);</pre>
+    </div>
+
+    <div class="card">
+      <h3>&#128295; scene.drillPick() — 穿透拾取</h3>
+      <pre><span class="cmt">// 当多个对象重叠时，drillPick 能找到所有被射线穿过的对象</span>
+<span class="var">handler</span>.<span class="fn">setInputAction</span>(<span class="kw">function</span>(<span class="var">movement</span>) {
+  <span class="kw">const</span> <span class="var">pickedObjects</span> = <span class="var">viewer</span>.<span class="var">scene</span>.<span class="fn">drillPick</span>(<span class="var">movement</span>.<span class="var">position</span>);
+  <span class="kw">if</span> (<span class="var">pickedObjects</span>.<span class="var">length</span> > <span class="num">0</span>) {
+    <span class="var">console</span>.<span class="fn">log</span>(<span class="str">'拾取到 '</span> + <span class="var">pickedObjects</span>.<span class="var">length</span> + <span class="str">' 个对象:'</span>);
+    <span class="var">pickedObjects</span>.<span class="fn">forEach</span>((<span class="var">p</span>, <span class="var">i</span>) => {
+      <span class="var">console</span>.<span class="fn">log</span>(<span class="str">`  ${i+1}. ${p.id?.name || '(未命名)'}`</span>);
+    });
+  }
+}, <span class="typ">Cesium.ScreenSpaceEventType</span>.<span class="prp">LEFT_CLICK</span>);</pre>
+    </div>
+
+    <div class="card">
+      <h3>&#127760; 屏幕坐标 → 地理坐标</h3>
+      <pre><span class="cmt">// 除了拾取对象，还可以获取地球表面的坐标</span>
+
+<span class="cmt">// 1. 获取椭球体表面坐标（不考虑地形）</span>
+<span class="kw">const</span> <span class="var">cartesian</span> = <span class="var">viewer</span>.<span class="var">scene</span>.<span class="fn">pickEllipsoid</span>(<span class="var">movement</span>.<span class="var">position</span>);
+<span class="kw">if</span> (<span class="var">cartesian</span>) {
+  <span class="kw">const</span> <span class="var">cartographic</span> = <span class="typ">Cesium.Cartographic</span>.<span class="fn">fromCartesian</span>(<span class="var">cartesian</span>);
+  <span class="kw">const</span> <span class="var">lon</span> = <span class="typ">Cesium.Math</span>.<span class="fn">toDegrees</span>(<span class="var">cartographic</span>.<span class="var">longitude</span>);
+  <span class="kw">const</span> <span class="var">lat</span> = <span class="typ">Cesium.Math</span>.<span class="fn">toDegrees</span>(<span class="var">cartographic</span>.<span class="var">latitude</span>);
+  <span class="var">console</span>.<span class="fn">log</span>(<span class="str">`点击位置: 经度=${lon.toFixed(4)}, 纬度=${lat.toFixed(4)}`</span>);
+}
+
+<span class="cmt">// 2. 获取地表坐标（考虑地形，需要地形数据已加载）</span>
+<span class="kw">const</span> <span class="var">cartesianOnTerrain</span> = <span class="var">viewer</span>.<span class="var">scene</span>.<span class="fn">pickPosition</span>(<span class="var">movement</span>.<span class="var">position</span>);
+<span class="cmt">// 如果该位置地形数据尚未加载，返回 undefined</span></pre>
+    </div>
+
+    <div class="tip">
+      <span>&#128161;</span>
+      <span><strong>区分三个 pick 方法：</strong><code>scene.pick()</code> 拾取 3D 对象（Entity、Primitive），<code>pickEllipsoid()</code> 拾取椭球体表面坐标（忽略地形），<code>pickPosition()</code> 拾取实际地表坐标（含地形高程）。大多数情况下用 <code>pick()</code> 检测点击了什么，用 <code>pickEllipsoid()</code> 计算经纬度。</span>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 10: Entity 点击与悬停 -->
+  <!-- ============================================================ -->
+  <div class="section" id="s10">
+    <div class="section-header">
+      <div class="section-num">10</div>
+      <h2>Entity 点击与悬停交互</h2>
+      <span class="tag">实战</span>
+    </div>
+
+    <div class="card">
+      <h3>&#128070; 点击 Entity 显示信息</h3>
+      <pre><span class="cmt">// 完整示例：点击城市标注显示详细信息</span>
+<span class="kw">const</span> <span class="var">handler</span> = <span class="kw">new</span> <span class="typ">Cesium.ScreenSpaceEventHandler</span>(<span class="var">viewer</span>.<span class="var">canvas</span>);
+
+<span class="var">handler</span>.<span class="fn">setInputAction</span>(<span class="kw">function</span>(<span class="var">movement</span>) {
+  <span class="kw">const</span> <span class="var">picked</span> = <span class="var">viewer</span>.<span class="var">scene</span>.<span class="fn">pick</span>(<span class="var">movement</span>.<span class="var">position</span>);
+
+  <span class="kw">if</span> (<span class="typ">Cesium</span>.<span class="fn">defined</span>(<span class="var">picked</span>) && <span class="var">picked</span>.<span class="var">id</span> <span class="kw">instanceof</span> <span class="typ">Cesium.Entity</span>) {
+    <span class="kw">const</span> <span class="var">entity</span> = <span class="var">picked</span>.<span class="var">id</span>;
+
+    <span class="cmt">// 弹出 InfoBox（CesiumJS 内置信息面板）</span>
+    <span class="var">viewer</span>.<span class="var">selectedEntity</span> = <span class="var">entity</span>;
+
+    <span class="cmt">// 或者自定义处理</span>
+    <span class="var">console</span>.<span class="fn">log</span>(<span class="str">'点击了:'</span>, <span class="var">entity</span>.<span class="var">name</span>);
+    <span class="var">console</span>.<span class="fn">log</span>(<span class="str">'属性:'</span>, <span class="var">entity</span>.<span class="var">properties</span>);
+  } <span class="kw">else</span> {
+    <span class="var">viewer</span>.<span class="var">selectedEntity</span> = <span class="kw">undefined</span>; <span class="cmt">// 取消选中</span>
+  }
+}, <span class="typ">Cesium.ScreenSpaceEventType</span>.<span class="prp">LEFT_CLICK</span>);</pre>
+      <p>设置 <code>viewer.selectedEntity</code> 后，CesiumJS 会自动在 InfoBox 面板中显示 Entity 的 <code>name</code> 和 <code>description</code>。你可以自定义 description 为 HTML 来展示丰富的属性信息。</p>
+    </div>
+
+    <div class="card">
+      <h3>&#128064; 鼠标悬停高亮</h3>
+      <pre><span class="cmt">// 悬停时改变 Entity 的颜色（高亮效果）</span>
+<span class="kw">let</span> <span class="var">hoveredEntity</span> = <span class="kw">null</span>;
+
+<span class="var">handler</span>.<span class="fn">setInputAction</span>(<span class="kw">function</span>(<span class="var">movement</span>) {
+  <span class="kw">const</span> <span class="var">picked</span> = <span class="var">viewer</span>.<span class="var">scene</span>.<span class="fn">pick</span>(<span class="var">movement</span>.<span class="var">endPosition</span>);
+  <span class="kw">const</span> <span class="var">entity</span> = <span class="typ">Cesium</span>.<span class="fn">defined</span>(<span class="var">picked</span>) ? <span class="var">picked</span>.<span class="var">id</span> : <span class="kw">null</span>;
+
+  <span class="kw">if</span> (<span class="var">hoveredEntity</span> !== <span class="var">entity</span>) {
+    <span class="cmt">// 还原上一个高亮的 Entity</span>
+    <span class="kw">if</span> (<span class="var">hoveredEntity</span>) {
+      <span class="var">hoveredEntity</span>.<span class="var">point</span>.<span class="var">color</span> = <span class="typ">Cesium.Color</span>.<span class="prp">WHITE</span>.<span class="fn">clone</span>();
+    }
+    <span class="cmt">// 高亮新的 Entity</span>
+    <span class="kw">if</span> (<span class="var">entity</span> && <span class="var">entity</span>.<span class="var">point</span>) {
+      <span class="var">entity</span>.<span class="var">point</span>.<span class="var">color</span> = <span class="typ">Cesium.Color</span>.<span class="prp">YELLOW</span>.<span class="fn">clone</span>();
+    }
+    <span class="var">hoveredEntity</span> = <span class="var">entity</span>;
+  }
+}, <span class="typ">Cesium.ScreenSpaceEventType</span>.<span class="prp">MOUSE_MOVE</span>);</pre>
+    </div>
+
+    <div class="card">
+      <h3>&#128736; Entity.description 动态 HTML</h3>
+      <pre><span class="cmt">// 在创建 Entity 时设置 description 为 HTML</span>
+<span class="var">viewer</span>.<span class="var">entities</span>.<span class="fn">add</span>({
+  <span class="prp">name</span>: <span class="str">'传感器 A-001'</span>,
+  <span class="prp">position</span>: <span class="typ">Cesium.Cartesian3</span>.<span class="fn">fromDegrees</span>(<span class="num">116.3972</span>, <span class="num">39.9075</span>, <span class="num">100</span>),
+  <span class="prp">point</span>: { <span class="prp">pixelSize</span>: <span class="num">10</span>, <span class="prp">color</span>: <span class="typ">Cesium.Color</span>.<span class="prp">GREEN</span> },
+  <span class="prp">description</span>: <span class="str">`
+    &lt;table style="color:white;font-size:13px;"&gt;
+      &lt;tr&gt;&lt;td&gt;温度&lt;/td&gt;&lt;td&gt;:&lt;/td&gt;&lt;td&gt;23.5°C&lt;/td&gt;&lt;/tr&gt;
+      &lt;tr&gt;&lt;td&gt;湿度&lt;/td&gt;&lt;td&gt;:&lt;/td&gt;&lt;td&gt;65%&lt;/td&gt;&lt;/tr&gt;
+      &lt;tr&gt;&lt;td&gt;状态&lt;/td&gt;&lt;td&gt;:&lt;/td&gt;&lt;td style="color:#7ee787"&gt;正常&lt;/td&gt;&lt;/tr&gt;
+    &lt;/table&gt;
+  `</span>
+});</pre>
+      <p>点击这个 Entity 后，CesiumJS InfoBox 会渲染这个 HTML 表格，展示传感器的实时数据。</p>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 11: 综合实战 -->
+  <!-- ============================================================ -->
+  <div class="section" id="s11">
+    <div class="section-header">
+      <div class="section-num">11</div>
+      <h2>综合实战：交互式数据浏览器</h2>
+      <span class="tag">实战</span>
+    </div>
+
+    <div class="card">
+      <h3>&#127760; 场景描述</h3>
+      <p>构建一个完整的交互式数据浏览器：从 GeoJSON 加载城市数据，支持点击查看详情，支持鼠标悬停高亮，提供图层面板控制显隐。</p>
+    </div>
+
+    <div class="card">
+      <h3>&#128295; 完整代码</h3>
+      <pre><span class="cmt">// ==========================================</span>
+<span class="cmt">// 交互式城市数据浏览器</span>
+<span class="cmt">// ==========================================</span>
+
+<span class="kw">const</span> <span class="var">viewer</span> = <span class="kw">new</span> <span class="typ">Cesium.Viewer</span>(<span class="str">'cesiumContainer'</span>, {
+  <span class="prp">infoBox</span>: <span class="kw">true</span>,  <span class="cmt">// 启用内置信息面板</span>
+  <span class="prp">selectionIndicator</span>: <span class="kw">true</span>
+});
+
+<span class="cmt">// --- 1. 加载城市数据 ---</span>
+<span class="kw">const</span> <span class="var">citiesGeoJSON</span> = {
+  <span class="prp">type</span>: <span class="str">'FeatureCollection'</span>,
+  <span class="prp">features</span>: [
+    {
+      <span class="prp">type</span>: <span class="str">'Feature'</span>,
+      <span class="prp">geometry</span>: { <span class="prp">type</span>: <span class="str">'Point'</span>, <span class="prp">coordinates</span>: [<span class="num">116.3972</span>, <span class="num">39.9075</span>] },
+      <span class="prp">properties</span>: { <span class="prp">name</span>: <span class="str">'北京'</span>, <span class="prp">population</span>: <span class="num">21540000</span>, <span class="prp">rank</span>: <span class="str">'首都'</span> }
+    },
+    {
+      <span class="prp">type</span>: <span class="str">'Feature'</span>,
+      <span class="prp">geometry</span>: { <span class="prp">type</span>: <span class="str">'Point'</span>, <span class="prp">coordinates</span>: [<span class="num">121.4737</span>, <span class="num">31.2304</span>] },
+      <span class="prp">properties</span>: { <span class="prp">name</span>: <span class="str">'上海'</span>, <span class="prp">population</span>: <span class="num">24870000</span>, <span class="prp">rank</span>: <span class="str">'直辖市'</span> }
+    },
+    {
+      <span class="prp">type</span>: <span class="str">'Feature'</span>,
+      <span class="prp">geometry</span>: { <span class="prp">type</span>: <span class="str">'Point'</span>, <span class="prp">coordinates</span>: [<span class="num">113.2644</span>, <span class="num">23.1291</span>] },
+      <span class="prp">properties</span>: { <span class="prp">name</span>: <span class="str">'广州'</span>, <span class="prp">population</span>: <span class="num">18680000</span>, <span class="prp">rank</span>: <span class="str">'省会'</span> }
+    }
+  ]
+};
+
+<span class="cmt">// --- 2. 加载并添加数据源 ---</span>
+<span class="kw">let</span> <span class="var">cityDs</span>;
+<span class="typ">Cesium.GeoJsonDataSource</span>.<span class="fn">load</span>(<span class="var">citiesGeoJSON</span>, {
+  <span class="prp">markerColor</span>: <span class="typ">Cesium.Color</span>.<span class="prp">DODGERBLUE</span>,
+  <span class="prp">markerSize</span>: <span class="num">30</span>
+}).<span class="fn">then</span>(<span class="var">ds</span> => {
+  <span class="var">cityDs</span> = <span class="var">ds</span>;
+  <span class="var">viewer</span>.<span class="var">dataSources</span>.<span class="fn">add</span>(<span class="var">ds</span>);
+  <span class="kw">return</span> <span class="var">viewer</span>.<span class="fn">flyTo</span>(<span class="var">ds</span>);
+});
+
+<span class="cmt">// --- 3. 交互处理 ---</span>
+<span class="kw">const</span> <span class="var">handler</span> = <span class="kw">new</span> <span class="typ">Cesium.ScreenSpaceEventHandler</span>(<span class="var">viewer</span>.<span class="var">canvas</span>);
+<span class="kw">let</span> <span class="var">lastHovered</span> = <span class="kw">null</span>;
+
+<span class="cmt">// 点击事件：选中并显示详情</span>
+<span class="var">handler</span>.<span class="fn">setInputAction</span>(<span class="kw">function</span>(<span class="var">movement</span>) {
+  <span class="kw">const</span> <span class="var">picked</span> = <span class="var">viewer</span>.<span class="var">scene</span>.<span class="fn">pick</span>(<span class="var">movement</span>.<span class="var">position</span>);
+  <span class="kw">if</span> (<span class="typ">Cesium</span>.<span class="fn">defined</span>(<span class="var">picked</span>)) {
+    <span class="kw">const</span> <span class="var">entity</span> = <span class="var">picked</span>.<span class="var">id</span>;
+    <span class="cmt">// 自定义 description</span>
+    <span class="var">entity</span>.<span class="var">description</span> = <span class="str">`
+      &lt;h3&gt;${entity.name}&lt;/h3&gt;
+      &lt;p&gt;人口: ${(entity.properties.population / 10000).toFixed(0)} 万&lt;/p&gt;
+      &lt;p&gt;级别: ${entity.properties.rank}&lt;/p&gt;
+    `</span>;
+    <span class="var">viewer</span>.<span class="var">selectedEntity</span> = <span class="var">entity</span>;
+  } <span class="kw">else</span> {
+    <span class="var">viewer</span>.<span class="var">selectedEntity</span> = <span class="kw">undefined</span>;
+  }
+}, <span class="typ">Cesium.ScreenSpaceEventType</span>.<span class="prp">LEFT_CLICK</span>);
+
+<span class="cmt">// 悬停事件：高亮效果</span>
+<span class="var">handler</span>.<span class="fn">setInputAction</span>(<span class="kw">function</span>(<span class="var">movement</span>) {
+  <span class="kw">const</span> <span class="var">picked</span> = <span class="var">viewer</span>.<span class="var">scene</span>.<span class="fn">pick</span>(<span class="var">movement</span>.<span class="var">endPosition</span>);
+  <span class="kw">const</span> <span class="var">entity</span> = <span class="typ">Cesium</span>.<span class="fn">defined</span>(<span class="var">picked</span>) ? <span class="var">picked</span>.<span class="var">id</span> : <span class="kw">null</span>;
+
+  <span class="kw">if</span> (<span class="var">lastHovered</span> && <span class="var">lastHovered</span>.<span class="var">billboard</span>) {
+    <span class="var">lastHovered</span>.<span class="var">billboard</span>.<span class="var">color</span> = <span class="typ">Cesium.Color</span>.<span class="prp">DODGERBLUE</span>;
+  }
+  <span class="kw">if</span> (<span class="var">entity</span> && <span class="var">entity</span>.<span class="var">billboard</span>) {
+    <span class="var">entity</span>.<span class="var">billboard</span>.<span class="var">color</span> = <span class="typ">Cesium.Color</span>.<span class="prp">YELLOW</span>;
+  }
+  <span class="var">lastHovered</span> = <span class="var">entity</span>;
+}, <span class="typ">Cesium.ScreenSpaceEventType</span>.<span class="prp">MOUSE_MOVE</span>);</pre>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 12: CesiumJS 关联场景 -->
+  <!-- ============================================================ -->
+  <div class="section" id="s12">
+    <div class="section-header">
+      <div class="section-num">12</div>
+      <h2>CesiumJS 关联场景</h2>
+      <span class="tag">应用</span>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <h3>&#128506; 场景 1：GIS 数据在线编辑器</h3>
+        <p>用户点击地图上的多边形（行政区划），系统高亮边界，右侧面板显示该区域的统计指标（人口、GDP、面积）。使用 <code>scene.pick()</code> + <code>Entity.properties</code>。</p>
+        <pre><span class="cmt">// 点击多边形 → 高亮 + 数据联动</span>
+<span class="kw">function</span> <span class="fn">onPolygonClick</span>(<span class="var">picked</span>) {
+  <span class="kw">const</span> <span class="var">entity</span> = <span class="var">picked</span>.<span class="var">id</span>;
+  <span class="var">entity</span>.<span class="var">polygon</span>.<span class="var">material</span> = <span class="typ">Cesium.Color</span>.<span class="prp">YELLOW</span>.<span class="fn">withAlpha</span>(<span class="num">0.5</span>);
+  <span class="var">updateDashboard</span>(<span class="var">entity</span>.<span class="var">properties</span>);  <span class="cmt">// 右面板刷新</span>
+}</pre>
+      </div>
+
+      <div class="card">
+        <h3>&#9992;&#65039; 场景 2：航班实时追踪</h3>
+        <p>从 API 获取航班位置，用 CustomDataSource 管理所有飞机。CZML 或定时器驱动位置更新，点击飞机弹出详情（航班号、速度、高度、目的地），使用 <code>path.leadTime</code> 显示航迹。</p>
+        <pre><span class="cmt">// 实时更新飞机位置</span>
+<span class="kw">setInterval</span>(<span class="kw">async</span> () => {
+  <span class="kw">const</span> <span class="var">flights</span> = <span class="kw">await</span> <span class="fn">fetchFlights</span>();
+  <span class="var">flights</span>.<span class="fn">forEach</span>(<span class="var">f</span> => {
+    <span class="kw">const</span> <span class="var">entity</span> = <span class="var">flightMap</span>.<span class="fn">get</span>(<span class="var">f</span>.<span class="var">id</span>);
+    <span class="kw">if</span> (<span class="var">entity</span>) <span class="var">entity</span>.<span class="var">position</span> = <span class="typ">Cesium.Cartesian3</span>.<span class="fn">fromDegrees</span>(<span class="var">f</span>.<span class="var">lon</span>, <span class="var">f</span>.<span class="var">lat</span>, <span class="var">f</span>.<span class="var">alt</span>);
+  });
+}, <span class="num">5000</span>);
+
+<span class="cmt">// 点击飞机 → 显示航速、高度、目的地</span>
+<span class="var">handler</span>.<span class="fn">setInputAction</span>(<span class="kw">function</span>(<span class="var">movement</span>) {
+  <span class="kw">const</span> <span class="var">picked</span> = <span class="var">viewer</span>.<span class="var">scene</span>.<span class="fn">pick</span>(<span class="var">movement</span>.<span class="var">position</span>);
+  <span class="kw">if</span> (<span class="var">picked</span>) <span class="fn">showFlightInfo</span>(<span class="var">picked</span>.<span class="var">id</span>.<span class="var">properties</span>);
+}, <span class="typ">Cesium.ScreenSpaceEventType</span>.<span class="prp">LEFT_CLICK</span>);</pre>
+      </div>
+
+      <div class="card">
+        <h3>&#128300; 场景 3：时空数据回放</h3>
+        <p>加载 CZML 格式的台风路径数据，使用 CesiumJS 时间轴回放台风的整个生命周期。CZML 中的 point 随时间变化大小（颜色反映风速），path 显示完整路径轨迹。</p>
+        <pre><span class="cmt">// 加载台风 CZML</span>
+<span class="kw">const</span> <span class="var">typhoonDs</span> = <span class="kw">await</span> <span class="typ">Cesium.CzmlDataSource</span>.<span class="fn">load</span>(<span class="str">'typhoon-2025.czml'</span>);
+<span class="var">viewer</span>.<span class="var">dataSources</span>.<span class="fn">add</span>(<span class="var">typhoonDs</span>);
+<span class="var">viewer</span>.<span class="var">clock</span>.<span class="var">shouldAnimate</span> = <span class="kw">true</span>;  <span class="cmt">// 开始播放</span>
+<span class="var">viewer</span>.<span class="var">clock</span>.<span class="var">multiplier</span> = <span class="num">3600</span>;  <span class="cmt">// 一小时 = 一秒钟</span></pre>
+      </div>
+
+      <div class="card">
+        <h3>&#128722; 场景 4：物流车辆监控大屏</h3>
+        <p>企业级场景：多个数据源协同工作。GeoJSON 加载配送区域多边形，CustomDataSource 管理实时车辆位置（WebSocket 推送），KML 加载仓库位置标注。点击车辆查看司机/货物/预计到达时间。</p>
+        <pre><span class="cmt">// 多源数据融合</span>
+<span class="kw">const</span> <span class="var">areasDs</span>      = <span class="kw">await</span> <span class="typ">GeoJsonDataSource</span>.<span class="fn">load</span>(<span class="str">'areas.geojson'</span>);
+<span class="kw">const</span> <span class="var">vehiclesDs</span>   = <span class="kw">new</span> <span class="typ">CustomDataSource</span>(<span class="str">'车辆'</span>);
+<span class="kw">const</span> <span class="var">warehousesDs</span> = <span class="kw">await</span> <span class="typ">KmlDataSource</span>.<span class="fn">load</span>(<span class="str">'warehouses.kml'</span>);
+<span class="var">viewer</span>.<span class="var">dataSources</span>.<span class="fn">add</span>(<span class="var">areasDs</span>);
+<span class="var">viewer</span>.<span class="var">dataSources</span>.<span class="fn">add</span>(<span class="var">vehiclesDs</span>);
+<span class="var">viewer</span>.<span class="var">dataSources</span>.<span class="fn">add</span>(<span class="var">warehousesDs</span>);
+
+<span class="cmt">// WebSocket 实时推送车辆位置</span>
+<span class="var">ws</span>.<span class="var">onmessage</span> = (<span class="var">event</span>) => {
+  <span class="kw">const</span> <span class="var">data</span> = <span class="typ">JSON</span>.<span class="fn">parse</span>(<span class="var">event</span>.<span class="var">data</span>);
+  <span class="fn">updateVehiclePositions</span>(<span class="var">vehiclesDs</span>, <span class="var">data</span>);
+};</pre>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 13: 练习题 -->
+  <!-- ============================================================ -->
+  <div class="practice" id="s13">
+    <h2>&#9997;&#65039; 练习题</h2>
+    <p>用今天的知识完成以下练习，答案不唯一，重点理解概念。</p>
+
+    <div class="exercise">
+      <div class="q">练习 1：GeoJSON 颜色映射</div>
+      <p>编写代码，加载一个包含多个 Polygon Feature 的 GeoJSON，根据每个 Feature 的 <code>properties.population</code> 值设置不同的填充颜色。人口 &gt; 1000万用红色，500-1000万用橙色，&lt; 500万用蓝色。</p>
+      <p>提示：需要在 GeoJsonDataSource 加载后遍历 <code>ds.entities.values</code>，读取 <code>entity.properties</code>，动态修改 <code>entity.polygon.material</code>。</p>
+    </div>
+
+    <div class="exercise">
+      <div class="q">练习 2：右键菜单</div>
+      <p>实现一个右键菜单功能：在 CesiumJS 地球上<strong>右键点击</strong>空白区域（未拾取到任何 Entity），在该位置添加一个标注点，并显示一个自定义 HTML 菜单（用绝对定位的 div 实现），包含"添加标注"和"查看坐标"两个选项。</p>
+      <p>提示：使用 <code>RIGHT_CLICK</code> 事件 + <code>pickEllipsoid()</code> 获取坐标 + <code>Cartographic.fromCartesian()</code> 转为经纬度。</p>
+    </div>
+
+    <div class="exercise">
+      <div class="q">练习 3：多源数据管理器</div>
+      <p>实现一个 <code>MultiSourceManager</code> 类，支持：</p>
+      <ul>
+        <li><code>loadGeoJSON(name, url)</code> — 加载并注册 GeoJSON 数据</li>
+        <li><code>loadCZML(name, url)</code> — 加载并注册 CZML 数据</li>
+        <li><code>createFromAPI(name, url)</code> — 从 REST API 获取 JSON 并用 CustomDataSource 展示</li>
+        <li><code>toggle(name)</code> / <code>remove(name)</code> / <code>flyTo(name)</code> / <code>listAll()</code></li>
+        <li><code>exportAllToGeoJSON()</code> — 将所有数据源中的 Entity 导出为一个 GeoJSON FeatureCollection</li>
+      </ul>
+      <p>提示：内部用 <code>Map&lt;string, DataSource&gt;</code> 存储（复习 Day 07），<code>exportAllToGeoJSON</code> 需要遍历 entities 并构建 GeoJSON 结构。</p>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 14: 在线练习控制台 -->
+  <!-- ============================================================ -->
+  <div class="console-area" id="s14">
+    <div class="console-header">
+      <div class="console-dots">
+        <div class="dot dot-r"></div>
+        <div class="dot dot-y"></div>
+        <div class="dot dot-g"></div>
+      </div>
+      <span>JavaScript 沙盒 — 练习 DataSource 与 Picking 概念</span>
+      <span style="font-size:11px;color:var(--muted);">Ctrl + Enter 运行</span>
+    </div>
+    <textarea id="sandbox-code" spellcheck="false">// ========================================
+// 数据源与交互 — 概念练习沙盒
+// 用纯 JS 模拟 DataSource 管理和 Pick 机制
+// ========================================
+
+// --- 模拟 Entity ---
+class Entity {
+  constructor(id, name, props = {}) {
+    this.id = id;
+    this.name = name;
+    this.properties = props;
+    this.show = true;
+  }
+}
+
+// --- 模拟 EntityCollection ---
+class EntityCollection {
+  constructor() {
+    this._entities = new Map();
+  }
+
+  add(entity) {
+    this._entities.set(entity.id, entity);
+    return entity;
+  }
+
+  remove(entity) {
+    return this._entities.delete(entity.id);
+  }
+
+  get values() {
+    return Array.from(this._entities.values());
+  }
+
+  getById(id) {
+    return this._entities.get(id);
+  }
+}
+
+// --- DataSource 抽象基类 ---
+class DataSource {
+  constructor(name) {
+    this.name = name;
+    this.show = true;
+    this.entities = new EntityCollection();
+    this._isLoading = false;
+    this._loadCallbacks = [];
+  }
+
+  get isLoading() { return this._isLoading; }
+
+  onLoad(callback) {
+    this._loadCallbacks.push(callback);
+  }
+
+  _finishLoad() {
+    this._isLoading = false;
+    this._loadCallbacks.forEach(cb => cb(this));
+  }
+}
+
+// --- GeoJsonDataSource 模拟 ---
+class GeoJsonDataSource extends DataSource {
+  constructor(name, geojson) {
+    super(name);
+    this._isLoading = true;
+    this._parse(geojson);
+  }
+
+  _parse(geojson) {
+    if (geojson.type !== 'FeatureCollection') return;
+    geojson.features.forEach((feature, i) => {
+      const props = feature.properties || {};
+      const entity = new Entity(
+        `${this.name}_${i}`,
+        props.name || `Feature ${i}`,
+        { ...props, geometry: feature.geometry }
+      );
+      this.entities.add(entity);
+    });
+    this._finishLoad();
+  }
+}
+
+// --- CustomDataSource ---
+class CustomDataSource extends DataSource {
+  addEntity(id, name, props = {}) {
+    const entity = new Entity(id, name, props);
+    this.entities.add(entity);
+    return entity;
+  }
+}
+
+// --- DataSourceCollection ---
+class DataSourceCollection {
+  constructor() {
+    this._sources = new Map();
+  }
+
+  add(ds) {
+    this._sources.set(ds.name, ds);
+    console.log(`📦 数据源 "${ds.name}" 已添加`);
+  }
+
+  remove(ds, destroy = false) {
+    this._sources.delete(ds.name);
+    console.log(`🗑 数据源 "${ds.name}" 已移除${destroy ? '（已销毁）' : ''}`);
+  }
+
+  getByName(name) {
+    return this._sources.get(name);
+  }
+
+  list() {
+    return Array.from(this._sources.values()).map(ds => ({
+      name: ds.name,
+      show: ds.show,
+      entityCount: ds.entities.values.length,
+      type: ds.constructor.name
+    }));
+  }
+
+  toggle(name) {
+    const ds = this._sources.get(name);
+    if (ds) {
+      ds.show = !ds.show;
+      return ds.show;
+    }
+    return null;
+  }
+}
+
+// --- Pick 模拟 ---
+class PickSimulator {
+  constructor(collection) {
+    this.collection = collection;
+  }
+
+  pick(x, y) {
+    // 模拟：根据坐标的哈希值选择一个 Entity
+    const allDs = this.collection.list();
+    if (allDs.length === 0) return null;
+
+    // 找当前显示的 DataSource
+    const visibleDs = allDs.filter(d => d.show);
+    if (visibleDs.length === 0) return null;
+
+    // 找一个 DataSource，从中选一个 Entity
+    const ds = this.collection.getByName(visibleDs[0].name);
+    const entities = ds.entities.values;
+    if (entities.length === 0) return null;
+
+    const idx = Math.floor((x * y * 7) % entities.length);
+    return entities[idx];
+  }
+
+  drillPick(x, y) {
+    // 模拟：返回所有可见数据源中匹配的 Entity
+    const results = [];
+    const allDs = this.collection.list();
+    allDs.forEach(dsInfo => {
+      if (!dsInfo.show) return;
+      const ds = this.collection.getByName(dsInfo.name);
+      const entities = ds.entities.values;
+      if (entities.length > 0) {
+        const idx = Math.floor((x * y * ds.name.length) % entities.length);
+        results.push(entities[idx]);
+      }
+    });
+    return results;
+  }
+}
+
+// --- 运行演示 ---
+async function demo() {
+  console.log('=== 数据源与交互 演示 ===\n');
+
+  // 1. 创建 DataSourceCollection
+  const coll = new DataSourceCollection();
+
+  // 2. 加载 GeoJSON 数据
+  const citiesGeoJSON = {
+    type: 'FeatureCollection',
+    features: [
+      { type: 'Feature', geometry: { type: 'Point', coordinates: [116.39, 39.90] },
+        properties: { name: '北京', population: 21540000 } },
+      { type: 'Feature', geometry: { type: 'Point', coordinates: [121.47, 31.23] },
+        properties: { name: '上海', population: 24870000 } },
+      { type: 'Feature', geometry: { type: 'Point', coordinates: [113.26, 23.13] },
+        properties: { name: '广州', population: 18680000 } },
+      { type: 'Feature', geometry: { type: 'Point', coordinates: [104.06, 30.57] },
+        properties: { name: '成都', population: 20930000 } }
+    ]
+  };
+
+  const citiesDs = new GeoJsonDataSource('中国城市', citiesGeoJSON);
+  coll.add(citiesDs);
+
+  // 3. 创建自定义数据源（模拟 API 数据）
+  const sensorsDs = new CustomDataSource('传感器网络');
+  sensorsDs.addEntity('sensor_1', '温度传感器 A', { temp: 23.5, humidity: 65 });
+  sensorsDs.addEntity('sensor_2', '温度传感器 B', { temp: 27.1, humidity: 58 });
+  sensorsDs.addEntity('sensor_3', '温度传感器 C', { temp: 19.8, humidity: 72 });
+  coll.add(sensorsDs);
+
+  // 4. 查看所有数据源
+  console.log('--- 已注册数据源 ---');
+  coll.list().forEach(ds => {
+    console.log(`  📊 ${ds.name} (${ds.type}): ${ds.entityCount} 个实体, ${ds.show ? '👁 显示' : '🚫 隐藏'}`);
+  });
+
+  // 5. 模拟 Pick 操作
+  console.log('\n--- 模拟交互 ---');
+  const picker = new PickSimulator(coll);
+
+  console.log('👆 单击 (100, 200):');
+  const picked = picker.pick(100, 200);
+  if (picked) {
+    console.log(`  选中: ${picked.name}`);
+    console.log(`  属性:`, picked.properties);
+  }
+
+  console.log('\n🔍 穿透拾取 (150, 300):');
+  const drilled = picker.drillPick(150, 300);
+  drilled.forEach((entity, i) => {
+    console.log(`  ${i + 1}. ${entity.name} (${entity.properties.name || entity.id})`);
+  });
+
+  // 6. 数据源管理
+  console.log('\n--- 数据源管理 ---');
+  coll.toggle('传感器网络');
+  console.log(`传感器网络: ${coll.getByName('传感器网络').show ? '显示' : '隐藏'}`);
+
+  // 7. 导出演示
+  console.log('\n--- 导出 GeoJSON ---');
+  const allEntities = [];
+  coll.list().forEach(dsInfo => {
+    const ds = coll.getByName(dsInfo.name);
+    ds.entities.values.forEach(entity => {
+      allEntities.push({
+        type: 'Feature',
+        properties: { name: entity.name, ...entity.properties },
+        geometry: entity.properties.geometry || null
+      });
+    });
+  });
+  console.log(`导出 ${allEntities.length} 个 Feature 到 GeoJSON FeatureCollection`);
+
+  console.log('\n=== 演示完毕 ===');
+}
+
+demo();</textarea>
+    <div class="console-actions">
+      <button class="btn btn-run" onclick="runCode()">&#9654; 运行 (Ctrl+Enter)</button>
+      <button class="btn btn-clear" onclick="clearOutput()">&#128465; 清空输出</button>
+    </div>
+    <div id="output-box"></div>
+  </div>
+
+</div><!-- /container -->
+
+<!-- ===== FOOTER ===== -->
+<div class="footer">
+  <p>&#128170; 明天继续：Day 19 — CesiumJS 更多高级主题</p>
+  <p style="margin-top:8px;">CesiumJS 学习路径 · 第 18 天 · 数据源（DataSource）与交互</p>
+</div>
+
+<!-- ===== SANDBOX ENGINE ===== -->
+<script>
+const outputBox = document.getElementById('output-box');
+const sandboxCode = document.getElementById('sandbox-code');
+
+// 拦截 console.log
+const sandboxConsole = [];
+const originalLog = console.log;
+console.log = function(...args) {
+  sandboxConsole.push(args.map(a => {
+    if (typeof a === 'object') {
+      try { return JSON.stringify(a, null, 2); } catch(e) { return String(a); }
+    }
+    return String(a);
+  }).join(' '));
+  originalLog.apply(console, args);
+};
+
+function runCode() {
+  sandboxConsole.length = 0;
+  outputBox.innerHTML = '';
+
+  const code = sandboxCode.value;
+  try {
+    const result = eval(code);
+    let output = sandboxConsole.join('\n');
+    if (result !== undefined && typeof result.then !== 'function') {
+      output += '\n// => ' + (typeof result === 'object' ? JSON.stringify(result) : String(result));
+    }
+    outputBox.innerHTML = output || '(无输出)';
+    if (result && typeof result.then === 'function') {
+      outputBox.innerHTML += '\n⏳ 异步操作进行中...';
+    }
+  } catch (e) {
+    outputBox.innerHTML = '<span class="err">❌ 错误: ' + e.message + '</span>';
+  }
+}
+
+function clearOutput() {
+  sandboxConsole.length = 0;
+  outputBox.innerHTML = '';
+}
+
+// Ctrl+Enter 快捷键
+document.addEventListener('keydown', function(e) {
+  if (e.ctrlKey && e.key === 'Enter') {
+    e.preventDefault();
+    runCode();
+  }
+});
+
+// 初始自动运行
+setTimeout(runCode, 300);
+</script>
+
+</body>
+</html>
